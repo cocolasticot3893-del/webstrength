@@ -1302,3 +1302,38 @@ if (typeof document !== "undefined") {
     bootstrap();
   }
 }
+
+
+/* WEBSTRENGTH_GEAR_FIX_V1 */
+document.addEventListener("DOMContentLoaded", () => {
+  const openBtn = document.getElementById("outbox-flush-btn") ||
+    Array.from(document.querySelectorAll("button")).find((b) => b.textContent.includes("⚙") || /vault|settings|config/i.test(b.id + " " + (b.getAttribute("aria-label") || "")));
+  const target = document.getElementById("vault-drawer") ||
+    document.querySelector("dialog, [data-vault-drawer], .vault-drawer, .drawer, .modal");
+
+  if (openBtn && target) {
+    openBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (typeof target.showModal === "function") {
+        if (!target.open) target.showModal();
+      } else {
+        target.hidden = false;
+        target.removeAttribute("hidden");
+        target.setAttribute("aria-hidden", "false");
+        target.classList.add("open", "is-open", "active");
+        target.style.display = target.style.display === "none" ? "block" : target.style.display;
+      }
+    });
+    const closeBtn = target.querySelector("[data-close], .close-btn, #btn-close-vault, #close-vault");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        if (typeof target.close === "function" && target.open) target.close();
+        else {
+          target.hidden = true;
+          target.setAttribute("aria-hidden", "true");
+          target.classList.remove("open", "is-open", "active");
+        }
+      });
+    }
+  }
+});
