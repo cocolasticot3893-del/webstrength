@@ -44,7 +44,12 @@ import {
 } from "../outbox.js";
 import {
   GEMINI_BASE_URL,
+  MODELS_CACHE_KEY,
+  OBSOLETE_MODELS,
   buildResponseSchema,
+  scoreGeminiModel,
+  fetchAvailableGeminiModels,
+  pickBestAvailableModel,
   generateSessionWithGemini,
 } from "../geminiClient.js";
 
@@ -1438,5 +1443,170 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
       const cat = getCatalogExercise(ex.id);
       assert.ok(cat.allowed_loads.includes(ex.load));
     }
+  });
+
+  it("scoreGeminiModel classe les générations Flash et rejette les modèles incompatibles (tts/embedding/image)", () => {
+    assert.equal(MODELS_CACHE_KEY, "PHYSIOPULSE_CACHED_MODELS_V2");
+    assert.equal(DEFAULT_VAULT.LLM_MODEL, "gemini-3.5-flash");
+    assert.ok(OBSOLETE_MODELS.has("gemini-2.5-flash"));
+
+    const s50 = scoreGeminiModel("gemini-5.0-flash");
+    const s38 = scoreGeminiModel("gemini-3.8-flash");
+    const sLatest = scoreGeminiModel("gemini-flash-latest");
+    const s35 = scoreGeminiModel("gemini-3.5-flash");
+    const s35Lite = scoreGeminiModel("gemini-3.5-flash-lite");
+    const s35Pro = scoreGeminiModel("gemini-3.5-pro");
+    const s25 = scoreGeminiModel("gemini-2.5-flash");
+
+    assert.ok(s50 > s38 && s38 > s35 && s35 > s25);
+    assert.ok(s38 > sLatest && sLatest > s35);
+    assert.ok(s35 > s35Lite);
+    assert.ok(s35 > s35Pro);
+
+    // Modèles incompatibles avec Structured Outputs JSON -> score < 0
+    assert.ok(scoreGeminiModel("gemini-2.5-flash-tts") < 0);
+    assert.ok(scoreGeminiModel("gemini-embedding-001") < 0);
+    assert.ok(scoreGeminiModel("gemini-2.5-flash-image") < 0);
+    assert.ok(scoreGeminiModel("gemma-3-27b-it") < 0);
+  });
+
+  it("pickBestAvailableModel remplace un modèle obsolète ou retiré tout en respectant un choix utilisateur actif", () => {
+    const activeModels = [
+      { id: "gemini-3.8-flash", displayName: "Gemini 3.8 Flash", score: 3920 },
+      { id: "gemini-3.5-flash", displayName: "Gemini 3.5 Flash", score: 3620 },
+      { id: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash", score: 2620 },
+    ];
+
+    // Ancien défaut obsolète remplacé automatiquement par le meilleur actif
+    assert.equal(
+      pickBestAvailableModel(activeModels, "gemini-2.5-flash"),
+      "gemini-3.8-flash"
+    );
+
+    // Modèle retiré de la liste active -> remplacé par le meilleur actif
+    assert.equal(
+      pickBestAvailableModel(activeModels, "gemini-3.0-flash"),
+      "gemini-3.8-flash"
+    );
+
+    // Choix utilisateur explicite non-obsolète et présent -> conservé
+    assert.equal(
+      pickBestAvailableModel(activeModels, "gemini-3.5-flash"),
+      "gemini-3.5-flash"
+    );
+
+    // Liste vide : remplace un obsolète par gemini-3.5-flash, préserve un choix valide
+    assert.equal(pickBestAvailableModel([], "gemini-2.5-flash"), "gemini-3.5-flash");
+    assert.equal(pickBestAvailableModel([], "gemini-3.8-flash"), "gemini-3.8-flash");
+  });
+
+  it("generateSessionWithGemini auto-répare un HTTP 404 via GET /v1beta/models, persiste le modèle et retourne autoUpgradedFrom", async () => {
+    saveVault({ LLM_MODEL: "gemini-2.5-flash" });
+
+    const calls = [];
+    const validGeminiPlan = {
+      theme: "Séance Auto-Upgraded",
+      rationale: "Plan validé après bascule automatique",
+      recommended_k_ecc: 1.3,
+      recommended_rir: 2,
+      recommended_rpe: 7,
+      target_duration_sec: 2100,
+      exercises: [
+        { id: "BAND_MONSTER_WALK", block: 1, sets: 3, reps: 45, load: 2 },
+        { id: "BAND_DEAD_BUG", block: 1, sets: 3, reps: 45, load: 2 },
+        { id: "KBOX_SQUAT_BELT", block: 2, sets: 3, reps: 8, load: 0.05 },
+        { id: "KBOX_HIGH_PULL", block: 2, sets: 3, reps: 8, load: 0.05 },
+        { id: "DB_SL_RDL", block: 3, sets: 3, reps: 8, load: 16 },
+        { id: "BAND_PALLOF_PRESS", block: 3, sets: 3, reps: 45, load: 2 },
+      ],
+    };
+
+    restoreFetch = stubGlobalProperty("fetch", {
+      value: async (url, init) => {
+        calls.push({ url, method: init?.method ?? "GET", headers: init?.headers ?? {} });
+
+        if (url === `${GEMINI_BASE_URL}/gemini-2.5-flash:generateContent`) {
+          return new Response(JSON.stringify({ error: { code: 404 } }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        if (url === `${GEMINI_BASE_URL}?pageSize=100`) {
+          return new Response(
+            JSON.stringify({
+              models: [
+                {
+                  name: "models/gemini-2.5-flash-tts",
+                  displayName: "TTS",
+                  supportedGenerationMethods: ["generateContent"],
+                },
+                {
+                  name: "models/gemini-3.5-flash",
+                  displayName: "Gemini 3.5 Flash",
+                  supportedGenerationMethods: ["generateContent"],
+                },
+                {
+                  name: "models/gemini-3.8-flash",
+                  displayName: "Gemini 3.8 Flash",
+                  supportedGenerationMethods: ["generateContent"],
+                },
+              ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        if (url === `${GEMINI_BASE_URL}/gemini-3.8-flash:generateContent`) {
+          return new Response(
+            JSON.stringify({
+              candidates: [
+                {
+                  content: {
+                    parts: [{ text: JSON.stringify(validGeminiPlan) }],
+                  },
+                },
+              ],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(JSON.stringify({}), { status: 500 });
+      },
+    });
+
+    // Vérifie aussi fetchAvailableGeminiModels directement (en-tête x-goog-api-key, aucun ?key= en URL)
+    const listed = await fetchAvailableGeminiModels("dummy_gemini_key");
+    assert.deepEqual(
+      listed.map((m) => m.id),
+      ["gemini-3.8-flash", "gemini-3.5-flash"]
+    );
+    assert.equal(calls[0].headers["x-goog-api-key"], "dummy_gemini_key");
+    assert.equal(calls[0].url.includes("?key="), false);
+
+    calls.length = 0;
+    const res = await generateSessionWithGemini({
+      apiKey: "dummy_gemini_key",
+      model: "gemini-2.5-flash",
+      context: {
+        gate: "ORANGE",
+        readiness: "OPTIMAL",
+        hours_since_last_eccentric: 72,
+        last_dominant_pattern: "HIP_DOMINANT",
+      },
+    });
+
+    assert.equal(calls.length, 3);
+    assert.equal(calls[0].url, `${GEMINI_BASE_URL}/gemini-2.5-flash:generateContent`);
+    assert.equal(calls[1].url, `${GEMINI_BASE_URL}?pageSize=100`);
+    assert.equal(calls[1].method, "GET");
+    assert.equal(calls[2].url, `${GEMINI_BASE_URL}/gemini-3.8-flash:generateContent`);
+
+    assert.equal(res.source, "GEMINI");
+    assert.equal(res.model, "gemini-3.8-flash");
+    assert.equal(res.autoUpgradedFrom, "gemini-2.5-flash");
+    assert.equal(res.plan.exercises.length, 6);
+    assert.equal(loadVault().LLM_MODEL, "gemini-3.8-flash");
   });
 });

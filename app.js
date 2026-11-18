@@ -9,7 +9,12 @@ import {
   calculateSessionMetrics,
 } from "./engine.js";
 import { generateFallbackSession } from "./fallbackGenerator.js";
-import { generateSessionWithGemini } from "./geminiClient.js";
+import {
+  MODELS_CACHE_KEY,
+  fetchAvailableGeminiModels,
+  generateSessionWithGemini,
+  pickBestAvailableModel,
+} from "./geminiClient.js";
 import {
   ensureCustomActivityFields,
   fetchAthleteContext,
@@ -182,12 +187,15 @@ function updateServicePills() {
 
   const hasIntervals = Boolean(state.vault.INTERVALS_API_KEY?.trim());
   const hasGemini = Boolean(state.vault.GEMINI_API_KEY?.trim());
+  const shortModel = String(state.vault.LLM_MODEL || "gemini-3.5-flash")
+    .replace(/^models\//, "")
+    .replace(/^gemini-/i, "");
 
   intervalsPill.textContent = hasIntervals ? "Intervals : Prêt" : "Intervals : Clé —";
   intervalsPill.classList.toggle("is-ready", hasIntervals);
   intervalsPill.classList.toggle("is-muted", !hasIntervals);
 
-  geminiPill.textContent = hasGemini ? "Gemini : Prêt" : "Gemini : Local";
+  geminiPill.textContent = hasGemini ? `Gemini : ${shortModel}` : "Gemini : Local";
   geminiPill.classList.toggle("is-ready", hasGemini);
   geminiPill.classList.toggle("is-muted", !hasGemini);
 }
@@ -265,11 +273,161 @@ async function attemptFlushOutbox({ silentIfEmpty = true } = {}) {
   }
 }
 
+/**
+ * Lit la liste des modèles Gemini mise en cache dans `localStorage`.
+ * @returns {Array<{ id: string, displayName?: string, score?: number }>}
+ */
+function readCachedModels() {
+  try {
+    const raw = localStorage.getItem(MODELS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.models)) return parsed.models;
+  } catch {
+    // Stockage ou JSON indisponible : repli silencieux
+  }
+  return [];
+}
+
+/**
+ * Enregistre la liste des modèles Gemini dans `localStorage`.
+ * @param {Array<{ id: string, displayName?: string, score?: number }>} modelsList
+ */
+function writeCachedModels(modelsList) {
+  try {
+    localStorage.setItem(MODELS_CACHE_KEY, JSON.stringify(modelsList));
+  } catch {
+    // Quota dépassé ou stockage restreint
+  }
+}
+
+/**
+ * Peuple un élément `<select>` avec les options de modèles via DOM sécurisé
+ * (`createElement` + `textContent` + `replaceChildren`).
+ * @param {HTMLSelectElement | null} selectEl
+ * @param {Array<string | { id?: string, displayName?: string }>} modelsList
+ * @param {string} [selectedId]
+ */
+function renderModelOptions(selectEl, modelsList, selectedId) {
+  if (!selectEl) return;
+
+  const cleanSelected =
+    typeof selectedId === "string"
+      ? selectedId.replace(/^models\//, "").trim()
+      : "";
+
+  const normalized = [];
+  const seen = new Set();
+
+  if (Array.isArray(modelsList)) {
+    for (const item of modelsList) {
+      const rawId =
+        typeof item === "string"
+          ? item
+          : typeof item?.id === "string"
+            ? item.id
+            : "";
+      const id = rawId.replace(/^models\//, "").trim();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      const displayName =
+        typeof item === "object" &&
+        typeof item?.displayName === "string" &&
+        item.displayName.trim().length > 0
+          ? item.displayName.trim()
+          : id;
+      normalized.push({ id, displayName });
+    }
+  }
+
+  // Si aucune liste fournie, conserve les options statiques du HTML en garantissant `selectedId`
+  if (normalized.length === 0) {
+    if (
+      cleanSelected &&
+      !Array.from(selectEl.options).some((opt) => opt.value === cleanSelected)
+    ) {
+      const extraOption = document.createElement("option");
+      extraOption.value = cleanSelected;
+      extraOption.textContent = cleanSelected;
+      selectEl.appendChild(extraOption);
+    }
+    if (cleanSelected) {
+      selectEl.value = cleanSelected;
+    }
+    return;
+  }
+
+  if (cleanSelected && !seen.has(cleanSelected)) {
+    normalized.push({ id: cleanSelected, displayName: cleanSelected });
+    seen.add(cleanSelected);
+  }
+
+  const optionNodes = normalized.map(({ id, displayName }) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = id;
+    if (displayName && displayName !== id) {
+      option.title = displayName;
+    }
+    return option;
+  });
+
+  selectEl.replaceChildren(...optionNodes);
+  if (cleanSelected) {
+    selectEl.value = cleanSelected;
+  }
+}
+
+/**
+ * Hydrate le sélecteur de modèles depuis le cache local puis interroge l'API Gemini
+ * si la clé et le réseau sont disponibles, en remplaçant tout modèle obsolète.
+ * Non bloquante en mode hors-ligne ou en cas d'erreur réseau.
+ */
+async function resolveAndSyncModelsAtStartup() {
+  const selectEl = $("vault-llm-model");
+  const cachedModels = readCachedModels();
+  if (cachedModels.length > 0) {
+    renderModelOptions(selectEl, cachedModels, state.vault.LLM_MODEL);
+  } else {
+    renderModelOptions(selectEl, [], state.vault.LLM_MODEL);
+  }
+
+  const apiKey = state.vault.GEMINI_API_KEY?.trim();
+  if (!apiKey || navigator.onLine === false) {
+    return;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const liveModels = await fetchAvailableGeminiModels(apiKey, {
+      signal: controller.signal,
+    });
+    if (liveModels.length === 0) {
+      return;
+    }
+
+    writeCachedModels(liveModels);
+    const chosenModel = pickBestAvailableModel(liveModels, state.vault.LLM_MODEL);
+    if (chosenModel !== state.vault.LLM_MODEL) {
+      state.vault = saveVault({ LLM_MODEL: chosenModel });
+    }
+    renderModelOptions(selectEl, liveModels, state.vault.LLM_MODEL);
+    updateServicePills();
+  } catch {
+    // Échec réseau ou timeout silencieux au démarrage (mode garage)
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function populateVaultForm() {
   $("vault-athlete-id").value = state.vault.INTERVALS_ATHLETE_ID ?? "0";
   $("vault-intervals-key").value = state.vault.INTERVALS_API_KEY ?? "";
   $("vault-gemini-key").value = state.vault.GEMINI_API_KEY ?? "";
-  $("vault-llm-model").value = state.vault.LLM_MODEL ?? "gemini-2.5-flash";
+  const modelId = state.vault.LLM_MODEL ?? "gemini-3.5-flash";
+  renderModelOptions($("vault-llm-model"), [], modelId);
 }
 
 function toggleVaultDrawer(forceOpen) {
@@ -304,6 +462,7 @@ function initVaultControls() {
 
   $("vault-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const previousGeminiKey = state.vault.GEMINI_API_KEY?.trim() ?? "";
     state.vault = saveVault({
       INTERVALS_ATHLETE_ID: $("vault-athlete-id").value,
       INTERVALS_API_KEY: $("vault-intervals-key").value,
@@ -312,7 +471,84 @@ function initVaultControls() {
     });
     updateServicePills();
     setStatusMessage($("vault-feedback"), "Coffre-fort sauvegardé localement.", "success");
+
+    const nextGeminiKey = state.vault.GEMINI_API_KEY?.trim() ?? "";
+    if (nextGeminiKey && nextGeminiKey !== previousGeminiKey) {
+      void resolveAndSyncModelsAtStartup();
+    }
+
     await refreshContext();
+  });
+
+  $("refresh-models-btn").addEventListener("click", async () => {
+    const apiKey =
+      $("vault-gemini-key").value.trim() ||
+      state.vault.GEMINI_API_KEY?.trim() ||
+      "";
+    if (!apiKey) {
+      setStatusMessage(
+        $("vault-feedback"),
+        "Renseignez GEMINI_API_KEY avant d'actualiser les modèles.",
+        "error"
+      );
+      return;
+    }
+    if (navigator.onLine === false) {
+      setStatusMessage(
+        $("vault-feedback"),
+        "Impossible hors-ligne : connectez-vous pour lister les modèles.",
+        "error"
+      );
+      return;
+    }
+
+    const btn = $("refresh-models-btn");
+    btn.disabled = true;
+    setStatusMessage($("vault-feedback"), "Actualisation des modèles Gemini…");
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    try {
+      const liveModels = await fetchAvailableGeminiModels(apiKey, {
+        signal: controller.signal,
+      });
+      if (liveModels.length === 0) {
+        setStatusMessage(
+          $("vault-feedback"),
+          "Aucun modèle Gemini compatible trouvé sur ce compte.",
+          "error"
+        );
+        return;
+      }
+
+      writeCachedModels(liveModels);
+      const selectEl = $("vault-llm-model");
+      const chosenModel = pickBestAvailableModel(
+        liveModels,
+        selectEl.value || state.vault.LLM_MODEL
+      );
+      renderModelOptions(selectEl, liveModels, chosenModel);
+
+      if (chosenModel !== state.vault.LLM_MODEL) {
+        state.vault = saveVault({ LLM_MODEL: chosenModel });
+        updateServicePills();
+      }
+
+      setStatusMessage(
+        $("vault-feedback"),
+        `${liveModels.length} modèle(s) Gemini synchronisé(s) (sélection : ${chosenModel}).`,
+        "success"
+      );
+    } catch (err) {
+      setStatusMessage(
+        $("vault-feedback"),
+        `Erreur modèles Gemini : ${err instanceof Error ? err.message : String(err)}`,
+        "error"
+      );
+    } finally {
+      clearTimeout(timer);
+      btn.disabled = false;
+    }
   });
 
   $("vault-export-btn").addEventListener("click", () => {
@@ -1038,10 +1274,16 @@ async function handleGateSelection(gate) {
 
     const result = await generateSessionWithGemini({
       apiKey: state.vault.GEMINI_API_KEY,
-      model: state.vault.LLM_MODEL || "gemini-2.5-flash",
+      model: state.vault.LLM_MODEL || "gemini-3.5-flash",
       context: genContext,
       timeoutMs: 4000,
     });
+
+    if (result.autoUpgradedFrom) {
+      state.vault = loadVault();
+      populateVaultForm();
+      updateServicePills();
+    }
 
     state.plan = result.plan;
     state.sourceMeta = {
@@ -1390,6 +1632,7 @@ async function bootstrap() {
   });
 
   await refreshOutboxBadge();
+  void resolveAndSyncModelsAtStartup();
   refreshContext();
 }
 
