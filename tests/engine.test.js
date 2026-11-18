@@ -362,7 +362,7 @@ describe("1. Intégrité du Catalogue (catalog.js)", () => {
 // ============================================================================
 
 describe("2. Exactitude Mathématique (engine.js)", () => {
-  it("calcule exactement PPG_Effective_TUT avec 0.3 * parasitic_reps", () => {
+  it("calcule exactement PpgEffectiveTut avec 0.3 * parasitic_reps", () => {
     // KBOX_SQUAT_HARNESS : parasitic_reps=2, unit_tut_sec=3.5 -> 3 * 1 * (5 + 0.6) * 3.5 = 58.8
     // DB_SL_RDL : parasitic_reps=0, unit_tut_sec=5.0 -> 3 * 0.5 * 8 * 5.0 = 60.0
     // BAND_PALLOF_PRESS : parasitic_reps=0, unit_tut_sec=1.0 -> 2 * 1 * 45 * 1.0 = 90.0
@@ -379,13 +379,13 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       elapsed_time_sec: 1200,
     });
 
-    assert.equal(metrics.PPG_Effective_TUT, 209);
+    assert.equal(metrics.PpgEffectiveTut, 209);
     assert.equal(metrics.pole_breakdown.KBOX.tut, 59);
     assert.equal(metrics.pole_breakdown.DUMBBELL.tut, 60);
     assert.equal(metrics.pole_breakdown.BAND_CORE.tut, 90);
   });
 
-  it("calcule exactement Eccentric_Strain_Index pour Pôle A, Pôle B non chronométré, Pôle B chronométré (R_i/4) et Pôle C", () => {
+  it("calcule exactement EccentricStrainIndex pour Pôle A, Pôle B non chronométré, Pôle B chronométré (R_i/4) et Pôle C", () => {
     const k_ecc = 1.4;
     const rir = 1;
 
@@ -432,7 +432,7 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       elapsed_time_sec: 2400,
     });
 
-    assert.equal(metrics.Eccentric_Strain_Index, totalExpectedStrain);
+    assert.equal(metrics.EccentricStrainIndex, totalExpectedStrain);
     assert.equal(metrics.pole_breakdown.KBOX.strain, Math.round(expectedStrainA));
     assert.equal(
       metrics.pole_breakdown.DUMBBELL.strain,
@@ -451,12 +451,12 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       elapsed_time_sec: 600,
     });
 
-    assert.equal(metrics.PPG_Effective_TUT, 60);
-    assert.equal(metrics.Eccentric_Strain_Index, 0);
+    assert.equal(metrics.PpgEffectiveTut, 60);
+    assert.equal(metrics.EccentricStrainIndex, 0);
     assert.equal(metrics.strain_zone, "GREEN");
   });
 
-  it("calcule Strength_Compliance_Pct pondéré par cns_spinal_tax (0, 0.5, 0.75, 1.0 et dénominateur nul)", () => {
+  it("calcule StrengthCompliancePct pondéré par cns_spinal_tax (0, 0.5, 0.75, 1.0 et dénominateur nul)", () => {
     // Cas uniformes : 0, 0.5, 0.75, 1.0
     for (const [comp, expectedPct] of [
       [0, 0],
@@ -474,7 +474,7 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
         rpe: 7,
         elapsed_time_sec: 1800,
       });
-      assert.equal(res.Strength_Compliance_Pct, expectedPct);
+      assert.equal(res.StrengthCompliancePct, expectedPct);
     }
 
     // Cas asymétrique prouvant la pondération par cns_spinal_tax * sets
@@ -490,7 +490,7 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       rpe: 7,
       elapsed_time_sec: 1500,
     });
-    assert.equal(weightedRes.Strength_Compliance_Pct, 83);
+    assert.equal(weightedRes.StrengthCompliancePct, 83);
 
     // Dénominateur nul : liste vide ou sets = 0 -> 0 sans NaN
     const emptyRes = calculateSessionMetrics({
@@ -500,8 +500,8 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       rpe: 6,
       elapsed_time_sec: 0,
     });
-    assert.equal(emptyRes.Strength_Compliance_Pct, 0);
-    assert.equal(Number.isNaN(emptyRes.Strength_Compliance_Pct), false);
+    assert.equal(emptyRes.StrengthCompliancePct, 0);
+    assert.equal(Number.isNaN(emptyRes.StrengthCompliancePct), false);
 
     const zeroSetsRes = calculateSessionMetrics({
       exercises: [{ id: "CORE_MCGILL_BIG3", sets: 0, reps: 60, load: 1, completion: 1 }],
@@ -510,14 +510,14 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       rpe: 5,
       elapsed_time_sec: 300,
     });
-    assert.equal(zeroSetsRes.Strength_Compliance_Pct, 0);
+    assert.equal(zeroSetsRes.StrengthCompliancePct, 0);
   });
 
   it("calcule exactement icu_training_load pour elapsed >= TUT et cas limite elapsed < TUT", () => {
     const ex = [{ id: "CORE_MCGILL_BIG3", sets: 5, reps: 60, load: 1, completion: 1 }];
     // TUT = 5 * 60 = 300 s, Strain = 300 * 0.02 * 1 = 6
 
-    // Cas 1 : elapsed_time_sec (1500) >= PPG_Effective_TUT (300)
+    // Cas 1 : elapsed_time_sec (1500) >= PpgEffectiveTut (300)
     // t_eff_min = (300 + 0.2 * (1500 - 300)) / 60 = (300 + 240) / 60 = 9.0 min
     // load = Math.round(9.0 * (0.8)^2 * 1.8 + 0.08 * 6) = Math.round(10.368 + 0.48) = Math.round(10.848) = 11
     const normalRes = calculateSessionMetrics({
@@ -527,11 +527,11 @@ describe("2. Exactitude Mathématique (engine.js)", () => {
       rpe: 8,
       elapsed_time_sec: 1500,
     });
-    assert.equal(normalRes.PPG_Effective_TUT, 300);
+    assert.equal(normalRes.PpgEffectiveTut, 300);
     assert.ok(Math.abs(normalRes.t_eff_min - 9.0) < 1e-12);
     assert.equal(normalRes.icu_training_load, 11);
 
-    // Cas 2 : elapsed_time_sec (120) < PPG_Effective_TUT (300)
+    // Cas 2 : elapsed_time_sec (120) < PpgEffectiveTut (300)
     // Math.max(0, 120 - 300) = 0 -> t_eff_min = 300 / 60 = 5.0 min
     // load = Math.round(5.0 * (0.8)^2 * 1.8 + 0.08 * 6) = Math.round(5.76 + 0.48) = Math.round(6.24) = 6
     const shortElapsedRes = calculateSessionMetrics({
@@ -623,16 +623,16 @@ describe("3. Invariant de Calibration Exigé (kBox 0.050 ORANGE 35 min)", () => 
         elapsed_time_sec: 2100,
       });
 
-      assert.equal(metrics.Strength_Compliance_Pct, 100);
+      assert.equal(metrics.StrengthCompliancePct, 100);
       assert.equal(metrics.max_kbox_inertia, 0.05);
       assert.ok(
         metrics.icu_training_load >= 28 && metrics.icu_training_load <= 38,
         `icu_training_load=${metrics.icu_training_load} hors [28, 38]`
       );
       assert.ok(
-        metrics.Eccentric_Strain_Index >= 130 &&
-          metrics.Eccentric_Strain_Index <= 175,
-        `Eccentric_Strain_Index=${metrics.Eccentric_Strain_Index} hors [130, 175]`
+        metrics.EccentricStrainIndex >= 130 &&
+          metrics.EccentricStrainIndex <= 175,
+        `EccentricStrainIndex=${metrics.EccentricStrainIndex} hors [130, 175]`
       );
       assert.equal(metrics.strain_zone, "ORANGE");
     });
@@ -988,11 +988,11 @@ describe("5. Aller-retour Payload & [TELEMETRY_JSON] (engine.js)", () => {
     assert.equal(payload.elapsed_time, 2100);
 
     // Champs custom obligatoires au 1er niveau JSON
-    assert.equal(typeof payload.Eccentric_Strain_Index, "number");
-    assert.equal(typeof payload.PPG_Effective_TUT, "number");
-    assert.equal(typeof payload.Strength_Compliance_Pct, "number");
+    assert.equal(typeof payload.EccentricStrainIndex, "number");
+    assert.equal(typeof payload.PpgEffectiveTut, "number");
+    assert.equal(typeof payload.StrengthCompliancePct, "number");
     assert.equal(typeof payload.icu_training_load, "number");
-    assert.equal(payload.moving_time, payload.PPG_Effective_TUT);
+    assert.equal(payload.moving_time, payload.PpgEffectiveTut);
 
     // Vérification de la dernière ligne [TELEMETRY_JSON] et aller-retour
     const lines = payload.description.split("\n");
@@ -1620,9 +1620,9 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
     const calls = [];
     const expectedCodes = CUSTOM_ACTIVITY_FIELDS.map((f) => f.code);
     assert.deepEqual(expectedCodes, [
-      "Eccentric_Strain_Index",
-      "PPG_Effective_TUT",
-      "Strength_Compliance_Pct",
+      "EccentricStrainIndex",
+      "PpgEffectiveTut",
+      "StrengthCompliancePct",
     ]);
 
     const mockFetch = async (url, init = {}) => {
@@ -1643,9 +1643,9 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
           typeof body?.content?.code === "string" && body.content.code.length > 0,
           "content.code doit toujours être non vide"
         );
-        // Simule un HTTP 422 sur le schéma principal pour PPG_Effective_TUT (2 replis jusqu'au succès)
+        // Simule un HTTP 422 sur le schéma principal pour PpgEffectiveTut (2 replis jusqu'au succès)
         if (
-          body.content.code === "PPG_Effective_TUT" &&
+          body.content.code === "PpgEffectiveTut" &&
           (body.content.label !== undefined || body.content.type === "numeric")
         ) {
           return new Response(JSON.stringify({ error: "Validation 422" }), {
@@ -1680,13 +1680,13 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
       postCalls[0].url,
       `${INTERVALS_BASE_URL}/athlete/i763697/custom-item`
     );
-    assert.equal(postCalls[0].body.content.code, "Eccentric_Strain_Index");
+    assert.equal(postCalls[0].body.content.code, "EccentricStrainIndex");
     assert.equal(postCalls[0].body.content.aggregate, "SUM");
-    assert.equal(postCalls[1].body.content.code, "PPG_Effective_TUT");
+    assert.equal(postCalls[1].body.content.code, "PpgEffectiveTut");
     assert.equal(postCalls[2].body.content.type, "numeric");
-    assert.equal(postCalls[3].body.name, "PPG_Effective_TUT");
-    assert.equal(postCalls[3].body.content.code, "PPG_Effective_TUT");
-    assert.equal(postCalls[4].body.content.code, "Strength_Compliance_Pct");
+    assert.equal(postCalls[3].body.name, "PpgEffectiveTut");
+    assert.equal(postCalls[3].body.content.code, "PpgEffectiveTut");
+    assert.equal(postCalls[4].body.content.code, "StrengthCompliancePct");
     assert.equal(postCalls[4].body.content.aggregate, "AVERAGE");
   });
 
@@ -1725,9 +1725,9 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
     const payload = {
       name: "[TEST] PPG kBox",
       icu_training_load: 64,
-      Eccentric_Strain_Index: 142.5,
-      PPG_Effective_TUT: 360,
-      Strength_Compliance_Pct: 100,
+      EccentricStrainIndex: 142.5,
+      PpgEffectiveTut: 360,
+      StrengthCompliancePct: 100,
     };
 
     const created = await postManualActivity({
@@ -1747,9 +1747,9 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
     assert.equal(calls[1].url, `${INTERVALS_BASE_URL}/activity/i999`);
     assert.deepEqual(calls[1].body, {
       icu_training_load: 64,
-      Eccentric_Strain_Index: 142.5,
-      PPG_Effective_TUT: 360,
-      Strength_Compliance_Pct: 100,
+      EccentricStrainIndex: 142.5,
+      PpgEffectiveTut: 360,
+      StrengthCompliancePct: 100,
     });
   });
 });

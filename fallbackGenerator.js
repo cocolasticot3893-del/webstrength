@@ -408,7 +408,7 @@ export function enforceSymbolicConstraints(rawPlan, context = {}) {
 /**
  * Génère instantanément une séance complète déterministe sans appel réseau (mode fallback).
  * Calibrée pour produire en ORANGE standard (35 min, RPE 7, k_ecc 1.3, RIR 2) :
- * icu_training_load dans [28, 38] et Eccentric_Strain_Index dans [130, 175].
+ * icu_training_load dans [28, 38] et EccentricStrainIndex dans [130, 175].
  * @param {object} context
  * @param {"GREEN"|"ORANGE"|"RED"} context.gate
  * @param {"OPTIMAL"|"MODERATE"|"COMPROMISED"|string} context.readiness

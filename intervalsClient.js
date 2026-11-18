@@ -15,21 +15,21 @@ export const INTERVALS_BASE_URL = "https://intervals.icu/api/v1";
  */
 export const CUSTOM_ACTIVITY_FIELDS = Object.freeze([
   Object.freeze({
-    code: "Eccentric_Strain_Index",
+    code: "EccentricStrainIndex",
     name: "Eccentric Strain Index",
     type: "numeric",
     units: "AU",
     aggregate: "SUM",
   }),
   Object.freeze({
-    code: "PPG_Effective_TUT",
+    code: "PpgEffectiveTut",
     name: "PPG Effective TUT",
     type: "numeric",
     units: "s",
     aggregate: "SUM",
   }),
   Object.freeze({
-    code: "Strength_Compliance_Pct",
+    code: "StrengthCompliancePct",
     name: "Strength Compliance",
     type: "numeric",
     units: "%",
@@ -694,12 +694,12 @@ export async function fetchAthleteContext({
         start_date_local: lastStrengthRaw.start_date_local ?? null,
         moving_time: toFiniteOrNull(lastStrengthRaw.moving_time),
         icu_training_load: toFiniteOrNull(lastStrengthRaw.icu_training_load),
-        Eccentric_Strain_Index: toFiniteOrNull(
-          lastStrengthRaw.Eccentric_Strain_Index
+        EccentricStrainIndex: toFiniteOrNull(
+          lastStrengthRaw.EccentricStrainIndex
         ),
-        PPG_Effective_TUT: toFiniteOrNull(lastStrengthRaw.PPG_Effective_TUT),
-        Strength_Compliance_Pct: toFiniteOrNull(
-          lastStrengthRaw.Strength_Compliance_Pct
+        PpgEffectiveTut: toFiniteOrNull(lastStrengthRaw.PpgEffectiveTut),
+        StrengthCompliancePct: toFiniteOrNull(
+          lastStrengthRaw.StrengthCompliancePct
         ),
       }
     : null;
@@ -767,9 +767,9 @@ export async function postManualActivity({
   });
 
   const hasCustomField =
-    payload.Eccentric_Strain_Index !== undefined ||
-    payload.PPG_Effective_TUT !== undefined ||
-    payload.Strength_Compliance_Pct !== undefined;
+    payload.EccentricStrainIndex !== undefined ||
+    payload.PpgEffectiveTut !== undefined ||
+    payload.StrengthCompliancePct !== undefined;
 
   if (
     created?.id !== undefined &&
@@ -789,9 +789,9 @@ export async function postManualActivity({
         },
         body: JSON.stringify({
           icu_training_load: payload.icu_training_load,
-          Eccentric_Strain_Index: payload.Eccentric_Strain_Index,
-          PPG_Effective_TUT: payload.PPG_Effective_TUT,
-          Strength_Compliance_Pct: payload.Strength_Compliance_Pct,
+          EccentricStrainIndex: payload.EccentricStrainIndex,
+          PpgEffectiveTut: payload.PpgEffectiveTut,
+          StrengthCompliancePct: payload.StrengthCompliancePct,
         }),
       });
     } catch {

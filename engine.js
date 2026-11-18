@@ -150,28 +150,28 @@ export function calculateSessionMetrics({
     }
   }
 
-  const PPG_Effective_TUT = Math.round(rawTutSum);
-  const Eccentric_Strain_Index = Math.round(
+  const PpgEffectiveTut = Math.round(rawTutSum);
+  const EccentricStrainIndex = Math.round(
     sumKboxStrain + sumDbStrain + sumBandStrain
   );
-  const Strength_Compliance_Pct =
+  const StrengthCompliancePct =
     weightedTotalSum <= 0
       ? 0
       : Math.round((100 * weightedDoneSum) / weightedTotalSum);
 
   const safeElapsed = Math.max(0, Number(elapsed_time_sec) || 0);
   const t_eff_min =
-    (PPG_Effective_TUT + 0.2 * Math.max(0, safeElapsed - PPG_Effective_TUT)) /
+    (PpgEffectiveTut + 0.2 * Math.max(0, safeElapsed - PpgEffectiveTut)) /
     60;
 
   const icu_training_load = Math.round(
-    t_eff_min * Math.pow(rpe / 10, 2) * 1.8 + 0.08 * Eccentric_Strain_Index
+    t_eff_min * Math.pow(rpe / 10, 2) * 1.8 + 0.08 * EccentricStrainIndex
   );
 
   let strain_zone = "GREEN";
-  if (Eccentric_Strain_Index > 180) {
+  if (EccentricStrainIndex > 180) {
     strain_zone = "RED";
-  } else if (Eccentric_Strain_Index >= 80) {
+  } else if (EccentricStrainIndex >= 80) {
     strain_zone = "ORANGE";
   }
 
@@ -182,9 +182,9 @@ export function calculateSessionMetrics({
   }
 
   return {
-    PPG_Effective_TUT,
-    Eccentric_Strain_Index,
-    Strength_Compliance_Pct,
+    PpgEffectiveTut,
+    EccentricStrainIndex,
+    StrengthCompliancePct,
     icu_training_load,
     t_eff_min,
     strain_zone,
@@ -315,8 +315,8 @@ export function buildManualActivityPayload({
   const lines = [
     `### WebStrength Telemetry — ${theme}`,
     `- **Gate**: ${gate} | **Readiness**: ${readiness} | **Dominante**: ${dominant_pattern} | **Lombaire**: ${lumbar_flag ? "DÉCHARGE" : "NORMAL"}`,
-    `- **k_ecc**: ${k_ecc} | **RIR**: ${rir} | **RPE**: ${rpe}/10 | **Compliance**: ${metrics.Strength_Compliance_Pct}%`,
-    `- **TUT Effectif**: ${metrics.PPG_Effective_TUT} s | **Strain Excentrique**: ${metrics.Eccentric_Strain_Index} (${metrics.strain_zone}) | **Load**: ${metrics.icu_training_load}`,
+    `- **k_ecc**: ${k_ecc} | **RIR**: ${rir} | **RPE**: ${rpe}/10 | **Compliance**: ${metrics.StrengthCompliancePct}%`,
+    `- **TUT Effectif**: ${metrics.PpgEffectiveTut} s | **Strain Excentrique**: ${metrics.EccentricStrainIndex} (${metrics.strain_zone}) | **Load**: ${metrics.icu_training_load}`,
   ];
 
   if (rationale && rationale.trim().length > 0) {
@@ -374,14 +374,14 @@ export function buildManualActivityPayload({
     start_date_local,
     type: "WeightTraining",
     name,
-    moving_time: metrics.PPG_Effective_TUT,
+    moving_time: metrics.PpgEffectiveTut,
     elapsed_time: Math.round(elapsed_time_sec),
     icu_training_load: metrics.icu_training_load,
     session_rpe: rpe,
     feeling: mapRpeToFeeling(rpe),
-    Eccentric_Strain_Index: metrics.Eccentric_Strain_Index,
-    PPG_Effective_TUT: metrics.PPG_Effective_TUT,
-    Strength_Compliance_Pct: metrics.Strength_Compliance_Pct,
+    EccentricStrainIndex: metrics.EccentricStrainIndex,
+    PpgEffectiveTut: metrics.PpgEffectiveTut,
+    StrengthCompliancePct: metrics.StrengthCompliancePct,
     description: lines.join("\n"),
   };
 }

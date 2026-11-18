@@ -741,12 +741,12 @@ function initVaultControls() {
 
       const activityId = res?.id ?? payload.external_id;
       const loadVal = res?.icu_training_load ?? payload.icu_training_load;
-      const strainVal = res?.Eccentric_Strain_Index ?? payload.Eccentric_Strain_Index;
-      const tutVal = res?.PPG_Effective_TUT ?? payload.PPG_Effective_TUT;
+      const strainVal = res?.EccentricStrainIndex ?? payload.EccentricStrainIndex;
+      const tutVal = res?.PpgEffectiveTut ?? payload.PpgEffectiveTut;
 
       setStatusMessage(
         statusEl,
-        `Séance test envoyée (ID: ${activityId}) — Load: ${loadVal}, Eccentric_Strain_Index: ${strainVal}, PPG_Effective_TUT: ${tutVal}s`,
+        `Séance test envoyée (ID: ${activityId}) — Load: ${loadVal}, EccentricStrainIndex: ${strainVal}, PpgEffectiveTut: ${tutVal}s`,
         "success"
       );
     } catch (err) {
@@ -996,18 +996,18 @@ function updateLiveTelemetryBar() {
   $("live-load").textContent = String(metrics.icu_training_load);
 
   const strainEl = $("live-strain");
-  strainEl.textContent = String(metrics.Eccentric_Strain_Index);
+  strainEl.textContent = String(metrics.EccentricStrainIndex);
   strainEl.classList.remove("is-strain-green", "is-strain-orange", "is-strain-red");
-  if (metrics.Eccentric_Strain_Index > 180) {
+  if (metrics.EccentricStrainIndex > 180) {
     strainEl.classList.add("is-strain-red");
-  } else if (metrics.Eccentric_Strain_Index >= 80) {
+  } else if (metrics.EccentricStrainIndex >= 80) {
     strainEl.classList.add("is-strain-orange");
   } else {
     strainEl.classList.add("is-strain-green");
   }
 
-  $("live-tut").textContent = `${metrics.PPG_Effective_TUT}s (${formatMmSs(metrics.PPG_Effective_TUT)})`;
-  $("live-compliance").textContent = `${metrics.Strength_Compliance_Pct}%`;
+  $("live-tut").textContent = `${metrics.PpgEffectiveTut}s (${formatMmSs(metrics.PpgEffectiveTut)})`;
+  $("live-compliance").textContent = `${metrics.StrengthCompliancePct}%`;
 }
 
 function updateGlobalSelectorsUI() {
@@ -1410,9 +1410,9 @@ async function handleSubmitSession() {
     }
 
     $("step3-load").textContent = String(metrics.icu_training_load);
-    $("step3-strain").textContent = `${metrics.Eccentric_Strain_Index} (${metrics.strain_zone})`;
-    $("step3-tut").textContent = `${metrics.PPG_Effective_TUT}s (${formatMmSs(metrics.PPG_Effective_TUT)})`;
-    $("step3-compliance").textContent = `${metrics.Strength_Compliance_Pct}%`;
+    $("step3-strain").textContent = `${metrics.EccentricStrainIndex} (${metrics.strain_zone})`;
+    $("step3-tut").textContent = `${metrics.PpgEffectiveTut}s (${formatMmSs(metrics.PpgEffectiveTut)})`;
+    $("step3-compliance").textContent = `${metrics.StrengthCompliancePct}%`;
     $("step3-payload-preview").textContent = payload.description;
 
     showStep(3);
