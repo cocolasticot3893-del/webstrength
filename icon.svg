@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WebStrength Logo">
+  <defs>
+    <linearGradient id="ws-grad" x1="15%" y1="15%" x2="85%" y2="85%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="ws-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.06" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fond OLED sombre compatible icône maskable -->
+  <rect width="512" height="512" rx="96" fill="#0b0f19" />
+
+  <!-- Halo subtil autour du volant d'inertie -->
+  <circle cx="256" cy="256" r="176" fill="url(#ws-glow)" />
+
+  <!-- Anneau externe du volant d'inertie kBox -->
+  <circle
+    cx="256"
+    cy="256"
+    r="148"
+    fill="none"
+    stroke="url(#ws-grad)"
+    stroke-width="24"
+    stroke-linecap="round"
+    stroke-dasharray="760 170"
+    transform="rotate(-35 256 256)"
+  />
+
+  <!-- Piste interne d'inertie -->
+  <circle
+    cx="256"
+    cy="256"
+    r="98"
+    fill="none"
+    stroke="#1e293b"
+    stroke-width="14"
+  />
+
+  <!-- Rayons symétriques du disque d'inertie -->
+  <g stroke="#22d3ee" stroke-width="12" stroke-linecap="round" opacity="0.85">
+    <line x1="256" y1="126" x2="256" y2="174" />
+    <line x1="143" y1="321" x2="185" y2="297" />
+    <line x1="369" y1="321" x2="327" y2="297" />
+  </g>
+
+  <!-- Vecteur de force excentrique / couple central -->
+  <path
+    d="M276 168 L216 266 H266 L236 348 L314 244 H264 Z"
+    fill="url(#ws-grad)"
+    stroke="#0b0f19"
+    stroke-width="6"
+    stroke-linejoin="round"
+  />
+
+  <!-- Axe central du volant -->
+  <circle cx="256" cy="256" r="18" fill="#0b0f19" stroke="#10b981" stroke-width="6" />
+</svg>

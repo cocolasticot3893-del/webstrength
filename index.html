@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://intervals.icu https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self';"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0f19" />
+    <meta
+      name="description"
+      content="WebStrength — Préparation physique neuro-symbolique kBox & télémétrie Intervals.icu offline-first."
+    />
+    <title>WebStrength — PPG &amp; Isoinertiel</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-brand">
+        <img
+          src="./icon.svg"
+          alt=""
+          class="brand-icon"
+          width="32"
+          height="32"
+        />
+        <div class="brand-text">
+          <span class="brand-name">WebStrength</span>
+          <span class="brand-sub">PPG &amp; kBox</span>
+        </div>
+      </div>
+
+      <div class="topbar-status" aria-label="État système et synchronisation">
+        <span id="network-badge" class="status-pill is-online" role="status">
+          En ligne
+        </span>
+        <button
+          type="button"
+          id="outbox-flush-btn"
+          class="status-pill outbox-pill"
+          title="Synchroniser la file d'attente hors-ligne"
+          aria-live="polite"
+        >
+          Outbox : <strong id="outbox-count">0</strong>
+        </button>
+        <span id="intervals-status-pill" class="status-pill is-muted">
+          Intervals : —
+        </span>
+        <span id="gemini-status-pill" class="status-pill is-muted">
+          Gemini : —
+        </span>
+        <button
+          type="button"
+          id="vault-toggle-btn"
+          class="icon-btn"
+          aria-label="Ouvrir le coffre-fort"
+          aria-controls="vault-drawer"
+          aria-expanded="false"
+        >
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <aside
+      id="vault-drawer"
+      class="vault-drawer"
+      hidden
+      aria-label="Coffre-fort de configuration"
+    >
+      <div class="vault-card">
+        <div class="vault-header">
+          <h2>Coffre-Fort Local</h2>
+          <button
+            type="button"
+            id="vault-close-btn"
+            class="btn btn-ghost btn-sm"
+            aria-label="Fermer le coffre-fort"
+          >
+            Fermer ✕
+          </button>
+        </div>
+
+        <form id="vault-form" class="vault-form" autocomplete="off">
+          <div class="field-group">
+            <label for="vault-athlete-id">INTERVALS_ATHLETE_ID</label>
+            <input
+              id="vault-athlete-id"
+              name="INTERVALS_ATHLETE_ID"
+              type="text"
+              inputmode="text"
+              placeholder="0 (athlète du token)"
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="vault-intervals-key">INTERVALS_API_KEY</label>
+            <div class="input-with-action">
+              <input
+                id="vault-intervals-key"
+                name="INTERVALS_API_KEY"
+                type="password"
+                placeholder="Clé API Intervals.icu"
+              />
+              <button
+                type="button"
+                id="toggle-intervals-key"
+                class="btn btn-ghost btn-sm"
+                aria-label="Afficher ou masquer la clé Intervals.icu"
+              >
+                Afficher
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="vault-gemini-key">GEMINI_API_KEY</label>
+            <div class="input-with-action">
+              <input
+                id="vault-gemini-key"
+                name="GEMINI_API_KEY"
+                type="password"
+                placeholder="Clé API Google Gemini (optionnelle)"
+              />
+              <button
+                type="button"
+                id="toggle-gemini-key"
+                class="btn btn-ghost btn-sm"
+                aria-label="Afficher ou masquer la clé Gemini"
+              >
+                Afficher
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="vault-llm-model">LLM_MODEL</label>
+            <input
+              id="vault-llm-model"
+              name="LLM_MODEL"
+              type="text"
+              value="gemini-2.5-flash"
+              placeholder="gemini-2.5-flash"
+            />
+          </div>
+
+          <div class="vault-actions">
+            <button type="submit" id="vault-save-btn" class="btn btn-primary">
+              Sauvegarder
+            </button>
+            <button
+              type="button"
+              id="vault-export-btn"
+              class="btn btn-secondary"
+            >
+              Exporter JSON
+            </button>
+            <button
+              type="button"
+              id="vault-import-btn"
+              class="btn btn-secondary"
+            >
+              Importer JSON
+            </button>
+            <input
+              id="vault-import-file"
+              type="file"
+              accept="application/json,.json"
+              hidden
+            />
+          </div>
+        </form>
+
+        <div class="vault-provision">
+          <button
+            type="button"
+            id="vault-check-fields-btn"
+            class="btn btn-outline btn-block"
+          >
+            Vérifier / Créer les 3 Custom Fields Intervals.icu
+          </button>
+          <p
+            id="custom-fields-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <p
+            id="vault-feedback"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <!-- ÉTAPE 1 : CONTEXTE & GATEKEEPER 1-CLIC -->
+      <section id="step-1" class="step-view" aria-labelledby="step-1-title">
+        <div class="section-head">
+          <div>
+            <p class="step-eyebrow">Étape 1 / 3</p>
+            <h1 id="step-1-title">Contexte Physiologique &amp; Gatekeeper</h1>
+          </div>
+          <button
+            type="button"
+            id="refresh-context-btn"
+            class="btn btn-secondary btn-sm"
+          >
+            Actualiser Contexte
+          </button>
+        </div>
+
+        <article class="card context-banner" aria-label="Contexte J0 et J-7">
+          <p
+            id="context-status"
+            class="context-status-line"
+            role="status"
+            aria-live="polite"
+          >
+            Chargement du contexte athlète…
+          </p>
+          <div class="context-grid">
+            <div class="context-metric">
+              <span class="metric-label">HRV J0 vs 7j</span>
+              <strong id="ctx-hrv" class="metric-value">—</strong>
+            </div>
+            <div class="context-metric">
+              <span class="metric-label">PVT &amp; Handgrip (G/D)</span>
+              <strong id="ctx-neuro" class="metric-value">—</strong>
+            </div>
+            <div class="context-metric">
+              <span class="metric-label">Vélo veille &amp; Load 7j</span>
+              <strong id="ctx-bike" class="metric-value">—</strong>
+            </div>
+            <div class="context-metric">
+              <span class="metric-label">Dernier Excentrique / N-1</span>
+              <strong id="ctx-ecc" class="metric-value">—</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="card control-card">
+          <h2>Readiness du Jour</h2>
+          <div
+            class="segmented-row"
+            role="group"
+            aria-label="Sélecteur rapide Readiness"
+          >
+            <button
+              type="button"
+              class="seg-btn is-active"
+              data-readiness="OPTIMAL"
+              aria-pressed="true"
+            >
+              OPTIMAL
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              data-readiness="MODERATE"
+              aria-pressed="false"
+            >
+              MODERATE
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              data-readiness="COMPROMISED"
+              aria-pressed="false"
+            >
+              COMPROMISED
+            </button>
+          </div>
+
+          <label class="switch-label" for="lumbar-switch">
+            <span class="switch-copy">
+              <strong>Raideur Lombaire</strong>
+              <small>Décharge L4-L5 immédiate (Belt Squat / Hip Thrust)</small>
+            </span>
+            <input
+              id="lumbar-switch"
+              type="checkbox"
+              switch
+              role="switch"
+              aria-checked="false"
+            />
+          </label>
+        </article>
+
+        <section class="gatekeeper-section" aria-label="Sélection Gatekeeper 1-Tap">
+          <h2>Charge Vélo de Demain (1 tap → Séance)</h2>
+          <div class="gatekeeper-stack">
+            <button
+              type="button"
+              class="gate-btn gate-green"
+              data-gate="GREEN"
+            >
+              <span class="gate-title">🟢 GREEN</span>
+              <span class="gate-desc">Demain : Z1 / Z2 / Repos</span>
+            </button>
+            <button
+              type="button"
+              class="gate-btn gate-orange"
+              data-gate="ORANGE"
+            >
+              <span class="gate-title">🟠 ORANGE</span>
+              <span class="gate-desc">Demain : SweetSpot / Seuil / Sortie D+</span>
+            </button>
+            <button
+              type="button"
+              class="gate-btn gate-red"
+              data-gate="RED"
+            >
+              <span class="gate-title">🔴 RED</span>
+              <span class="gate-desc"
+                >Demain : PMA / VO2max / Course / Jambes lourdes</span
+              >
+            </button>
+          </div>
+          <p
+            id="generation-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
+      </section>
+
+      <!-- ÉTAPE 2 : EXÉCUTION & VALIDATION TACTILE -->
+      <section
+        id="step-2"
+        class="step-view"
+        hidden
+        aria-labelledby="plan-theme"
+      >
+        <div class="step2-top-actions">
+          <button
+            type="button"
+            id="back-step1-btn"
+            class="btn btn-secondary btn-sm"
+          >
+            ← Étape 1
+          </button>
+          <span id="plan-source-badge" class="source-badge">Fallback Local</span>
+        </div>
+
+        <article class="card plan-summary-card">
+          <h1 id="plan-theme">Séance WebStrength</h1>
+          <p id="plan-rationale" class="plan-rationale"></p>
+          <div
+            id="plan-rules"
+            class="rules-row"
+            aria-label="Règles symboliques actives"
+          ></div>
+        </article>
+
+        <article class="card timers-card" aria-label="Chronomètre et minuteur de repos">
+          <div class="timer-panel">
+            <div class="timer-readout">
+              <span class="timer-label">Chrono Séance</span>
+              <strong id="session-chrono-display" class="timer-digits">00:00</strong>
+            </div>
+            <div class="timer-actions">
+              <button
+                type="button"
+                id="chrono-toggle-btn"
+                class="btn btn-secondary btn-sm"
+              >
+                Pause
+              </button>
+              <button
+                type="button"
+                id="chrono-reset-btn"
+                class="btn btn-ghost btn-sm"
+              >
+                RAZ
+              </button>
+            </div>
+          </div>
+
+          <div class="timer-panel">
+            <div class="timer-readout">
+              <span class="timer-label">Repos</span>
+              <strong id="rest-timer-display" class="timer-digits">00:00</strong>
+            </div>
+            <div class="rest-buttons">
+              <button
+                type="button"
+                id="rest-auto-btn"
+                class="btn btn-primary btn-sm"
+              >
+                Auto 2m30 / 1m30
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                data-rest-sec="60"
+              >
+                60s
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                data-rest-sec="90"
+              >
+                90s
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                data-rest-sec="150"
+              >
+                150s
+              </button>
+              <button
+                type="button"
+                id="rest-stop-btn"
+                class="btn btn-ghost btn-sm"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <div id="blocks-container" class="blocks-container"></div>
+
+        <article class="card globals-card" aria-label="Paramètres globaux de séance">
+          <h2>Ressenti &amp; Paramètres Globaux</h2>
+
+          <div class="global-group">
+            <span class="global-label">1. Intention Excentrique (k_ecc)</span>
+            <div class="segmented-row" role="group" aria-label="Intention excentrique">
+              <button
+                type="button"
+                class="seg-btn"
+                data-kecc="1.0"
+                aria-pressed="false"
+              >
+                Fluide (1.0)
+              </button>
+              <button
+                type="button"
+                class="seg-btn"
+                data-kecc="1.3"
+                aria-pressed="false"
+              >
+                Contrôlé (1.3)
+              </button>
+              <button
+                type="button"
+                class="seg-btn"
+                data-kecc="1.7"
+                aria-pressed="false"
+              >
+                Agressif Tardif (1.7)
+              </button>
+            </div>
+          </div>
+
+          <div class="global-group">
+            <span class="global-label">2. RIR Moyen (Répétitions en Réserve)</span>
+            <div class="segmented-row" role="group" aria-label="RIR moyen">
+              <button
+                type="button"
+                class="seg-btn"
+                data-rir="0.5"
+                aria-pressed="false"
+              >
+                0-1
+              </button>
+              <button
+                type="button"
+                class="seg-btn"
+                data-rir="2"
+                aria-pressed="false"
+              >
+                2
+              </button>
+              <button
+                type="button"
+                class="seg-btn"
+                data-rir="3"
+                aria-pressed="false"
+              >
+                3
+              </button>
+              <button
+                type="button"
+                class="seg-btn"
+                data-rir="4"
+                aria-pressed="false"
+              >
+                4+
+              </button>
+            </div>
+          </div>
+
+          <div class="global-group">
+            <span class="global-label">3. sRPE Global (1 à 10)</span>
+            <div
+              id="rpe-grid"
+              class="rpe-grid"
+              role="group"
+              aria-label="sRPE global de 1 à 10"
+            >
+              <button type="button" class="rpe-btn" data-rpe="1">1</button>
+              <button type="button" class="rpe-btn" data-rpe="2">2</button>
+              <button type="button" class="rpe-btn" data-rpe="3">3</button>
+              <button type="button" class="rpe-btn" data-rpe="4">4</button>
+              <button type="button" class="rpe-btn" data-rpe="5">5</button>
+              <button type="button" class="rpe-btn" data-rpe="6">6</button>
+              <button type="button" class="rpe-btn" data-rpe="7">7</button>
+              <button type="button" class="rpe-btn" data-rpe="8">8</button>
+              <button type="button" class="rpe-btn" data-rpe="9">9</button>
+              <button type="button" class="rpe-btn" data-rpe="10">10</button>
+            </div>
+          </div>
+
+          <div class="global-group">
+            <span class="global-label">Durée Totale Séance</span>
+            <div class="duration-row">
+              <button
+                type="button"
+                id="duration-minus-btn"
+                class="btn btn-secondary stepper-btn"
+                aria-label="Retirer 1 minute"
+              >
+                -1m
+              </button>
+              <strong id="duration-display" class="duration-value">35:00 (35 min)</strong>
+              <button
+                type="button"
+                id="duration-plus-btn"
+                class="btn btn-secondary stepper-btn"
+                aria-label="Ajouter 1 minute"
+              >
+                +1m
+              </button>
+              <button
+                type="button"
+                id="sync-chrono-btn"
+                class="btn btn-outline btn-sm"
+              >
+                Sync Chrono
+              </button>
+            </div>
+          </div>
+
+          <div class="global-group">
+            <label class="global-label" for="session-notes"
+              >Note Rapide (optionnelle)</label
+            >
+            <div class="note-row">
+              <input
+                id="session-notes"
+                type="text"
+                maxlength="240"
+                placeholder="Sensation tendon, angle genou, qualité freinage…"
+              />
+              <button
+                type="button"
+                id="voice-note-btn"
+                class="btn btn-secondary btn-sm"
+                hidden
+              >
+                🎙️ Dictée
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- BARRE DE TÉLÉMÉTRIE LIVE STICKY BOTTOM -->
+        <div
+          id="live-telemetry-bar"
+          class="live-telemetry-bar"
+          aria-label="Télémétrie live de la séance"
+        >
+          <div class="telemetry-metrics">
+            <div class="tele-item">
+              <span class="tele-label">Load</span>
+              <strong id="live-load" class="tele-value">0</strong>
+            </div>
+            <div class="tele-item">
+              <span class="tele-label">Strain Ecc</span>
+              <strong id="live-strain" class="tele-value is-strain-green">0</strong>
+            </div>
+            <div class="tele-item">
+              <span class="tele-label">TUT</span>
+              <strong id="live-tut" class="tele-value">0s</strong>
+            </div>
+            <div class="tele-item">
+              <span class="tele-label">Compliance</span>
+              <strong id="live-compliance" class="tele-value">100%</strong>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="submit-session-btn"
+            class="btn btn-primary btn-push"
+          >
+            Valider &amp; Push Intervals.icu
+          </button>
+        </div>
+      </section>
+
+      <!-- ÉTAPE 3 : CONFIRMATION & PAYLOAD -->
+      <section
+        id="step-3"
+        class="step-view"
+        hidden
+        aria-labelledby="step-3-title"
+      >
+        <div class="section-head">
+          <div>
+            <p class="step-eyebrow">Étape 3 / 3</p>
+            <h1 id="step-3-title">Confirmation &amp; Télémétrie</h1>
+          </div>
+        </div>
+
+        <article
+          id="step3-status-banner"
+          class="card status-banner"
+          role="status"
+          aria-live="polite"
+        ></article>
+
+        <div class="step3-metrics-grid">
+          <div class="card metric-box">
+            <span class="metric-label">Load</span>
+            <strong id="step3-load" class="metric-big">0</strong>
+          </div>
+          <div class="card metric-box">
+            <span class="metric-label">Strain Ecc</span>
+            <strong id="step3-strain" class="metric-big">0</strong>
+          </div>
+          <div class="card metric-box">
+            <span class="metric-label">TUT Effectif</span>
+            <strong id="step3-tut" class="metric-big">0s</strong>
+          </div>
+          <div class="card metric-box">
+            <span class="metric-label">Compliance</span>
+            <strong id="step3-compliance" class="metric-big">0%</strong>
+          </div>
+        </div>
+
+        <article class="card payload-card">
+          <div class="payload-head">
+            <h2>Aperçu Markdown &amp; [TELEMETRY_JSON]</h2>
+            <button
+              type="button"
+              id="copy-payload-btn"
+              class="btn btn-secondary btn-sm"
+            >
+              Copier
+            </button>
+          </div>
+          <pre class="payload-pre"><code id="step3-payload-preview"></code></pre>
+        </article>
+
+        <button
+          type="button"
+          id="new-session-btn"
+          class="btn btn-primary btn-block btn-lg"
+        >
+          Nouvelle Séance
+        </button>
+      </section>
+    </main>
+  </body>
+</html>
