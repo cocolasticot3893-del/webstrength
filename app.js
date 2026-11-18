@@ -38,6 +38,24 @@ const BLOCK_TITLES = Object.freeze({
   3: "Bloc 3 : Transfert Unilatéral & Anti-Rotation",
 });
 
+const BLOCK_DESCRIPTIONS = Object.freeze({
+  1: "Pré-activation lombo-pelvienne, moyen fessier et rachis sans fatigue centrale.",
+  2: "Surcharge excentrique / force spécifique (pôle principal de la séance).",
+  3: "Stabilité unilatérale, anti-rotation et transfert vers le coup de pédale.",
+});
+
+const RULE_LABELS = Object.freeze({
+  "RÈGLE_1_RED_GATE_DECHARGE": "Règle 1 · RED Gate → Zéro kBox jambes (22 min)",
+  "RÈGLE_1_DELAI_EXCENTRIQUE_INF_36H": "Règle 1 · <36h depuis dernière PPG → Zéro kBox jambes",
+  "RÈGLE_2_DECHARGE_LOMBAIRE_ACTIVE": "Règle 2 · Raideur lombaire → Décharge L4-L5 (Belt / Hip Thrust)",
+  "RÈGLE_2_POST_VELO_SUP_4H": "Règle 2 · Vélo >4h veille → Décharge L4-L5 automatique",
+  "RÈGLE_3_PLAFOND_INERTIE_0.050": "Règle 3 · Plafond inertie à 0.050 kg·m²",
+  "RÈGLE_3_ORANGE_KECC_1.3_MAX3SETS": "Règle 3 · ORANGE → Max 0.050 kg·m², k_ecc 1.3, 3 séries",
+  "RÈGLE_3_GREEN_OPTIMAL": "Règle 3 · GREEN + OPTIMAL → Palier 0.075 kg·m² autorisé",
+  "RÈGLE_4_ALTERNANCE_KNEE_DOMINANT": "Règle 4 · Alternance → Dominante Genou (Knee)",
+  "RÈGLE_4_ALTERNANCE_HIP_DOMINANT": "Règle 4 · Alternance → Dominante Hanche (Hip)",
+});
+
 const COMPLETION_OPTIONS = Object.freeze([
   { value: 1, label: "100%" },
   { value: 0.75, label: "75%" },
@@ -1067,7 +1085,22 @@ function createExerciseCard(ex, index) {
   badges.append(poleBadge, patternBadge);
   head.append(nameEl, badges);
 
-  // Boutons complétion 1-tap (100% | 75% | 50% | 0%)
+  // Description rapide & repères biomécaniques
+  const descEl = document.createElement("p");
+  descEl.className = "exo-desc";
+  descEl.textContent = cat.short_desc ?? "";
+
+  const metaLineEl = document.createElement("p");
+  metaLineEl.className = "exo-meta-line";
+  const parasiticPart =
+    cat.parasitic_reps > 0 ? ` · +${cat.parasitic_reps} reps élan` : "";
+  metaLineEl.textContent = `TUT: ${cat.unit_tut_sec}s/${cat.is_timed ? "s" : "rep"} · Taxe SNC: ${cat.cns_spinal_tax}${parasiticPart}`;
+
+  // Libellé complétion + Boutons 1-tap (100% | 75% | 50% | 0%)
+  const compLabel = document.createElement("span");
+  compLabel.className = "completion-label";
+  compLabel.textContent = "Complétion :";
+
   const compRow = document.createElement("div");
   compRow.className = "completion-row";
   compRow.setAttribute("role", "group");
@@ -1176,7 +1209,7 @@ function createExerciseCard(ex, index) {
 
   steppersGrid.append(setsBox, repsBox);
   controlsRow.append(loadRow, steppersGrid);
-  card.append(head, compRow, controlsRow);
+  card.append(head, descEl, metaLineEl, compLabel, compRow, controlsRow);
   return card;
 }
 
@@ -1240,7 +1273,9 @@ function renderStep2Plan() {
     for (const rule of rules) {
       const pill = document.createElement("span");
       pill.className = "rule-pill";
-      pill.textContent = rule;
+      pill.textContent = Object.hasOwn(RULE_LABELS, rule)
+        ? RULE_LABELS[rule]
+        : rule;
       rulesRow.appendChild(pill);
     }
   }
@@ -1257,6 +1292,11 @@ function renderStep2Plan() {
     title.className = "block-title";
     title.textContent = BLOCK_TITLES[blockNum];
     section.appendChild(title);
+
+    const blockDesc = document.createElement("p");
+    blockDesc.className = "block-desc";
+    blockDesc.textContent = BLOCK_DESCRIPTIONS[blockNum];
+    section.appendChild(blockDesc);
 
     state.session.exercises.forEach((ex, idx) => {
       if (ex.block === blockNum) {
