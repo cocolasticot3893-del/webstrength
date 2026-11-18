@@ -257,10 +257,131 @@ export async function fetchJsonWithBackoff(url, options = {}, maxRetries = 3) {
  * @param {boolean} [params.dryRun=false]
  * @returns {Promise<{ checked: number, existing: string[], created: string[], errors: Array<{ code: string, error: string }>, dryRun: boolean, wouldCreate: string[] }>}
  */
-export async function ensureCustomActivityFields({
-  athleteId = "0",
-  apiKey,
-  dryRun = false,
+export async function ensureCustomActivityFields(arg1, arg2, arg3 = {}) {
+  let athleteId = "0";
+  let apiKey = "";
+  let dryRun = false;
+  let fetchImpl = fetch;
+
+  if (arg1 && typeof arg1 === "object") {
+    athleteId = String(arg1.athleteId || "0").trim();
+    apiKey = String(arg1.apiKey || "").trim();
+    dryRun = Boolean(arg1.dryRun);
+    if (typeof arg1.fetchImpl === "function") fetchImpl = arg1.fetchImpl;
+  } else {
+    athleteId = String(arg1 || "0").trim();
+    apiKey = String(arg2 || "").trim();
+    dryRun = Boolean(arg3 && arg3.dryRun);
+    if (arg3 && typeof arg3.fetchImpl === "function") fetchImpl = arg3.fetchImpl;
+  }
+
+  if (!/^[a-zA-Z0-9_-]{1,32}$/.test(athleteId)) {
+    throw new Error("athleteId invalide");
+  }
+  if (!apiKey) {
+    throw new Error("Clé API Intervals.icu manquante");
+  }
+
+  const requiredFields = [
+    {
+      type: "ACTIVITY_FIELD",
+      code: "Eccentric_Strain_Index",
+      name: "Eccentric Strain Index",
+      units: "AU",
+      content: { type: "NUMBER", units: "AU" }
+    },
+    {
+      type: "ACTIVITY_FIELD",
+      code: "PPG_Effective_TUT",
+      name: "PPG Effective TUT",
+      units: "s",
+      content: { type: "NUMBER", units: "s" }
+    },
+    {
+      type: "ACTIVITY_FIELD",
+      code: "Strength_Compliance_Pct",
+      name: "Strength Compliance Pct",
+      units: "%",
+      content: { type: "NUMBER", units: "%" }
+    }
+  ];
+
+  const authHeader = "Basic " + btoa(`API_KEY:${apiKey}`);
+  const endpoint = `https://intervals.icu/api/v1/athlete/${encodeURIComponent(athleteId)}/custom-item`;
+
+  const listRes = await fetchImpl(endpoint, {
+    method: "GET",
+    headers: { Authorization: authHeader, Accept: "application/json" }
+  });
+  if (!listRes.ok) {
+    const errText = await listRes.text();
+    throw new Error(`Erreur HTTP ${listRes.status} Intervals.icu : ${errText}`);
+  }
+
+  const existingItems = await listRes.json();
+  const existingSet = new Set(
+    (Array.isArray(existingItems) ? existingItems : []).flatMap((item) =>
+      [item?.code, item?.name, item?.content?.code].filter(Boolean)
+    )
+  );
+
+  const result = {
+    checked: requiredFields.length,
+    existing: [],
+    created: [],
+    errors: [],
+    dryRun,
+    wouldCreate: []
+  };
+
+  for (const field of requiredFields) {
+    if (existingSet.has(field.code) || existingSet.has(field.name)) {
+      result.existing.push(field.code);
+      continue;
+    }
+    if (dryRun) {
+      result.wouldCreate.push(field.code);
+      continue;
+    }
+
+    let postRes = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(field)
+    });
+
+    if (postRes.status === 422) {
+      postRes = await fetchImpl(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          type: "ACTIVITY_FIELD",
+          name: field.code,
+          content: { type: "NUMBER", units: field.units }
+        })
+      });
+    }
+
+    if (postRes.ok) {
+      result.created.push(field.code);
+    } else {
+      const errBody = await postRes.text();
+      result.errors.push({
+        code: field.code,
+        error: `Erreur HTTP ${postRes.status} Intervals.icu : ${errBody}`
+      });
+    }
+  }
+
+  return result;
 }) {
   const aid = normalizeAthleteId(athleteId);
   const authHeader = buildBasicAuthHeader(apiKey);
