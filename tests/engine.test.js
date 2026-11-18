@@ -52,6 +52,12 @@ import {
   pickBestAvailableModel,
   generateSessionWithGemini,
 } from "../geminiClient.js";
+import {
+  INTERVALS_BASE_URL,
+  CUSTOM_ACTIVITY_FIELDS,
+  ensureCustomActivityFields,
+  postManualActivity,
+} from "../intervalsClient.js";
 
 // ============================================================================
 // Utilitaires d'isolation pour stockage local, navigator et fetch (aucun secret)
@@ -1608,5 +1614,142 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
     assert.equal(res.autoUpgradedFrom, "gemini-2.5-flash");
     assert.equal(res.plan.exercises.length, 6);
     assert.equal(loadVault().LLM_MODEL, "gemini-3.8-flash");
+  });
+
+  it("ensureCustomActivityFields envoie content.code non vide sur POST /custom-item et gère le repli HTTP 422", async () => {
+    const calls = [];
+    const expectedCodes = CUSTOM_ACTIVITY_FIELDS.map((f) => f.code);
+    assert.deepEqual(expectedCodes, [
+      "Eccentric_Strain_Index",
+      "PPG_Effective_TUT",
+      "Strength_Compliance_Pct",
+    ]);
+
+    const mockFetch = async (url, init = {}) => {
+      const method = init.method ?? "GET";
+      const body = init.body ? JSON.parse(init.body) : null;
+      calls.push({ url, method, body });
+
+      if (method === "GET") {
+        // Aucun champ préexistant
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (method === "POST") {
+        assert.ok(
+          typeof body?.content?.code === "string" && body.content.code.length > 0,
+          "content.code doit toujours être non vide"
+        );
+        // Simule un HTTP 422 sur le schéma principal pour PPG_Effective_TUT (2 replis jusqu'au succès)
+        if (
+          body.content.code === "PPG_Effective_TUT" &&
+          (body.content.label !== undefined || body.content.type === "numeric")
+        ) {
+          return new Response(JSON.stringify({ error: "Validation 422" }), {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ id: `ci_${body.content.code}` }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({}), { status: 500 });
+    };
+
+    const res = await ensureCustomActivityFields({
+      athleteId: "i763697",
+      apiKey: "dummy_intervals_key",
+      fetchImpl: mockFetch,
+    });
+
+    assert.equal(res.checked, 3);
+    assert.deepEqual(res.existing, []);
+    assert.deepEqual(res.errors, []);
+    assert.deepEqual(res.created, expectedCodes);
+
+    const postCalls = calls.filter((c) => c.method === "POST");
+    // 1er champ: 1 POST, 2e champ: 3 POST (principal + 2 replis 422), 3e champ: 1 POST
+    assert.equal(postCalls.length, 5);
+    assert.equal(
+      postCalls[0].url,
+      `${INTERVALS_BASE_URL}/athlete/i763697/custom-item`
+    );
+    assert.equal(postCalls[0].body.content.code, "Eccentric_Strain_Index");
+    assert.equal(postCalls[0].body.content.aggregate, "SUM");
+    assert.equal(postCalls[1].body.content.code, "PPG_Effective_TUT");
+    assert.equal(postCalls[2].body.content.type, "numeric");
+    assert.equal(postCalls[3].body.name, "PPG_Effective_TUT");
+    assert.equal(postCalls[3].body.content.code, "PPG_Effective_TUT");
+    assert.equal(postCalls[4].body.content.code, "Strength_Compliance_Pct");
+    assert.equal(postCalls[4].body.content.aggregate, "AVERAGE");
+  });
+
+  it("postManualActivity effectue POST /activities/manual puis PUT /activity/{id} avec icu_training_load et les 3 champs personnalisés", async () => {
+    const calls = [];
+    restoreFetch = stubGlobalProperty("fetch", {
+      value: async (url, init = {}) => {
+        const method = init.method ?? "GET";
+        const body = init.body ? JSON.parse(init.body) : null;
+        calls.push({ url, method, body });
+
+        if (
+          method === "POST" &&
+          url === `${INTERVALS_BASE_URL}/athlete/i763697/activities/manual`
+        ) {
+          return new Response(JSON.stringify({ id: "i999", name: body.name }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        if (
+          method === "PUT" &&
+          url === `${INTERVALS_BASE_URL}/activity/i999`
+        ) {
+          return new Response(JSON.stringify({ id: "i999", ...body }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify({}), { status: 500 });
+      },
+    });
+
+    const payload = {
+      name: "[TEST] PPG kBox",
+      icu_training_load: 64,
+      Eccentric_Strain_Index: 142.5,
+      PPG_Effective_TUT: 360,
+      Strength_Compliance_Pct: 100,
+    };
+
+    const created = await postManualActivity({
+      athleteId: "i763697",
+      apiKey: "dummy_intervals_key",
+      payload,
+    });
+
+    assert.equal(created.id, "i999");
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].method, "POST");
+    assert.equal(
+      calls[0].url,
+      `${INTERVALS_BASE_URL}/athlete/i763697/activities/manual`
+    );
+    assert.equal(calls[1].method, "PUT");
+    assert.equal(calls[1].url, `${INTERVALS_BASE_URL}/activity/i999`);
+    assert.deepEqual(calls[1].body, {
+      icu_training_load: 64,
+      Eccentric_Strain_Index: 142.5,
+      PPG_Effective_TUT: 360,
+      Strength_Compliance_Pct: 100,
+    });
   });
 });

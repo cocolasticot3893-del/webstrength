@@ -282,36 +282,12 @@ export async function ensureCustomActivityFields(arg1, arg2, arg3 = {}) {
     throw new Error("Clé API Intervals.icu manquante");
   }
 
-  const requiredFields = [
-    {
-      type: "ACTIVITY_FIELD",
-      code: "Eccentric_Strain_Index",
-      name: "Eccentric Strain Index",
-      units: "AU",
-      content: { type: "NUMBER", units: "AU" }
-    },
-    {
-      type: "ACTIVITY_FIELD",
-      code: "PPG_Effective_TUT",
-      name: "PPG Effective TUT",
-      units: "s",
-      content: { type: "NUMBER", units: "s" }
-    },
-    {
-      type: "ACTIVITY_FIELD",
-      code: "Strength_Compliance_Pct",
-      name: "Strength Compliance Pct",
-      units: "%",
-      content: { type: "NUMBER", units: "%" }
-    }
-  ];
-
-  const authHeader = "Basic " + btoa(`API_KEY:${apiKey}`);
-  const endpoint = `https://intervals.icu/api/v1/athlete/${encodeURIComponent(athleteId)}/custom-item`;
+  const authHeader = buildBasicAuthHeader(apiKey);
+  const endpoint = `${INTERVALS_BASE_URL}/athlete/${encodeURIComponent(athleteId)}/custom-item`;
 
   const listRes = await fetchImpl(endpoint, {
     method: "GET",
-    headers: { Authorization: authHeader, Accept: "application/json" }
+    headers: { Authorization: authHeader, Accept: "application/json" },
   });
   if (!listRes.ok) {
     const errText = await listRes.text();
@@ -326,15 +302,15 @@ export async function ensureCustomActivityFields(arg1, arg2, arg3 = {}) {
   );
 
   const result = {
-    checked: requiredFields.length,
+    checked: CUSTOM_ACTIVITY_FIELDS.length,
     existing: [],
     created: [],
     errors: [],
     dryRun,
-    wouldCreate: []
+    wouldCreate: [],
   };
 
-  for (const field of requiredFields) {
+  for (const field of CUSTOM_ACTIVITY_FIELDS) {
     if (existingSet.has(field.code) || existingSet.has(field.name)) {
       result.existing.push(field.code);
       continue;
@@ -344,39 +320,64 @@ export async function ensureCustomActivityFields(arg1, arg2, arg3 = {}) {
       continue;
     }
 
-    let postRes = await fetchImpl(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-        "Content-Type": "application/json",
-        Accept: "application/json"
+    // Schéma principal puis deux replis compacts incluant toujours `content.code` sur HTTP 422
+    const candidatePayloads = [
+      {
+        type: "ACTIVITY_FIELD",
+        name: field.name,
+        units: field.units,
+        content: {
+          code: field.code,
+          name: field.name,
+          label: field.name,
+          type: "NUMBER",
+          units: field.units,
+          aggregate: field.aggregate,
+        },
       },
-      body: JSON.stringify(field)
-    });
+      {
+        type: "ACTIVITY_FIELD",
+        name: field.name,
+        content: {
+          code: field.code,
+          name: field.name,
+          type: "numeric",
+          units: field.units,
+        },
+      },
+      {
+        type: "ACTIVITY_FIELD",
+        name: field.code,
+        content: {
+          code: field.code,
+          units: field.units,
+        },
+      },
+    ];
 
-    if (postRes.status === 422) {
+    let postRes = null;
+    for (const candidate of candidatePayloads) {
       postRes = await fetchImpl(endpoint, {
         method: "POST",
         headers: {
           Authorization: authHeader,
           "Content-Type": "application/json",
-          Accept: "application/json"
+          Accept: "application/json",
         },
-        body: JSON.stringify({
-          type: "ACTIVITY_FIELD",
-          name: field.code,
-          content: { type: "NUMBER", units: field.units }
-        })
+        body: JSON.stringify(candidate),
       });
+      if (postRes.status !== 422) {
+        break;
+      }
     }
 
-    if (postRes.ok) {
+    if (postRes?.ok) {
       result.created.push(field.code);
     } else {
-      const errBody = await postRes.text();
+      const errBody = postRes ? await postRes.text() : "Réponse absente";
       result.errors.push({
         code: field.code,
-        error: `Erreur HTTP ${postRes.status} Intervals.icu : ${errBody}`
+        error: `Erreur HTTP ${postRes?.status ?? "inconnu"} Intervals.icu : ${errBody}`,
       });
     }
   }
@@ -755,7 +756,7 @@ export async function postManualActivity({
   const authHeader = buildBasicAuthHeader(apiKey);
   const endpoint = `${INTERVALS_BASE_URL}/athlete/${aid}/activities/manual`;
 
-  return fetchJsonWithBackoff(endpoint, {
+  const created = await fetchJsonWithBackoff(endpoint, {
     method: "POST",
     headers: {
       Authorization: authHeader,
@@ -764,4 +765,39 @@ export async function postManualActivity({
     },
     body: JSON.stringify(payload),
   });
+
+  const hasCustomField =
+    payload.Eccentric_Strain_Index !== undefined ||
+    payload.PPG_Effective_TUT !== undefined ||
+    payload.Strength_Compliance_Pct !== undefined;
+
+  if (
+    created?.id !== undefined &&
+    created?.id !== null &&
+    String(created.id).trim() !== "" &&
+    hasCustomField
+  ) {
+    // Mise à jour best-effort des champs personnalisés après création manuelle
+    try {
+      const activityEndpoint = `${INTERVALS_BASE_URL}/activity/${encodeURIComponent(String(created.id))}`;
+      await fetchJsonWithBackoff(activityEndpoint, {
+        method: "PUT",
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          icu_training_load: payload.icu_training_load,
+          Eccentric_Strain_Index: payload.Eccentric_Strain_Index,
+          PPG_Effective_TUT: payload.PPG_Effective_TUT,
+          Strength_Compliance_Pct: payload.Strength_Compliance_Pct,
+        }),
+      });
+    } catch {
+      // Silencieux afin de ne jamais masquer la création réussie de l'activité
+    }
+  }
+
+  return created;
 }

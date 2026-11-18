@@ -590,12 +590,35 @@ function initVaultControls() {
     }
   });
 
+  const updateCustomFieldsStatus = (res) => {
+    if (res.errors.length > 0) {
+      const errSummary = res.errors.map((e) => `${e.code}: ${e.error}`).join(" | ");
+      setStatusMessage(
+        $("custom-fields-status"),
+        `Vérifiés (${res.checked}) — Existants: ${res.existing.length}, Créés: ${res.created.length}, Erreurs: ${errSummary}`,
+        "error"
+      );
+    } else {
+      setStatusMessage(
+        $("custom-fields-status"),
+        `OK (${res.checked}/3) — Existants: [${res.existing.join(", ") || "aucun"}], Créés: [${res.created.join(", ") || "aucun"}]`,
+        "success"
+      );
+    }
+  };
+
   $("vault-check-fields-btn").addEventListener("click", async () => {
-    const apiKey = state.vault.INTERVALS_API_KEY?.trim();
+    const athleteId =
+      $("vault-athlete-id").value.trim() ||
+      (state.vault.INTERVALS_ATHLETE_ID ?? "").trim() ||
+      "0";
+    const apiKey =
+      $("vault-intervals-key").value.trim() ||
+      (state.vault.INTERVALS_API_KEY ?? "").trim();
     if (!apiKey) {
       setStatusMessage(
         $("custom-fields-status"),
-        "Renseignez et sauvegardez INTERVALS_API_KEY avant la vérification.",
+        "Renseignez INTERVALS_API_KEY avant la vérification.",
         "error"
       );
       return;
@@ -615,23 +638,10 @@ function initVaultControls() {
 
     try {
       const res = await ensureCustomActivityFields({
-        athleteId: state.vault.INTERVALS_ATHLETE_ID,
+        athleteId,
         apiKey,
       });
-      if (res.errors.length > 0) {
-        const errSummary = res.errors.map((e) => `${e.code}: ${e.error}`).join(" | ");
-        setStatusMessage(
-          $("custom-fields-status"),
-          `Vérifiés (${res.checked}) — Existants: ${res.existing.length}, Créés: ${res.created.length}, Erreurs: ${errSummary}`,
-          "error"
-        );
-      } else {
-        setStatusMessage(
-          $("custom-fields-status"),
-          `OK (${res.checked}/3) — Existants: [${res.existing.join(", ") || "aucun"}], Créés: [${res.created.join(", ") || "aucun"}]`,
-          "success"
-        );
-      }
+      updateCustomFieldsStatus(res);
     } catch (err) {
       setStatusMessage(
         $("custom-fields-status"),
@@ -675,6 +685,18 @@ function initVaultControls() {
     setStatusMessage(statusEl, "Génération et envoi de la séance test sur Intervals.icu…");
 
     try {
+      // Préambule : provisionne automatiquement les 3 champs personnalisés sans bloquer le test
+      try {
+        const fieldsRes = await ensureCustomActivityFields({ athleteId, apiKey });
+        updateCustomFieldsStatus(fieldsRes);
+      } catch (fieldsErr) {
+        setStatusMessage(
+          $("custom-fields-status"),
+          `Erreur API Intervals.icu : ${fieldsErr instanceof Error ? fieldsErr.message : String(fieldsErr)}`,
+          "error"
+        );
+      }
+
       const plan = generateFallbackSession({
         gate: "ORANGE",
         readiness: "OPTIMAL",
