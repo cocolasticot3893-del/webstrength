@@ -177,6 +177,43 @@ li {
   font-weight: 600;
 }
 
+.status-pill-btn,
+button.status-pill {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.error-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin: 0.75rem max(0.9rem, env(safe-area-inset-right, 0px)) 0
+    max(0.9rem, env(safe-area-inset-left, 0px));
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ef4444;
+  background: #7f1d1d;
+  color: #fecaca;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.error-banner-text {
+  flex: 1 1 220px;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.error-banner-close {
+  min-block-size: 44px;
+  border-color: rgba(254, 202, 202, 0.45);
+  color: #fecaca;
+}
+
 .outbox-pill.has-pending {
   border-color: rgba(245, 158, 11, 0.7);
   background: rgba(245, 158, 11, 0.16);

@@ -8,6 +8,7 @@ import {
   buildManualActivityPayload,
   calculateSessionMetrics,
 } from "./engine.js";
+import { generateFallbackSession } from "./fallbackGenerator.js";
 import { generateSessionWithGemini } from "./geminiClient.js";
 import {
   ensureCustomActivityFields,
@@ -295,6 +296,8 @@ function setupPasswordToggle(inputId, btnId) {
 function initVaultControls() {
   $("vault-toggle-btn").addEventListener("click", () => toggleVaultDrawer());
   $("vault-close-btn").addEventListener("click", () => toggleVaultDrawer(false));
+  $("intervals-status-pill").addEventListener("click", () => toggleVaultDrawer(true));
+  $("gemini-status-pill").addEventListener("click", () => toggleVaultDrawer(true));
 
   setupPasswordToggle("vault-intervals-key", "toggle-intervals-key");
   setupPasswordToggle("vault-gemini-key", "toggle-gemini-key");
@@ -396,6 +399,101 @@ function initVaultControls() {
     } catch (err) {
       setStatusMessage(
         $("custom-fields-status"),
+        `Erreur API Intervals.icu : ${err instanceof Error ? err.message : String(err)}`,
+        "error"
+      );
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("vault-send-test-btn").addEventListener("click", async () => {
+    const statusEl = $("test-workout-status");
+    const athleteId =
+      $("vault-athlete-id").value.trim() ||
+      (state.vault.INTERVALS_ATHLETE_ID ?? "").trim();
+    const apiKey =
+      $("vault-intervals-key").value.trim() ||
+      (state.vault.INTERVALS_API_KEY ?? "").trim();
+
+    if (!athleteId || !apiKey) {
+      setStatusMessage(
+        statusEl,
+        "Renseignez INTERVALS_ATHLETE_ID (ex. i763697) et INTERVALS_API_KEY avant d'envoyer une séance test.",
+        "error"
+      );
+      return;
+    }
+
+    if (navigator.onLine === false) {
+      setStatusMessage(
+        statusEl,
+        "Impossible hors-ligne : connectez-vous pour envoyer une séance test sur Intervals.icu.",
+        "error"
+      );
+      return;
+    }
+
+    const btn = $("vault-send-test-btn");
+    btn.disabled = true;
+    setStatusMessage(statusEl, "Génération et envoi de la séance test sur Intervals.icu…");
+
+    try {
+      const plan = generateFallbackSession({
+        gate: "ORANGE",
+        readiness: "OPTIMAL",
+        lumbar_flag: false,
+        yesterday_bike_hours: 2,
+        hours_since_last_eccentric: 72,
+        last_dominant_pattern: null,
+      });
+
+      const exercises = plan.exercises.map((ex) => ({
+        id: ex.id,
+        block: ex.block,
+        sets: Number(ex.sets),
+        reps: Number(ex.reps),
+        load: Number(ex.load),
+        completion: 1.0,
+      }));
+
+      const payload = buildManualActivityPayload({
+        dateObj: new Date(),
+        theme: plan.theme,
+        rationale: plan.rationale,
+        notes: "Séance test de validation WebStrength",
+        gate: "ORANGE",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 2100,
+        exercises,
+      });
+
+      payload.external_id = "pwa_strength_test_sandbox";
+      payload.name = "[TEST] PPG kBox [0.050] - Validation WebStrength";
+
+      const res = await postManualActivity({
+        athleteId,
+        apiKey,
+        payload,
+      });
+
+      const activityId = res?.id ?? payload.external_id;
+      const loadVal = res?.icu_training_load ?? payload.icu_training_load;
+      const strainVal = res?.Eccentric_Strain_Index ?? payload.Eccentric_Strain_Index;
+      const tutVal = res?.PPG_Effective_TUT ?? payload.PPG_Effective_TUT;
+
+      setStatusMessage(
+        statusEl,
+        `Séance test envoyée (ID: ${activityId}) — Load: ${loadVal}, Eccentric_Strain_Index: ${strainVal}, PPG_Effective_TUT: ${tutVal}s`,
+        "success"
+      );
+    } catch (err) {
+      setStatusMessage(
+        statusEl,
         `Erreur API Intervals.icu : ${err instanceof Error ? err.message : String(err)}`,
         "error"
       );
@@ -1302,38 +1400,3 @@ if (typeof document !== "undefined") {
     bootstrap();
   }
 }
-
-
-/* WEBSTRENGTH_GEAR_FIX_V1 */
-document.addEventListener("DOMContentLoaded", () => {
-  const openBtn = document.getElementById("outbox-flush-btn") ||
-    Array.from(document.querySelectorAll("button")).find((b) => b.textContent.includes("⚙") || /vault|settings|config/i.test(b.id + " " + (b.getAttribute("aria-label") || "")));
-  const target = document.getElementById("vault-drawer") ||
-    document.querySelector("dialog, [data-vault-drawer], .vault-drawer, .drawer, .modal");
-
-  if (openBtn && target) {
-    openBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (typeof target.showModal === "function") {
-        if (!target.open) target.showModal();
-      } else {
-        target.hidden = false;
-        target.removeAttribute("hidden");
-        target.setAttribute("aria-hidden", "false");
-        target.classList.add("open", "is-open", "active");
-        target.style.display = target.style.display === "none" ? "block" : target.style.display;
-      }
-    });
-    const closeBtn = target.querySelector("[data-close], .close-btn, #btn-close-vault, #close-vault");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        if (typeof target.close === "function" && target.open) target.close();
-        else {
-          target.hidden = true;
-          target.setAttribute("aria-hidden", "true");
-          target.classList.remove("open", "is-open", "active");
-        }
-      });
-    }
-  }
-});

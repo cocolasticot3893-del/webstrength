@@ -21,6 +21,7 @@
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link rel="apple-touch-icon" href="./icon.svg" />
     <link rel="stylesheet" href="./styles.css" />
+    <script src="./errorGuard.js" defer></script>
     <script type="module" src="./app.js"></script>
   </head>
   <body>
@@ -52,12 +53,22 @@
         >
           Outbox : <strong id="outbox-count">0</strong>
         </button>
-        <span id="intervals-status-pill" class="status-pill is-muted">
+        <button
+          type="button"
+          id="intervals-status-pill"
+          class="status-pill status-pill-btn is-muted"
+          title="Configurer Intervals.icu dans le coffre-fort"
+        >
           Intervals : —
-        </span>
-        <span id="gemini-status-pill" class="status-pill is-muted">
+        </button>
+        <button
+          type="button"
+          id="gemini-status-pill"
+          class="status-pill status-pill-btn is-muted"
+          title="Configurer Gemini dans le coffre-fort"
+        >
           Gemini : —
-        </span>
+        </button>
         <button
           type="button"
           id="vault-toggle-btn"
@@ -70,6 +81,8 @@
         </button>
       </div>
     </header>
+
+    <div id="global-error-banner" class="error-banner" role="alert" hidden></div>
 
     <aside
       id="vault-drawer"
@@ -190,6 +203,19 @@
           </button>
           <p
             id="custom-fields-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <button
+            type="button"
+            id="vault-send-test-btn"
+            class="btn btn-secondary btn-block"
+          >
+            🧪 Envoyer une séance test sur Intervals.icu
+          </button>
+          <p
+            id="test-workout-status"
             class="status-message"
             role="status"
             aria-live="polite"
