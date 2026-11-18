@@ -348,6 +348,9 @@ export function buildManualActivityPayload({
       sets: Number(ex.sets),
       reps: Number(ex.reps),
       load: Number(ex.load),
+      s: Number(ex.sets),
+      r: Number(ex.reps),
+      l: Number(ex.load),
       c: Number(ex.completion),
     };
   });
@@ -364,6 +367,9 @@ export function buildManualActivityPayload({
     rir,
     lumbar_flag: Boolean(lumbar_flag),
     dominant_pattern,
+    strain: metrics.EccentricStrainIndex,
+    tut: metrics.PpgEffectiveTut,
+    compliance: metrics.StrengthCompliancePct,
     ex: compactExercises,
   };
 

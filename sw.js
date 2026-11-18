@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.1.1";
+const CACHE_NAME = "webstrength-v1.3.0";
 
 const PRECACHE_ASSETS = [
   "./",

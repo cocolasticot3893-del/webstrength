@@ -1007,10 +1007,25 @@ describe("5. Aller-retour Payload & [TELEMETRY_JSON] (engine.js)", () => {
     assert.equal(parsed.rir, 2);
     assert.equal(parsed.lumbar_flag, false);
     assert.equal(parsed.dominant_pattern, "KNEE_DOMINANT");
+    assert.equal(parsed.strain, payload.EccentricStrainIndex);
+    assert.equal(parsed.tut, payload.PpgEffectiveTut);
+    assert.equal(parsed.compliance, payload.StrengthCompliancePct);
     assert.equal(parsed.ex.length, 6);
     assert.equal(parsed.ex[2].id, "KBOX_SQUAT_BELT");
     assert.equal(parsed.ex[2].load, 0.05);
+    assert.equal(parsed.ex[2].l, 0.05);
     assert.equal(parsed.ex[2].c, 1);
+
+    // Vérification de la présence simultanée des noms complets et des alias courts Python
+    for (const item of parsed.ex) {
+      assert.equal(typeof item.sets, "number");
+      assert.equal(typeof item.reps, "number");
+      assert.equal(typeof item.load, "number");
+      assert.equal(item.s, item.sets);
+      assert.equal(item.r, item.reps);
+      assert.equal(item.l, item.load);
+      assert.equal(typeof item.c, "number");
+    }
 
     // Résilience face aux sauts de ligne finaux (LF, CRLF, espaces)
     const parsedWithTrailingNewlines = parseTelemetryJsonFromDescription(
