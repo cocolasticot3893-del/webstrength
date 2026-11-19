@@ -15,6 +15,10 @@ import {
   saveUserExercise,
 } from "./catalog.js";
 import {
+  pushCustomExercisesToDrive,
+  validateDriveWebhookUrl,
+} from "./driveSync.js";
+import {
   buildManualActivityPayload,
   calculateSessionMetrics,
 } from "./engine.js";
@@ -460,24 +464,94 @@ async function resolveAndSyncModelsAtStartup() {
   }
 }
 
+/**
+ * Synchronise la classe CSS de secours et les attributs ARIA de validation de l'URL Drive.
+ * @param {HTMLInputElement | null} urlInput
+ * @param {{ forceInvalid?: boolean }} [options]
+ */
+function syncDriveUrlValidationUI(urlInput, { forceInvalid = false } = {}) {
+  if (!urlInput) return;
+  const raw = urlInput.value.trim();
+  const isInvalid =
+    forceInvalid === true ||
+    (raw.length > 0 && !validateDriveWebhookUrl(raw).valid);
+  if (isInvalid) {
+    urlInput.classList.add("user-invalid-fallback");
+    urlInput.setAttribute("aria-invalid", "true");
+    urlInput.setAttribute(
+      "aria-describedby",
+      "vault-drive-url-hint vault-drive-url-error"
+    );
+  } else {
+    urlInput.classList.remove("user-invalid-fallback");
+    urlInput.setAttribute("aria-invalid", "false");
+    urlInput.setAttribute("aria-describedby", "vault-drive-url-hint");
+  }
+}
+
 function populateVaultForm() {
   $("vault-athlete-id").value = state.vault.INTERVALS_ATHLETE_ID ?? "0";
   $("vault-intervals-key").value = state.vault.INTERVALS_API_KEY ?? "";
   $("vault-gemini-key").value = state.vault.GEMINI_API_KEY ?? "";
+  const urlInput = $("vault-drive-webhook-url");
+  if (urlInput) {
+    urlInput.value = state.vault.DRIVE_WEBHOOK_URL ?? "";
+    urlInput.classList.remove("user-invalid-fallback");
+    urlInput.setAttribute("aria-invalid", "false");
+    urlInput.setAttribute("aria-describedby", "vault-drive-url-hint");
+  }
+  const secretInput = $("vault-drive-webhook-secret");
+  if (secretInput) {
+    secretInput.value = state.vault.DRIVE_WEBHOOK_SECRET ?? "";
+  }
   const modelId = state.vault.LLM_MODEL ?? "gemini-3.5-flash";
   renderModelOptions($("vault-llm-model"), [], modelId);
   updateExportUserExercisesBtn();
 }
 
 function updateExportUserExercisesBtn() {
-  const btn = $("vault-export-custom-exos-btn");
-  if (!btn) return;
   const count = getUserExercisesList().length;
-  btn.disabled = count === 0;
-  btn.title =
-    count > 0
-      ? `Exporter ${count} exercice(s) promu(s)`
-      : "Aucun exercice promu localement";
+  const exportBtn = $("vault-export-custom-exos-btn");
+  if (exportBtn) {
+    exportBtn.disabled = count === 0;
+    exportBtn.title =
+      count > 0
+        ? `Télécharger ${count} exercice(s) promu(s) en JSON`
+        : "Aucun exercice promu localement";
+  }
+  const pushBtn = $("vault-push-drive-exos-btn");
+  if (pushBtn) {
+    pushBtn.disabled = count === 0;
+    pushBtn.title =
+      count > 0
+        ? `Envoyer ${count} exercice(s) promu(s) sur Google Drive`
+        : "Aucun exercice promu localement";
+  }
+}
+
+/**
+ * Télécharge localement les exercices personnalisés au format JSON.
+ * @param {string} [filename]
+ * @returns {{ count: number, filename: string }}
+ */
+function downloadCustomExercisesJson(
+  filename = "webstrength-custom-exercises.json"
+) {
+  const count = getUserExercisesList().length;
+  if (count === 0) {
+    return { count: 0, filename };
+  }
+  const json = exportUserExercisesJson();
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return { count, filename };
 }
 
 function toggleVaultDrawer(forceOpen) {
@@ -509,16 +583,86 @@ function initVaultControls() {
 
   setupPasswordToggle("vault-intervals-key", "toggle-intervals-key");
   setupPasswordToggle("vault-gemini-key", "toggle-gemini-key");
+  setupPasswordToggle("vault-drive-webhook-secret", "toggle-drive-secret");
+
+  const driveUrlInput = $("vault-drive-webhook-url");
+  if (driveUrlInput) {
+    driveUrlInput.addEventListener("blur", () => {
+      if (
+        driveUrlInput.value.trim().length > 0 ||
+        driveUrlInput.classList.contains("user-invalid-fallback")
+      ) {
+        syncDriveUrlValidationUI(driveUrlInput);
+      }
+    });
+    driveUrlInput.addEventListener("input", () => {
+      const raw = driveUrlInput.value.trim();
+      if (raw.length === 0 || validateDriveWebhookUrl(raw).valid) {
+        syncDriveUrlValidationUI(driveUrlInput);
+      }
+    });
+  }
+
+  /**
+   * Valide et persiste localement l'URL et le secret du webhook Google Drive.
+   * @param {{ showSuccess?: boolean }} [options]
+   * @returns {boolean}
+   */
+  const saveDriveConfig = ({ showSuccess = true } = {}) => {
+    const urlInput = $("vault-drive-webhook-url");
+    const secretInput = $("vault-drive-webhook-secret");
+    const rawUrl = (urlInput?.value ?? "").trim();
+    const secret = (secretInput?.value ?? "").trim();
+
+    if (rawUrl.length > 0) {
+      const check = validateDriveWebhookUrl(rawUrl);
+      if (!check.valid) {
+        syncDriveUrlValidationUI(urlInput, { forceInvalid: true });
+        setStatusMessage(
+          $("vault-drive-status"),
+          check.error || "URL du webhook Google Drive invalide.",
+          "error"
+        );
+        urlInput?.focus();
+        return false;
+      }
+    }
+
+    state.vault = saveVault({
+      DRIVE_WEBHOOK_URL: rawUrl,
+      DRIVE_WEBHOOK_SECRET: secret,
+    });
+    syncDriveUrlValidationUI(urlInput);
+    if (showSuccess) {
+      setStatusMessage(
+        $("vault-drive-status"),
+        "Configuration Drive enregistrée localement.",
+        "success"
+      );
+    }
+    return true;
+  };
+
+  $("vault-save-drive-btn")?.addEventListener("click", () => {
+    saveDriveConfig({ showSuccess: true });
+  });
 
   $("vault-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const previousGeminiKey = state.vault.GEMINI_API_KEY?.trim() ?? "";
-    state.vault = saveVault({
+    const rawDriveUrl = ($("vault-drive-webhook-url")?.value ?? "").trim();
+    const driveSecret = ($("vault-drive-webhook-secret")?.value ?? "").trim();
+    const vaultPayload = {
       INTERVALS_ATHLETE_ID: $("vault-athlete-id").value,
       INTERVALS_API_KEY: $("vault-intervals-key").value,
       GEMINI_API_KEY: $("vault-gemini-key").value,
       LLM_MODEL: $("vault-llm-model").value,
-    });
+      DRIVE_WEBHOOK_SECRET: driveSecret,
+    };
+    if (rawDriveUrl.length === 0 || validateDriveWebhookUrl(rawDriveUrl).valid) {
+      vaultPayload.DRIVE_WEBHOOK_URL = rawDriveUrl;
+    }
+    state.vault = saveVault(vaultPayload);
     updateServicePills();
     setStatusMessage($("vault-feedback"), "Coffre-fort sauvegardé localement.", "success");
 
@@ -620,23 +764,91 @@ function initVaultControls() {
   });
 
   $("vault-export-custom-exos-btn")?.addEventListener("click", () => {
-    const count = getUserExercisesList().length;
+    const { count } = downloadCustomExercisesJson();
     if (count === 0) return;
-    const json = exportUserExercisesJson();
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "webstrength-custom-exercises.json";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    setStatusMessage(
-      $("vault-feedback"),
-      `Export JSON de ${count} exercice(s) téléchargé.`,
-      "success"
-    );
+    const message = `Export JSON de ${count} exercice(s) téléchargé.`;
+    setStatusMessage($("vault-drive-status"), message, "success");
+    setStatusMessage($("vault-feedback"), message, "success");
+  });
+
+  $("vault-push-drive-exos-btn")?.addEventListener("click", async () => {
+    if (getUserExercisesList().length === 0) return;
+
+    const urlInput = $("vault-drive-webhook-url");
+    const pushBtn = $("vault-push-drive-exos-btn");
+    const statusEl = $("vault-drive-status");
+    const rawUrl = (
+      urlInput?.value ??
+      state.vault.DRIVE_WEBHOOK_URL ??
+      ""
+    ).trim();
+    const secret = (
+      $("vault-drive-webhook-secret")?.value ??
+      state.vault.DRIVE_WEBHOOK_SECRET ??
+      ""
+    ).trim();
+    const urlCheck = validateDriveWebhookUrl(rawUrl);
+
+    if (navigator.onLine === false) {
+      downloadCustomExercisesJson();
+      setStatusMessage(
+        statusEl,
+        "Hors-ligne : téléchargement JSON local déclenché en secours.",
+        "error"
+      );
+      return;
+    }
+
+    if (!urlCheck.valid) {
+      syncDriveUrlValidationUI(urlInput, { forceInvalid: true });
+      downloadCustomExercisesJson();
+      setStatusMessage(
+        statusEl,
+        `${urlCheck.error} — téléchargement JSON local déclenché en secours.`,
+        "error"
+      );
+      return;
+    }
+
+    pushBtn.disabled = true;
+    pushBtn.textContent = "⏳ Envoi Drive…";
+    setStatusMessage(statusEl, "Envoi vers Google Drive…");
+
+    try {
+      const res = await pushCustomExercisesToDrive({
+        webhookUrl: urlCheck.url,
+        secret,
+        exercisesJson: exportUserExercisesJson(),
+        timeoutMs: 15000,
+      });
+
+      if (
+        urlCheck.url !== (state.vault.DRIVE_WEBHOOK_URL ?? "") ||
+        secret !== (state.vault.DRIVE_WEBHOOK_SECRET ?? "")
+      ) {
+        state.vault = saveVault({
+          DRIVE_WEBHOOK_URL: urlCheck.url,
+          DRIVE_WEBHOOK_SECRET: secret,
+        });
+      }
+
+      setStatusMessage(
+        statusEl,
+        `✅ Envoyé sur Drive (${res.count} exo(s) • ${res.fileName})`,
+        "success"
+      );
+    } catch (err) {
+      downloadCustomExercisesJson();
+      const reason = err instanceof Error ? err.message : String(err);
+      setStatusMessage(
+        statusEl,
+        `⚠️ Échec Drive (${reason}) — téléchargement JSON local déclenché en secours.`,
+        "error"
+      );
+    } finally {
+      pushBtn.textContent = "☁️ Envoyer exos sur Drive";
+      updateExportUserExercisesBtn();
+    }
   });
 
   updateExportUserExercisesBtn();

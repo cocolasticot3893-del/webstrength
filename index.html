@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://intervals.icu https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://intervals.icu https://generativelanguage.googleapis.com https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self';"
     />
     <meta
       name="viewport"
@@ -200,14 +200,6 @@
             >
               Importer JSON
             </button>
-            <button
-              type="button"
-              id="vault-export-custom-exos-btn"
-              class="btn btn-secondary"
-              disabled
-            >
-              📦 Exporter exos ajoutés (JSON)
-            </button>
             <input
               id="vault-import-file"
               type="file"
@@ -216,6 +208,85 @@
             />
           </div>
         </form>
+
+        <section class="vault-drive-section" aria-labelledby="vault-drive-title">
+          <h3 id="vault-drive-title" class="vault-section-title">Sync Google Drive (Exos perso)</h3>
+
+          <div class="field-group">
+            <label for="vault-drive-webhook-url">DRIVE_WEBHOOK_URL</label>
+            <small id="vault-drive-url-hint" class="field-hint">
+              URL HTTPS du déploiement Google Apps Script (/exec).
+            </small>
+            <input
+              id="vault-drive-webhook-url"
+              name="DRIVE_WEBHOOK_URL"
+              type="url"
+              pattern="https://.*"
+              inputmode="url"
+              placeholder="https://script.google.com/macros/s/.../exec"
+              aria-describedby="vault-drive-url-hint"
+              aria-invalid="false"
+              data-error="vault-drive-url-error"
+            />
+            <p id="vault-drive-url-error" class="field-error-msg">
+              <span role="img" aria-label="Erreur">❌</span> Saisissez une URL HTTPS valide (https://script.google.com/macros/s/.../exec).
+            </p>
+          </div>
+
+          <div class="field-group">
+            <label for="vault-drive-webhook-secret">DRIVE_WEBHOOK_SECRET</label>
+            <div class="input-with-action">
+              <input
+                id="vault-drive-webhook-secret"
+                name="DRIVE_WEBHOOK_SECRET"
+                type="password"
+                placeholder="Jeton secret partagé"
+              />
+              <button
+                type="button"
+                id="toggle-drive-secret"
+                class="btn btn-ghost btn-sm"
+                aria-label="Afficher ou masquer le secret Drive"
+              >
+                Afficher
+              </button>
+            </div>
+            <small class="field-hint">Optionnel mais recommandé : doit correspondre à SHARED_SECRET dans Code.gs.</small>
+          </div>
+
+          <div class="vault-drive-actions">
+            <button
+              type="button"
+              id="vault-save-drive-btn"
+              class="btn btn-secondary"
+            >
+              💾 Enregistrer Drive
+            </button>
+            <button
+              type="button"
+              id="vault-push-drive-exos-btn"
+              class="btn btn-primary"
+              disabled
+            >
+              ☁️ Envoyer exos sur Drive
+            </button>
+            <button
+              type="button"
+              id="vault-export-custom-exos-btn"
+              class="btn btn-secondary"
+              disabled
+            >
+              📦 Télécharger JSON
+            </button>
+          </div>
+
+          <p
+            id="vault-drive-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+        </section>
 
         <div class="vault-provision">
           <button

@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.7.1";
+const CACHE_NAME = "webstrength-v1.8.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -22,6 +22,7 @@ const PRECACHE_ASSETS = [
   "./outbox.js",
   "./intervalsClient.js",
   "./geminiClient.js",
+  "./driveSync.js",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/exos/KBOX_SQUAT_HARNESS.svg",
@@ -99,7 +100,9 @@ function isExcludedExternalHost(url) {
     host === "intervals.icu" ||
     host.endsWith(".intervals.icu") ||
     host === "googleapis.com" ||
-    host.endsWith(".googleapis.com")
+    host.endsWith(".googleapis.com") ||
+    host === "script.google.com" ||
+    host === "script.googleusercontent.com"
   );
 }
 

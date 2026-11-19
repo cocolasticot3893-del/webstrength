@@ -90,6 +90,12 @@ import {
   ensureCustomActivityFields,
   postManualActivity,
 } from "../intervalsClient.js";
+import {
+  DRIVE_APP_VERSION,
+  validateDriveWebhookUrl,
+  buildDriveExportFilename,
+  pushCustomExercisesToDrive,
+} from "../driveSync.js";
 
 // ============================================================================
 // Utilitaires d'isolation pour stockage local, navigator et fetch (aucun secret)
@@ -2695,5 +2701,249 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
       "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND"
     );
     assert.equal(parsed.exercises[1].id, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+  });
+});
+
+// ============================================================================
+// 9. Sync Google Drive Webhook (driveSync.js & vault.js)
+// ============================================================================
+
+describe("9. Sync Google Drive Webhook (driveSync.js & vault.js)", () => {
+  let restoreLocalStorage;
+
+  beforeEach(() => {
+    const ls = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", { value: ls });
+  });
+
+  afterEach(() => {
+    restoreLocalStorage?.();
+  });
+
+  it("persiste DRIVE_WEBHOOK_URL/SECRET dans vault.js, masque le secret à l'export sans secrets et restaure via importVaultJson", () => {
+    saveVault({
+      INTERVALS_ATHLETE_ID: "i999",
+      INTERVALS_API_KEY: "intervals-demo-key",
+      GEMINI_API_KEY: "gemini-demo-key",
+      LLM_MODEL: "gemini-3.5-flash",
+      CP_WATTS: 325,
+      DRIVE_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbTestDemo/exec",
+      DRIVE_WEBHOOK_SECRET: "shared-secret-demo",
+    });
+
+    const loaded = loadVault();
+    assert.equal(
+      loaded.DRIVE_WEBHOOK_URL,
+      "https://script.google.com/macros/s/AKfycbTestDemo/exec"
+    );
+    assert.equal(loaded.DRIVE_WEBHOOK_SECRET, "shared-secret-demo");
+    assert.equal(loaded.CP_WATTS, 325);
+    assert.equal(globalThis.localStorage.getItem("INTERVALS_ATHLETE_ID"), "i999");
+    assert.equal(
+      globalThis.localStorage.getItem("DRIVE_WEBHOOK_URL"),
+      null,
+      "Les clés Drive ne doivent pas être dupliquées dans FLAT_KEYS"
+    );
+
+    const maskedJson = exportVaultJson({ includeSecrets: false });
+    const maskedObj = JSON.parse(maskedJson);
+    assert.equal(
+      maskedObj.DRIVE_WEBHOOK_URL,
+      "https://script.google.com/macros/s/AKfycbTestDemo/exec"
+    );
+    assert.equal(maskedObj.DRIVE_WEBHOOK_SECRET, "");
+    assert.equal(maskedObj.INTERVALS_API_KEY, "");
+    assert.equal(maskedObj.GEMINI_API_KEY, "");
+
+    const fullJson = exportVaultJson({ includeSecrets: true });
+    globalThis.localStorage.clear();
+
+    const imported = importVaultJson(fullJson);
+    assert.equal(
+      imported.DRIVE_WEBHOOK_URL,
+      "https://script.google.com/macros/s/AKfycbTestDemo/exec"
+    );
+    assert.equal(imported.DRIVE_WEBHOOK_SECRET, "shared-secret-demo");
+    assert.equal(imported.CP_WATTS, 325);
+  });
+
+  it("valide les URLs webhook HTTPS strictes et génère un nom de fichier horodaté valide", () => {
+    const invalidCases = [
+      "",
+      "   ",
+      "http://script.google.com/macros/s/abc/exec",
+      "javascript:alert(1)",
+      "not-a-url",
+      "https://user:pass@script.google.com/macros/s/abc/exec",
+    ];
+    for (const raw of invalidCases) {
+      const res = validateDriveWebhookUrl(raw);
+      assert.equal(res.valid, false, `L'URL "${raw}" aurait dû être rejetée`);
+      assert.ok(typeof res.error === "string" && res.error.length > 0);
+    }
+
+    const appsScriptRes = validateDriveWebhookUrl(
+      "https://script.google.com/macros/s/AKfycbDemo123/exec"
+    );
+    assert.equal(appsScriptRes.valid, true);
+    assert.equal(appsScriptRes.isAppsScript, true);
+    assert.equal(appsScriptRes.error, null);
+
+    const genericRes = validateDriveWebhookUrl(
+      "https://webhook.example.com/hook"
+    );
+    assert.equal(genericRes.valid, true);
+    assert.equal(genericRes.isAppsScript, false);
+    assert.equal(genericRes.error, null);
+
+    const filename = buildDriveExportFilename(new Date(2026, 10, 19, 8, 5, 9));
+    assert.match(
+      filename,
+      /^webstrength-custom-exercises-\d{8}-\d{6}\.json$/
+    );
+    assert.equal(
+      filename,
+      "webstrength-custom-exercises-20261119-080509.json"
+    );
+  });
+
+  it("envoie les exercices via POST text/plain sans preflight et gère les erreurs HTTP/JSON/timeout", async () => {
+    const sampleExercises = [
+      { id: "USER_TEST_EXO", label: "Exercice Test Drive", pole: "CORE" },
+    ];
+    const fixedDate = new Date("2026-11-19T08:30:00.000Z");
+    let capturedUrl = null;
+    let capturedInit = null;
+
+    const okResult = await pushCustomExercisesToDrive({
+      webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+      secret: "secret-123",
+      exercisesJson: JSON.stringify(sampleExercises),
+      now: fixedDate,
+      fetchImpl: async (url, init) => {
+        capturedUrl = url;
+        capturedInit = init;
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          text: async () =>
+            JSON.stringify({
+              ok: true,
+              fileId: "file_abc_123",
+              fileName: "webstrength-custom-exercises-test.json",
+              folderName: "WebStrength Exports",
+              count: 1,
+            }),
+        };
+      },
+    });
+
+    assert.equal(
+      capturedUrl,
+      "https://script.google.com/macros/s/AKfycbDemo123/exec"
+    );
+    assert.equal(capturedInit.method, "POST");
+    assert.equal(
+      capturedInit.headers["Content-Type"],
+      "text/plain;charset=utf-8"
+    );
+    assert.equal(capturedInit.redirect, "follow");
+
+    const sentBody = JSON.parse(capturedInit.body);
+    assert.equal(sentBody.secret, "secret-123");
+    assert.match(
+      sentBody.filename,
+      /^webstrength-custom-exercises-\d{8}-\d{6}\.json$/
+    );
+    assert.equal(sentBody.exported_at, fixedDate.toISOString());
+    assert.equal(sentBody.app_version, DRIVE_APP_VERSION);
+    assert.equal(DRIVE_APP_VERSION, "1.8.0");
+    assert.deepEqual(sentBody.exercises, sampleExercises);
+
+    assert.deepEqual(okResult, {
+      ok: true,
+      fileId: "file_abc_123",
+      fileName: "webstrength-custom-exercises-test.json",
+      folderName: "WebStrength Exports",
+      count: 1,
+    });
+
+    await assert.rejects(
+      () =>
+        pushCustomExercisesToDrive({
+          webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+          exercisesJson: "[]",
+          fetchImpl: async () => {
+            throw new Error("Ne doit pas être appelé");
+          },
+        }),
+      /Aucun exercice/
+    );
+
+    await assert.rejects(
+      () =>
+        pushCustomExercisesToDrive({
+          webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+          exercisesJson: "{}",
+          fetchImpl: async () => {
+            throw new Error("Ne doit pas être appelé");
+          },
+        }),
+      /Aucun exercice/
+    );
+
+    await assert.rejects(
+      () =>
+        pushCustomExercisesToDrive({
+          webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+          exercisesJson: sampleExercises,
+          fetchImpl: async () => ({
+            ok: false,
+            status: 500,
+            statusText: "Internal Server Error",
+            text: async () => "error",
+          }),
+        }),
+      /500/
+    );
+
+    await assert.rejects(
+      () =>
+        pushCustomExercisesToDrive({
+          webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+          exercisesJson: sampleExercises,
+          fetchImpl: async () => ({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () =>
+              JSON.stringify({ ok: false, error: "unauthorized" }),
+          }),
+        }),
+      /unauthorized/
+    );
+
+    await assert.rejects(
+      () =>
+        pushCustomExercisesToDrive({
+          webhookUrl: "https://script.google.com/macros/s/AKfycbDemo123/exec",
+          exercisesJson: sampleExercises,
+          timeoutMs: 60,
+          fetchImpl: (_url, init) =>
+            new Promise((_resolve, reject) => {
+              init.signal.addEventListener(
+                "abort",
+                () => {
+                  const abortErr = new Error("Aborted");
+                  abortErr.name = "AbortError";
+                  reject(abortErr);
+                },
+                { once: true }
+              );
+            }),
+        }),
+      /Timeout/
+    );
   });
 });

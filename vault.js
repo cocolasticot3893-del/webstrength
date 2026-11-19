@@ -19,6 +19,8 @@ export const DEFAULT_VAULT = Object.freeze({
   INTERVALS_API_KEY: "",
   GEMINI_API_KEY: "",
   LLM_MODEL: "gemini-3.5-flash",
+  DRIVE_WEBHOOK_URL: "",
+  DRIVE_WEBHOOK_SECRET: "",
   updatedAt: null,
 });
 
@@ -188,6 +190,14 @@ function normalizeVaultRecord(rawSource, flatFallback = {}) {
     llmModelCandidate,
     DEFAULT_VAULT.LLM_MODEL
   );
+  merged.DRIVE_WEBHOOK_URL = normalizeString(
+    merged.DRIVE_WEBHOOK_URL,
+    DEFAULT_VAULT.DRIVE_WEBHOOK_URL
+  );
+  merged.DRIVE_WEBHOOK_SECRET = normalizeString(
+    merged.DRIVE_WEBHOOK_SECRET,
+    DEFAULT_VAULT.DRIVE_WEBHOOK_SECRET
+  );
 
   merged.updatedAt =
     typeof merged.updatedAt === "string" && merged.updatedAt.trim().length > 0
@@ -255,6 +265,7 @@ export function exportVaultJson({ includeSecrets = true } = {}) {
   if (!includeSecrets) {
     vault.INTERVALS_API_KEY = "";
     vault.GEMINI_API_KEY = "";
+    vault.DRIVE_WEBHOOK_SECRET = "";
   }
   return JSON.stringify(vault, null, 2);
 }
