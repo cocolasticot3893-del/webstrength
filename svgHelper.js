@@ -376,7 +376,7 @@ function stripDiacritics(text) {
 function detectBandCoreSubmode(displayName) {
   const normalized = stripDiacritics(displayName);
   const isFloorCore =
-    /\b(planche|plank|gainage|hollow|deadbug|abdo|core)\b/i.test(normalized) &&
+    /\b(planche|plank|gainage|hollow|deadbug|abdo|core|bird.?dog|quadrupedie|anti.?rotation)\b/i.test(normalized) &&
     !/\b(elastique|tirage|row|band|pallof)\b/i.test(normalized);
   if (isFloorCore) {
     return "FLOOR_CORE";

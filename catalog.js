@@ -668,6 +668,41 @@ const RAW_INTEGRATED_USER_EXERCISES = [
       ],
     },
   },
+  {
+    id: "USER_BIRD_DOG_ANTI_ROTATION_AU_SOL",
+    name: "Bird-Dog Anti-Rotation au Sol",
+    pole: "BAND_CORE",
+    pattern: "LUMBO_PELVIC",
+    allowed_loads: [0, 1, 2, 3, 4],
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 0.5,
+    is_timed: true,
+    unit_label: "niv.",
+    default_sets: 3,
+    default_reps: 40,
+    is_custom: false,
+    is_user_catalog: true,
+    is_integrated_user: true,
+    short_desc:
+      "Stabilité anti-rotation et anti-extension L4-L5 en quadrupédie — contrôle croisé hanche/épaule sans cisaillement lombaire.",
+    guide: {
+      svg_path: "./assets/exos/USER_BIRD_DOG_ANTI_ROTATION_AU_SOL.svg",
+      tempo_badge: "Quadrupédie • Tempo lent 3-2-3",
+      setup:
+        "En quadrupédie sur tapis, mains exactement sous les épaules et genoux sous les hanches, nuque dans le prolongement du dos et caisson abdominal pré-engagé.",
+      execution: [
+        "Tends le bras et la jambe opposés dans l'axe horizontal, sans dépasser la ligne du bassin.",
+        "Tiens 2 s avec le bassin parallèle au sol, sans vrille, en respirant calmement.",
+        "Reviens lentement avec contrôle, puis alterne le côté.",
+      ],
+      errors: [
+        "Creuser les lombaires (L4-L5) en levant trop la jambe.",
+        "Vriller ou ouvrir la hanche du côté de la jambe tendue.",
+        "Affaisser les omoplates ou relever la tête.",
+      ],
+    },
+  },
 ];
 
 /** Liste immuable des exercices utilisateur intégrés nativement au catalogue. */

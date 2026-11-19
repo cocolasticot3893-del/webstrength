@@ -2223,17 +2223,17 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
 
     const all = getAllCatalogExercises();
     assert.equal(all.length, CATALOG.length + INTEGRATED_USER_EXERCISES.length + 1);
-    assert.equal(all.length, 20);
+    assert.equal(all.length, 21);
     assert.ok(all.some((ex) => ex.id === id1));
 
     // Invariant strict du catalogue officiel
     assert.equal(EXERCISE_IDS.length, 17);
     assert.equal(CATALOG.length, 17);
 
-    // Suppression unitaire propre -> retour à 19 exercices (17 officiels + 2 intégrés)
+    // Suppression unitaire propre -> retour à 20 exercices (17 officiels + 3 intégrés)
     assert.equal(removeUserExercise(id1), true);
     assert.equal(getUserExercisesList().length, 0);
-    assert.equal(getAllCatalogExercises().length, 19);
+    assert.equal(getAllCatalogExercises().length, 20);
   });
 
   it("Parité mathématique exacte entre CUSTOM_BAND_CORE et sa version promue USER_*", () => {
@@ -2588,7 +2588,7 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     // 1. Immuabilité et présence des 2 exercices intégrés dans INTEGRATED_USER_EXERCISES
     assert.equal(Object.isFrozen(INTEGRATED_USER_EXERCISES), true);
     assert.equal(Object.isFrozen(INTEGRATED_USER_EXERCISES_BY_ID), true);
-    assert.equal(INTEGRATED_USER_EXERCISES.length, 2);
+    assert.equal(INTEGRATED_USER_EXERCISES.length, 3);
 
     const plank = getCatalogExercise("USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND");
     const row = getCatalogExercise("USER_TIRAGE_HORIZONTAL_ELASTIQUE");
@@ -2602,6 +2602,17 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     assert.equal(row.is_integrated_user, true);
     assert.equal(row.is_user_catalog, true);
     assert.equal(row.is_custom, false);
+    const birdDog = getCatalogExercise("USER_BIRD_DOG_ANTI_ROTATION_AU_SOL");
+    assert.equal(birdDog.id, "USER_BIRD_DOG_ANTI_ROTATION_AU_SOL");
+    assert.equal(birdDog.is_timed, true);
+    assert.equal(birdDog.default_reps, 40);
+    assert.equal(birdDog.is_integrated_user, true);
+    assert.equal(birdDog.is_user_catalog, true);
+    assert.equal(birdDog.is_custom, false);
+    assert.equal(
+      birdDog.guide.svg_path,
+      "./assets/exos/USER_BIRD_DOG_ANTI_ROTATION_AU_SOL.svg"
+    );
 
     // 2. Priorité sur localStorage & anti-doublon dans getAllCatalogExercises()
     const tplBand = getCatalogExercise("CUSTOM_BAND_CORE");
@@ -2641,13 +2652,14 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
       (ex) => ex.id === "USER_TIRAGE_HORIZONTAL_ELASTIQUE"
     );
     assert.equal(matchingRowEntries.length, 1);
-    assert.equal(allWithStale.length, 19);
+    assert.equal(allWithStale.length, 20);
 
     // 3. Vérification des 2 fichiers SVG sur disque
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const svgFiles = [
       "assets/exos/USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND.svg",
       "assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg",
+      "assets/exos/USER_BIRD_DOG_ANTI_ROTATION_AU_SOL.svg",
     ];
     const svgContents = [];
 
@@ -2672,6 +2684,10 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     assert.notEqual(svgContents[0], svgContents[1]);
     assert.equal(/élastique|elastique/i.test(svgContents[0]), false);
     assert.equal(/#f59e0b/i.test(svgContents[0]), false);
+    assert.notEqual(svgContents[2], svgContents[0]);
+    assert.notEqual(svgContents[2], svgContents[1]);
+    assert.equal(/élastique|elastique/i.test(svgContents[2]), false);
+    assert.equal(/#f59e0b/i.test(svgContents[2]), false);
 
     // 4. Schémas paramétriques de repli distincts pour BAND_CORE (planche vs tirage)
     const fallbackPlank = buildFallbackParametricSvg(
@@ -2693,14 +2709,16 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
       [
         "Gainage planche ventrale gainage profond | 0 | 3x45s",
         "Tirage horizontal élastique | 1 | 3x12",
+        "Bird-Dog anti-rotation au sol | 0 | 3x40s",
       ].join("\n")
     );
-    assert.equal(parsed.exercises.length, 2);
+    assert.equal(parsed.exercises.length, 3);
     assert.equal(
       parsed.exercises[0].id,
       "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND"
     );
     assert.equal(parsed.exercises[1].id, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(parsed.exercises[2].id, "USER_BIRD_DOG_ANTI_ROTATION_AU_SOL");
   });
 });
 

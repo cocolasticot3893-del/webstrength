@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Bird-dog anti-rotation au sol en quadrupédie">
+  <style>
+    .ubd-anim {
+      --base-dur: 3.6s;
+      animation-duration: calc(var(--base-dur, 3.6s) / var(--anim-speed, 1));
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ubd-arm { transform-origin: 62px 118px; animation-name: ubd_bras; }
+    .ubd-leg { transform-origin: 150px 118px; animation-name: ubd_jambe; }
+    .ubd-pelvis { animation-name: ubd_verrou; }
+    @keyframes ubd_bras {
+      0%, 12%, 88%, 100% { transform: rotate(0deg); }
+      45%, 62% { transform: rotate(90deg); }
+    }
+    @keyframes ubd_jambe {
+      0%, 12%, 88%, 100% { transform: rotate(0deg); }
+      45%, 62% { transform: rotate(-90deg); }
+    }
+    @keyframes ubd_verrou {
+      0%, 12%, 88%, 100% { opacity: 0.35; }
+      45%, 62% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="12" fill="#0d1117" />
+  <text x="120" y="20" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="9" font-weight="600" letter-spacing="0.8">BIRD-DOG • ANTI-ROTATION AU SOL</text>
+
+  <!-- Sol et tapis -->
+  <line x1="16" y1="170" x2="224" y2="170" stroke="#1e293b" stroke-width="2" stroke-linecap="round" />
+  <rect x="28" y="164" width="184" height="6" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1" />
+
+  <!-- Appuis fixes : main sous l'épaule, genou sous la hanche -->
+  <line x1="62" y1="118" x2="62" y2="162" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" />
+  <path d="M150 118 L150 162 L172 162" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Repère anti-rotation du bassin : plan horizontal verrouillé -->
+  <g class="ubd-anim ubd-pelvis" fill="none" stroke-linecap="round">
+    <line x1="128" y1="104" x2="172" y2="104" stroke="#22d3ee" stroke-width="1.6" stroke-dasharray="4 3" />
+    <path d="M128 100 L128 108 M172 100 L172 108" stroke="#10b981" stroke-width="1.6" />
+    <path d="M140 92 A14 8 0 0 1 160 92" stroke="#22d3ee" stroke-width="1.2" />
+    <path d="M136 95 L141 92 M164 95 L159 92" stroke="#22d3ee" stroke-width="1.2" />
+  </g>
+
+  <!-- Membres actifs opposés : bras avant et jambe arrière tendus à l'horizontale -->
+  <g class="ubd-anim ubd-arm">
+    <line x1="62" y1="118" x2="62" y2="160" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+  </g>
+  <g class="ubd-anim ubd-leg">
+    <line x1="150" y1="118" x2="150" y2="160" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" />
+  </g>
+
+  <!-- Buste, bassin et tête dans le prolongement -->
+  <rect x="56" y="108" width="18" height="12" rx="5" fill="#1e293b" stroke="#475569" stroke-width="1.4" />
+  <rect x="138" y="108" width="24" height="14" rx="5" fill="#1e293b" stroke="#475569" stroke-width="1.4" />
+  <circle cx="42" cy="114" r="9" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
+
+  <!-- Rachis horizontal neutre -->
+  <line x1="50" y1="115" x2="150" y2="118" stroke="#10b981" stroke-width="3.4" stroke-linecap="round" />
+
+  <text x="120" y="208" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="9" font-weight="600">Bassin verrouillé • Extension dans l'axe • Zéro rotation</text>
+</svg>
