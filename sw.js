@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.6.0";
+const CACHE_NAME = "webstrength-v1.7.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -14,6 +14,7 @@ const PRECACHE_ASSETS = [
   "./errorGuard.js",
   "./app.js",
   "./catalog.js",
+  "./svgHelper.js",
   "./engine.js",
   "./fallbackGenerator.js",
   "./mdParser.js",

@@ -16,8 +16,22 @@ import {
   CUSTOM_TEMPLATES,
   CUSTOM_TEMPLATE_IDS,
   ALL_EXERCISE_IDS,
+  USER_EXERCISES_STORAGE_KEY,
+  generateUserExerciseId,
+  loadUserExercises,
+  saveUserExercise,
+  removeUserExercise,
+  clearUserExercises,
+  getUserExercisesList,
+  getAllCatalogExercises,
+  exportUserExercisesJson,
   getCatalogExercise,
 } from "../catalog.js";
+import {
+  sanitizeSvgMarkup,
+  buildFallbackParametricSvg,
+  buildFallbackExerciseGuide,
+} from "../svgHelper.js";
 import {
   formatExternalId,
   mapRpeToFeeling,
@@ -60,11 +74,13 @@ import {
   OBSOLETE_MODELS,
   buildResponseSchema,
   buildMarkdownParserSchema,
+  buildExerciseCatalogSchema,
   scoreGeminiModel,
   fetchAvailableGeminiModels,
   pickBestAvailableModel,
   generateSessionWithGemini,
   parseMarkdownWithGemini,
+  generateExerciseCatalogEntryWithGemini,
 } from "../geminiClient.js";
 import {
   INTERVALS_BASE_URL,
@@ -2104,5 +2120,457 @@ describe("7. Mode Séance Libre (CUSTOM_*) & Import Markdown", () => {
     assert.equal(customEx.custom_label, sanitizeCustomLabel("Curl Marteau <script>alert(1)</script>"));
     assert.equal(customEx.custom_label, "Curl Marteau alert(1)");
     assert.equal(customEx.is_timed, false);
+  });
+});
+
+// ============================================================================
+// 8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export JSON
+// ============================================================================
+
+describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export JSON", () => {
+  let restoreLocalStorage;
+  let restoreFetch;
+  let restoreNavigator;
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+    clearUserExercises();
+  });
+
+  afterEach(() => {
+    clearUserExercises();
+    restoreFetch?.();
+    restoreFetch = undefined;
+    restoreNavigator?.();
+    restoreNavigator = undefined;
+    restoreLocalStorage?.();
+    restoreLocalStorage = undefined;
+  });
+
+  it("generateUserExerciseId déterministe, collision multi-pôle, persistance USER_* et invariant EXERCISE_IDS.length === 17", () => {
+    const id1 = generateUserExerciseId(
+      "Tirage Horizontal Élastique",
+      {},
+      "BAND_CORE"
+    );
+    assert.equal(id1, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+
+    const tplBand = getCatalogExercise("CUSTOM_BAND_CORE");
+    const guide1 = buildFallbackExerciseGuide({
+      name: "Tirage Horizontal Élastique",
+      pole: "BAND_CORE",
+      isTimed: false,
+      exerciseId: id1,
+    });
+
+    const saved1 = saveUserExercise({
+      id: id1,
+      name: "Tirage Horizontal Élastique",
+      pole: tplBand.pole,
+      pattern: tplBand.pattern,
+      allowed_loads: [...tplBand.allowed_loads],
+      parasitic_reps: tplBand.parasitic_reps,
+      unit_tut_sec: tplBand.unit_tut_sec,
+      cns_spinal_tax: tplBand.cns_spinal_tax,
+      unit_label: tplBand.unit_label,
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 12,
+      short_desc: guide1.short_desc,
+      guide: guide1.guide,
+      svg_inline: guide1.svg_inline,
+    });
+
+    assert.equal(saved1.id, id1);
+    assert.equal(saved1.is_user_catalog, true);
+    assert.equal(saved1.is_custom, false);
+
+    // Vérifie la collision même nom sur un pôle différent -> suffixe _DUMBBELL
+    const existingMap = loadUserExercises();
+    assert.ok(Object.hasOwn(existingMap, id1));
+    assert.ok(
+      globalThis.localStorage.getItem(USER_EXERCISES_STORAGE_KEY) !== null
+    );
+
+    const idSamePole = generateUserExerciseId(
+      "Tirage Horizontal Élastique",
+      existingMap,
+      "BAND_CORE"
+    );
+    assert.equal(idSamePole, id1);
+
+    const idOtherPole = generateUserExerciseId(
+      "Tirage Horizontal Élastique",
+      existingMap,
+      "DUMBBELL"
+    );
+    assert.equal(idOtherPole, "USER_TIRAGE_HORIZONTAL_ELASTIQUE_DUMBBELL");
+
+    const resolved = getCatalogExercise(id1);
+    assert.equal(resolved.id, id1);
+    assert.equal(resolved.name, "Tirage Horizontal Élastique");
+
+    const all = getAllCatalogExercises();
+    assert.equal(all.length, 18);
+    assert.ok(all.some((ex) => ex.id === id1));
+
+    // Invariant strict du catalogue officiel
+    assert.equal(EXERCISE_IDS.length, 17);
+    assert.equal(CATALOG.length, 17);
+
+    // Suppression unitaire propre
+    assert.equal(removeUserExercise(id1), true);
+    assert.equal(getUserExercisesList().length, 0);
+  });
+
+  it("Parité mathématique exacte entre CUSTOM_BAND_CORE et sa version promue USER_*", () => {
+    const tpl = getCatalogExercise("CUSTOM_BAND_CORE");
+    const promotedId = generateUserExerciseId(
+      "Tirage Horizontal Élastique",
+      {},
+      tpl.pole
+    );
+    const guide = buildFallbackExerciseGuide({
+      name: "Tirage Horizontal Élastique",
+      pole: tpl.pole,
+      isTimed: false,
+      exerciseId: promotedId,
+    });
+
+    saveUserExercise({
+      id: promotedId,
+      name: "Tirage Horizontal Élastique",
+      pole: tpl.pole,
+      pattern: tpl.pattern,
+      allowed_loads: [...tpl.allowed_loads],
+      parasitic_reps: tpl.parasitic_reps,
+      unit_tut_sec: tpl.unit_tut_sec,
+      cns_spinal_tax: tpl.cns_spinal_tax,
+      unit_label: tpl.unit_label,
+      ...(tpl.beta_ecc !== undefined ? { beta_ecc: tpl.beta_ecc } : {}),
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 12,
+      short_desc: guide.short_desc,
+      guide: guide.guide,
+      svg_inline: guide.svg_inline,
+    });
+
+    const commonMeta = {
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      elapsed_time_sec: 1800,
+    };
+
+    const customExercises = [
+      {
+        id: "CUSTOM_BAND_CORE",
+        block: 1,
+        sets: 4,
+        reps: 15,
+        load: 2,
+        completion: 1,
+        custom_label: "Tirage Horizontal Élastique",
+        is_timed: false,
+      },
+    ];
+    const promotedExercises = [
+      {
+        id: promotedId,
+        block: 1,
+        sets: 4,
+        reps: 15,
+        load: 2,
+        completion: 1,
+        is_timed: false,
+      },
+    ];
+
+    const customMetrics = calculateSessionMetrics({
+      ...commonMeta,
+      exercises: customExercises,
+    });
+    const promotedMetrics = calculateSessionMetrics({
+      ...commonMeta,
+      exercises: promotedExercises,
+    });
+
+    assert.equal(
+      promotedMetrics.EccentricStrainIndex,
+      customMetrics.EccentricStrainIndex
+    );
+    assert.equal(promotedMetrics.PpgEffectiveTut, customMetrics.PpgEffectiveTut);
+    assert.equal(
+      promotedMetrics.StrengthCompliancePct,
+      customMetrics.StrengthCompliancePct
+    );
+
+    const payloadParams = {
+      dateIso: "2026-11-19",
+      theme: "Test Parité Promotion",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      elapsed_time_sec: 1800,
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      session_source: "FREE_BUILDER",
+    };
+
+    const customPayload = buildManualActivityPayload({
+      ...payloadParams,
+      exercises: customExercises,
+    });
+    const promotedPayload = buildManualActivityPayload({
+      ...payloadParams,
+      exercises: promotedExercises,
+    });
+
+    assert.equal(
+      promotedPayload.icu_training_load,
+      customPayload.icu_training_load
+    );
+    assert.equal(
+      promotedPayload.EccentricStrainIndex,
+      customPayload.EccentricStrainIndex
+    );
+    assert.equal(
+      promotedPayload.PpgEffectiveTut,
+      customPayload.PpgEffectiveTut
+    );
+    assert.equal(
+      promotedPayload.StrengthCompliancePct,
+      customPayload.StrengthCompliancePct
+    );
+
+    const customParsed = parseTelemetryJsonFromDescription(
+      customPayload.description
+    );
+    const promotedParsed = parseTelemetryJsonFromDescription(
+      promotedPayload.description
+    );
+    assert.equal(
+      promotedParsed.EccentricStrainIndex,
+      customParsed.EccentricStrainIndex
+    );
+    assert.equal(promotedParsed.PpgEffectiveTut, customParsed.PpgEffectiveTut);
+    assert.equal(
+      promotedParsed.StrengthCompliancePct,
+      customParsed.StrengthCompliancePct
+    );
+    assert.equal(
+      promotedParsed.icu_training_load,
+      customParsed.icu_training_load
+    );
+  });
+
+  it("parseMarkdownOffline résout automatiquement un exercice promu USER_* par son nom exact ou son ID USER_*", () => {
+    const tpl = getCatalogExercise("CUSTOM_DUMBBELL");
+    const userId = generateUserExerciseId(
+      "Curl Incliné Haltères",
+      {},
+      tpl.pole
+    );
+    const guide = buildFallbackExerciseGuide({
+      name: "Curl Incliné Haltères",
+      pole: tpl.pole,
+      isTimed: false,
+      exerciseId: userId,
+    });
+
+    saveUserExercise({
+      id: userId,
+      name: "Curl Incliné Haltères",
+      pole: tpl.pole,
+      pattern: tpl.pattern,
+      allowed_loads: [...tpl.allowed_loads],
+      parasitic_reps: tpl.parasitic_reps,
+      unit_tut_sec: tpl.unit_tut_sec,
+      cns_spinal_tax: tpl.cns_spinal_tax,
+      unit_label: tpl.unit_label,
+      ...(tpl.beta_ecc !== undefined ? { beta_ecc: tpl.beta_ecc } : {}),
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 10,
+      short_desc: guide.short_desc,
+      guide: guide.guide,
+      svg_inline: guide.svg_inline,
+    });
+
+    const mdByName = [
+      "# Séance Haut du Corps",
+      "- Curl Incliné Haltères | 8kg | 3x10",
+    ].join("\n");
+    const planByName = parseMarkdownOffline(mdByName);
+    assert.equal(planByName.exercises.length, 1);
+    assert.equal(planByName.exercises[0].id, userId);
+    assert.equal(planByName.exercises[0].load, 8);
+    assert.equal(planByName.exercises[0].sets, 3);
+    assert.equal(planByName.exercises[0].reps, 10);
+
+    const mdById = [
+      "# Séance ID Explicite",
+      `${userId} | 10 | 4x8`,
+    ].join("\n");
+    const planById = parseMarkdownOffline(mdById);
+    assert.equal(planById.exercises.length, 1);
+    assert.equal(planById.exercises[0].id, userId);
+    assert.equal(planById.exercises[0].load, 10);
+    assert.equal(planById.exercises[0].sets, 4);
+    assert.equal(planById.exercises[0].reps, 8);
+  });
+
+  it("sanitizeSvgMarkup neutralise les vecteurs XSS, rejette les SVG sans primitives et préserve le SVG paramétrique conforme", () => {
+    const dirtySvg = [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" onload="alert(1)">',
+      '<style>@import url("https://evil.example/a.css"); .bar { fill: #10b981; }</style>',
+      "<script>alert(1)</script>",
+      "<foreignObject><body xmlns=\"http://www.w3.org/1999/xhtml\"><p>XSS</p></body></foreignObject>",
+      '<iframe src="https://evil.example"></iframe>',
+      '<a href="javascript:alert(1)"><rect x="10" y="10" width="50" height="50" onclick=\'evil()\'/></a>',
+      '<circle cx="120" cy="110" r="20" fill="#10b981"/>',
+      "</svg>",
+    ].join("");
+
+    const cleaned = sanitizeSvgMarkup(dirtySvg);
+    assert.equal(/<script/i.test(cleaned), false);
+    assert.equal(/<foreignObject/i.test(cleaned), false);
+    assert.equal(/<iframe/i.test(cleaned), false);
+    assert.equal(/\bonload\s*=/i.test(cleaned), false);
+    assert.equal(/\bonclick\s*=/i.test(cleaned), false);
+    assert.equal(/javascript:/i.test(cleaned), false);
+    assert.equal(/@import/i.test(cleaned), false);
+    assert.ok(/<circle/i.test(cleaned));
+
+    assert.throws(() => sanitizeSvgMarkup("<div>pas un svg</div>"));
+    assert.throws(() =>
+      sanitizeSvgMarkup('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    );
+
+    const parametric = buildFallbackParametricSvg(
+      "KBOX",
+      "Squat Sangle Test",
+      "USER_SQUAT_SANGLE_TEST"
+    );
+    const verifiedParametric = sanitizeSvgMarkup(parametric);
+    assert.ok(verifiedParametric.includes("viewBox"));
+    assert.ok(verifiedParametric.includes("#0d1117"));
+    assert.ok(verifiedParametric.includes("#10b981"));
+    assert.ok(verifiedParametric.includes("--anim-speed"));
+    assert.ok(verifiedParametric.includes("--anim-state"));
+  });
+
+  it("generateExerciseCatalogEntryWithGemini offline/mocké XSS et exportUserExercisesJson propre", async () => {
+    const schema = buildExerciseCatalogSchema();
+    assert.ok(Array.isArray(schema.required));
+    assert.ok(schema.required.includes("svg_inline"));
+
+    let fetchCalls = 0;
+    restoreFetch = stubGlobalProperty("fetch", {
+      value: async () => {
+        fetchCalls++;
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({
+                        short_desc: "Tirage poitrine élastique contrôlé.",
+                        tempo_badge: "Tempo 2-1-2 • Élastique",
+                        setup: "Ancrage solide face au buste.",
+                        execution: [
+                          "Engage les omoplates vers le bas.",
+                          "Tire les coudes le long du buste.",
+                          "Freine le retour sans cambrer.",
+                        ],
+                        errors: [
+                          "Hausser les épaules.",
+                          "Cambrer les lombaires.",
+                          "Relâcher brusquement.",
+                        ],
+                        svg_inline:
+                          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" onload="evil()"><script>evil()</script><rect x="20" y="20" width="200" height="180" fill="#0d1117"/><circle cx="120" cy="110" r="24" fill="#10b981"/></svg>',
+                      }),
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    // 1. Sans clé API -> OFFLINE_FALLBACK, zéro fetch
+    const offlineEntry = await generateExerciseCatalogEntryWithGemini({
+      name: "Tirage Horizontal Élastique",
+      pole: "BAND_CORE",
+      isTimed: false,
+      exerciseId: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+      apiKey: "",
+    });
+    assert.equal(fetchCalls, 0);
+    assert.equal(offlineEntry.source, "OFFLINE_FALLBACK");
+    assert.equal(offlineEntry.guide.execution.length, 3);
+    assert.equal(offlineEntry.guide.errors.length, 3);
+    assert.ok(offlineEntry.svg_inline.includes("<svg"));
+
+    // 2. Avec clé API + payload Gemini contenant XSS -> assaini sans <script ni onload=
+    const geminiEntry = await generateExerciseCatalogEntryWithGemini({
+      name: "Tirage Horizontal Élastique",
+      pole: "BAND_CORE",
+      isTimed: false,
+      exerciseId: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+      apiKey: "dummy_gemini_key",
+      model: "gemini-2.5-flash",
+    });
+    assert.equal(fetchCalls, 1);
+    assert.equal(geminiEntry.source, "GEMINI_CATALOG");
+    assert.equal(/<script/i.test(geminiEntry.svg_inline), false);
+    assert.equal(/\bonload\s*=/i.test(geminiEntry.svg_inline), false);
+    assert.ok(geminiEntry.svg_inline.includes("<circle"));
+
+    // 3. Sauvegarde + exportUserExercisesJson()
+    const tpl = getCatalogExercise("CUSTOM_BAND_CORE");
+    saveUserExercise({
+      id: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+      name: "Tirage Horizontal Élastique",
+      pole: tpl.pole,
+      pattern: tpl.pattern,
+      allowed_loads: [...tpl.allowed_loads],
+      parasitic_reps: tpl.parasitic_reps,
+      unit_tut_sec: tpl.unit_tut_sec,
+      cns_spinal_tax: tpl.cns_spinal_tax,
+      unit_label: tpl.unit_label,
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 12,
+      short_desc: geminiEntry.short_desc,
+      guide: geminiEntry.guide,
+      svg_inline: geminiEntry.svg_inline,
+    });
+
+    const exportedRaw = exportUserExercisesJson();
+    const exportedArr = JSON.parse(exportedRaw);
+    assert.ok(Array.isArray(exportedArr));
+    assert.equal(exportedArr.length, 1);
+    const exportedItem = exportedArr[0];
+    assert.equal(exportedItem.id, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(exportedItem.pole, "BAND_CORE");
+    assert.deepEqual(exportedItem.allowed_loads, tpl.allowed_loads);
+    assert.equal(exportedItem.unit_tut_sec, tpl.unit_tut_sec);
+    assert.equal(exportedItem.cns_spinal_tax, tpl.cns_spinal_tax);
+    assert.equal(exportedItem.short_desc, geminiEntry.short_desc);
+    assert.ok(exportedItem.guide);
+    assert.equal(exportedItem.guide.svg_inline, undefined);
+    assert.ok(typeof exportedItem.svg_inline === "string");
+    assert.equal(/<script/i.test(exportedItem.svg_inline), false);
   });
 });

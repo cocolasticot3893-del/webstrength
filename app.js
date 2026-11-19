@@ -3,7 +3,17 @@
  * Architecture Vanilla JS ES2024+ zéro-build, manipulation DOM sécurisée (`textContent`).
  */
 
-import { CATALOG, CUSTOM_TEMPLATES, getCatalogExercise } from "./catalog.js";
+import {
+  CATALOG,
+  CUSTOM_TEMPLATES,
+  exportUserExercisesJson,
+  generateUserExerciseId,
+  getAllCatalogExercises,
+  getCatalogExercise,
+  getUserExercisesList,
+  loadUserExercises,
+  saveUserExercise,
+} from "./catalog.js";
 import {
   buildManualActivityPayload,
   calculateSessionMetrics,
@@ -12,6 +22,7 @@ import { generateFallbackSession } from "./fallbackGenerator.js";
 import {
   MODELS_CACHE_KEY,
   fetchAvailableGeminiModels,
+  generateExerciseCatalogEntryWithGemini,
   generateSessionWithGemini,
   parseMarkdownWithGemini,
   pickBestAvailableModel,
@@ -27,6 +38,7 @@ import {
   getOutboxCount,
   enqueueActivity,
 } from "./outbox.js";
+import { sanitizeAndImportSvg } from "./svgHelper.js";
 import {
   exportVaultJson,
   importVaultJson,
@@ -454,6 +466,18 @@ function populateVaultForm() {
   $("vault-gemini-key").value = state.vault.GEMINI_API_KEY ?? "";
   const modelId = state.vault.LLM_MODEL ?? "gemini-3.5-flash";
   renderModelOptions($("vault-llm-model"), [], modelId);
+  updateExportUserExercisesBtn();
+}
+
+function updateExportUserExercisesBtn() {
+  const btn = $("vault-export-custom-exos-btn");
+  if (!btn) return;
+  const count = getUserExercisesList().length;
+  btn.disabled = count === 0;
+  btn.title =
+    count > 0
+      ? `Exporter ${count} exercice(s) promu(s)`
+      : "Aucun exercice promu localement";
 }
 
 function toggleVaultDrawer(forceOpen) {
@@ -594,6 +618,28 @@ function initVaultControls() {
   $("vault-import-btn").addEventListener("click", () => {
     $("vault-import-file").click();
   });
+
+  $("vault-export-custom-exos-btn")?.addEventListener("click", () => {
+    const count = getUserExercisesList().length;
+    if (count === 0) return;
+    const json = exportUserExercisesJson();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "webstrength-custom-exercises.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(
+      $("vault-feedback"),
+      `Export JSON de ${count} exercice(s) téléchargé.`,
+      "success"
+    );
+  });
+
+  updateExportUserExercisesBtn();
 
   $("vault-import-file").addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
@@ -1084,7 +1130,26 @@ function createExerciseCard(ex, index) {
   nameEl.className = "exo-name";
   nameEl.textContent = displayName;
 
-  if (cat.is_custom || !cat.guide) {
+  if (ex.id.startsWith("CUSTOM_")) {
+    const libreStack = document.createElement("div");
+    libreStack.className = "exo-libre-stack";
+
+    const libreBadge = document.createElement("span");
+    libreBadge.className = "exo-libre-badge";
+    libreBadge.textContent = "Libre";
+
+    const promoteBtn = document.createElement("button");
+    promoteBtn.type = "button";
+    promoteBtn.className = "exo-promote-btn";
+    promoteBtn.dataset.promoteIndex = String(index);
+    promoteBtn.textContent = "➕ Ajouter au catalogue";
+    promoteBtn.addEventListener("click", () => {
+      void promoteCustomExercise(index, promoteBtn);
+    });
+
+    libreStack.append(libreBadge, promoteBtn);
+    headTop.append(nameEl, libreStack);
+  } else if (!cat.guide) {
     const libreBadge = document.createElement("span");
     libreBadge.className = "exo-libre-badge";
     libreBadge.textContent = "Libre";
@@ -1115,6 +1180,12 @@ function createExerciseCard(ex, index) {
   patternBadge.textContent = cat.pattern;
 
   badges.append(poleBadge, patternBadge);
+  if (cat.is_user_catalog) {
+    const persoBadge = document.createElement("span");
+    persoBadge.className = "exo-badge is-user-catalog";
+    persoBadge.textContent = "Perso";
+    badges.append(persoBadge);
+  }
   head.append(headTop, badges);
 
   // Description rapide & repères biomécaniques
@@ -1749,44 +1820,100 @@ function initStep3Events() {
 }
 
 /**
- * Parse et assainit un document SVG XML avant injection DOM sans `innerHTML`.
- * @param {string} svgText
- * @returns {SVGElement}
+ * Promeut un exercice libre (`CUSTOM_*`) vers le catalogue personnel (`USER_*`)
+ * avec parité biomécanique stricte et schéma SVG assaini.
+ * @param {number} index
+ * @param {HTMLButtonElement | null} [triggerBtn]
  */
-function sanitizeAndImportSvg(svgText) {
-  const parser = new DOMParser();
-  const parsedDoc = parser.parseFromString(String(svgText ?? ""), "image/svg+xml");
+async function promoteCustomExercise(index, triggerBtn = null) {
+  const ex = state.session.exercises[index];
+  if (!ex || !ex.id.startsWith("CUSTOM_")) return;
 
-  if (parsedDoc.getElementsByTagName("parsererror").length > 0) {
-    throw new Error("Erreur de parsing XML du schéma SVG.");
+  const tpl = getCatalogExercise(ex.id);
+  const displayName = (ex.custom_label || tpl.name).trim();
+  const isTimed =
+    typeof ex.is_timed === "boolean" ? ex.is_timed : Boolean(tpl.is_timed);
+  const sourceCustomId = ex.id;
+  const normalizedTargetLabel = displayName.toLowerCase();
+
+  const originalText = triggerBtn?.textContent || "➕ Ajouter au catalogue";
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    triggerBtn.textContent = "⏳ Génération…";
   }
 
-  const root = parsedDoc.documentElement;
-  if (!root || root.tagName.toLowerCase() !== "svg") {
-    throw new Error("Le document chargé n'est pas un élément <svg> valide.");
-  }
+  let succeeded = false;
+  try {
+    const existingUserMap = loadUserExercises();
+    const newId = generateUserExerciseId(displayName, existingUserMap, tpl.pole);
+    const result = await generateExerciseCatalogEntryWithGemini({
+      name: displayName,
+      pole: tpl.pole,
+      isTimed,
+      exerciseId: newId,
+      apiKey: state.vault.GEMINI_API_KEY,
+      model: "gemini-2.5-flash",
+    });
 
-  const forbiddenTags = new Set(["script", "foreignobject", "iframe", "object", "embed"]);
-  for (const el of Array.from(root.getElementsByTagName("*"))) {
-    const tag = (el.localName ?? el.tagName ?? "").toLowerCase();
-    if (forbiddenTags.has(tag)) {
-      el.remove();
-    }
-  }
+    const candidateEntry = {
+      id: newId,
+      name: displayName,
+      pole: tpl.pole,
+      pattern: tpl.pattern,
+      allowed_loads: [...tpl.allowed_loads],
+      parasitic_reps: tpl.parasitic_reps,
+      unit_tut_sec: tpl.unit_tut_sec,
+      cns_spinal_tax: tpl.cns_spinal_tax,
+      unit_label: tpl.unit_label,
+      ...(tpl.beta_ecc !== undefined ? { beta_ecc: tpl.beta_ecc } : {}),
+      is_timed: isTimed,
+      default_sets: Math.max(1, Math.min(10, Number(ex.sets) || tpl.default_sets || 3)),
+      default_reps: Math.max(1, Math.min(180, Number(ex.reps) || tpl.default_reps || 10)),
+      short_desc: result.short_desc,
+      guide: {
+        tempo_badge: result.guide.tempo_badge,
+        setup: result.guide.setup,
+        execution: [...result.guide.execution],
+        errors: [...result.guide.errors],
+        svg_inline: result.svg_inline,
+      },
+      svg_inline: result.svg_inline,
+    };
 
-  for (const el of [root, ...Array.from(root.getElementsByTagName("*"))]) {
-    for (const attr of Array.from(el.attributes)) {
-      const attrName = attr.name.toLowerCase();
-      const attrLocal = (attr.localName ?? "").toLowerCase();
-      const isHref = attrName === "href" || attrName === "xlink:href" || attrLocal === "href";
-      const hasJsScheme = attr.value.toLowerCase().replace(/\s+/g, "").includes("javascript:");
-      if (attrName.startsWith("on") || (isHref && hasJsScheme)) {
-        el.removeAttribute(attr.name);
+    const saved = saveUserExercise(candidateEntry);
+
+    for (const item of state.session.exercises) {
+      if (item.id !== sourceCustomId) continue;
+      const itemLabel = (item.custom_label || tpl.name).trim().toLowerCase();
+      const itemTimed =
+        typeof item.is_timed === "boolean" ? item.is_timed : Boolean(tpl.is_timed);
+      if (item === ex || (itemLabel === normalizedTargetLabel && itemTimed === isTimed)) {
+        item.id = saved.id;
+        delete item.custom_label;
       }
     }
-  }
 
-  return /** @type {SVGElement} */ (document.importNode(root, true));
+    renderStep2Plan();
+    updateExportUserExercisesBtn();
+
+    const originLabel =
+      result.source === "GEMINI_CATALOG" ? "Gemini" : "schéma offline";
+    setStatusMessage(
+      $("step2-promote-status"),
+      `"${saved.name}" ajouté au catalogue (${originLabel}).`,
+      "success"
+    );
+    succeeded = true;
+  } catch (err) {
+    const msg =
+      err instanceof Error ? err.message : "Erreur lors de l'ajout au catalogue.";
+    setStatusMessage($("step2-promote-status"), msg, "error");
+  } finally {
+    if (!succeeded && triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = originalText;
+    }
+  }
 }
 
 /**
@@ -1856,11 +1983,21 @@ async function fetchExerciseSvgText(svgPath) {
  */
 async function openExerciseGuideModal(exerciseId) {
   const cat = getCatalogExercise(exerciseId);
+  const displayName = cat.name;
   const guide = cat.guide;
+  if (!guide) {
+    setStatusMessage(
+      $("step2-promote-status"),
+      `Guide biomécanique indisponible pour "${displayName}".`,
+      "error"
+    );
+    return;
+  }
+
   const dialog = /** @type {HTMLDialogElement | null} */ ($("exercise-guide-modal"));
   if (!dialog) return;
 
-  $("guide-modal-title").textContent = cat.name;
+  $("guide-modal-title").textContent = displayName;
   $("guide-tempo-badge").textContent = guide.tempo_badge;
   $("guide-setup-text").textContent = guide.setup;
 
@@ -1883,11 +2020,29 @@ async function openExerciseGuideModal(exerciseId) {
   );
 
   const ytLink = /** @type {HTMLAnchorElement} */ ($("guide-youtube-link"));
-  ytLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${cat.name} exercice`)}`;
+  ytLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${displayName} exercice`)}`;
 
   setGuideAnimationState({ speed: 1, playing: true });
 
   const stage = $("guide-svg-stage");
+  const inlineSvg = cat.svg_inline || guide.svg_inline;
+  if (typeof inlineSvg === "string" && inlineSvg.trim()) {
+    ++state.guideModal.activeRequestId;
+    try {
+      const importedSvg = sanitizeAndImportSvg(inlineSvg);
+      stage.replaceChildren(importedSvg);
+    } catch {
+      const errorMsg = document.createElement("p");
+      errorMsg.className = "guide-svg-status";
+      errorMsg.textContent = "Schéma biomécanique indisponible.";
+      stage.replaceChildren(errorMsg);
+    }
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+    return;
+  }
+
   const loadingMsg = document.createElement("p");
   loadingMsg.className = "guide-svg-status";
   loadingMsg.textContent = "Chargement du schéma…";
@@ -2103,10 +2258,11 @@ function initFreeBuilderModal() {
     if (!catalogPicker) return;
     catalogPicker.replaceChildren();
 
+    const allCatalog = getAllCatalogExercises();
     const filtered =
       activePole === "ALL"
-        ? CATALOG
-        : CATALOG.filter((ex) => ex.pole === activePole);
+        ? allCatalog
+        : allCatalog.filter((ex) => ex.pole === activePole);
 
     for (const cat of filtered) {
       const row = document.createElement("div");
@@ -2132,7 +2288,14 @@ function initFreeBuilderModal() {
       const defaultMeta = document.createElement("span");
       defaultMeta.textContent = `${defaultSets}×${defaultReps}${cat.is_timed ? "s" : ""} · ${formatLoadOption(cat.allowed_loads[0], cat)}`;
 
-      meta.append(poleBadge, defaultMeta);
+      if (cat.is_user_catalog) {
+        const persoBadge = document.createElement("span");
+        persoBadge.className = "exo-badge is-user-catalog";
+        persoBadge.textContent = "Perso";
+        meta.append(poleBadge, persoBadge, defaultMeta);
+      } else {
+        meta.append(poleBadge, defaultMeta);
+      }
       info.append(title, meta);
 
       const addBtn = document.createElement("button");

@@ -4,6 +4,8 @@
  * Compatible ES2024+ natif zéro-build (Navigateur & Node.js ESM).
  */
 
+import { sanitizeSvgMarkup } from "./svgHelper.js";
+
 /**
  * Gèle récursivement un objet ou un tableau pour garantir une immuabilité totale.
  * @template T
@@ -591,16 +593,426 @@ export const ALL_EXERCISE_IDS = deepFreeze([
   ...CUSTOM_TEMPLATE_IDS,
 ]);
 
+/** Clé de persistance localStorage pour les exercices promus dans le catalogue utilisateur. */
+export const USER_EXERCISES_STORAGE_KEY = "WEBSTRENGTH_USER_EXERCISES_V1";
+
+const VALID_POLES = new Set(["KBOX", "DUMBBELL", "BAND_CORE"]);
+
+/** Repli mémoire pour l'environnement Node.js ou lorsque localStorage est indisponible. */
+let memoryUserExercises = {};
+
 /**
- * Récupère un exercice du catalogue (ou un modèle libre) par son identifiant.
+ * Vérifie si `globalThis.localStorage` est accessible sans lever d'exception.
+ * @returns {Storage | null}
+ */
+function getSafeLocalStorage() {
+  try {
+    const ls = globalThis?.localStorage;
+    if (ls && typeof ls.getItem === "function" && typeof ls.setItem === "function") {
+      return ls;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+/**
+ * Valide et normalise une entrée d'exercice utilisateur.
+ * Lève une `Error` si la structure ou les constantes biomécaniques sont invalides.
+ * @param {any} exerciseObj
+ * @returns {Readonly<Record<string, any>>}
+ */
+function normalizeAndValidateUserExercise(exerciseObj) {
+  if (!exerciseObj || typeof exerciseObj !== "object") {
+    throw new Error("Objet exercice utilisateur invalide.");
+  }
+
+  const id = typeof exerciseObj.id === "string" ? exerciseObj.id.trim() : "";
+  if (!/^USER_[A-Z0-9_]+$/.test(id)) {
+    throw new Error(`Identifiant d'exercice utilisateur invalide : "${id}".`);
+  }
+
+  const name = typeof exerciseObj.name === "string" ? exerciseObj.name.trim() : "";
+  if (!name) {
+    throw new Error("Le nom de l'exercice utilisateur est requis.");
+  }
+
+  const pole = typeof exerciseObj.pole === "string" ? exerciseObj.pole.trim().toUpperCase() : "";
+  if (!VALID_POLES.has(pole)) {
+    throw new Error(`Pôle matériel invalide : "${pole}".`);
+  }
+
+  if (
+    !Array.isArray(exerciseObj.allowed_loads) ||
+    exerciseObj.allowed_loads.length === 0 ||
+    !exerciseObj.allowed_loads.every((v) => typeof v === "number" && Number.isFinite(v))
+  ) {
+    throw new Error("allowed_loads doit être un tableau non vide de nombres finis.");
+  }
+
+  const parasiticReps = Number(exerciseObj.parasitic_reps);
+  if (!Number.isFinite(parasiticReps) || parasiticReps < 0) {
+    throw new Error("parasitic_reps doit être un nombre fini >= 0.");
+  }
+
+  const unitTutSec = Number(exerciseObj.unit_tut_sec);
+  if (!Number.isFinite(unitTutSec) || unitTutSec <= 0) {
+    throw new Error("unit_tut_sec doit être un nombre fini > 0.");
+  }
+
+  const cnsSpinalTax = Number(exerciseObj.cns_spinal_tax);
+  if (!Number.isFinite(cnsSpinalTax) || cnsSpinalTax < 0) {
+    throw new Error("cns_spinal_tax doit être un nombre fini >= 0.");
+  }
+
+  if (typeof exerciseObj.is_timed !== "boolean") {
+    throw new Error("is_timed doit être un booléen.");
+  }
+
+  const unitLabel =
+    typeof exerciseObj.unit_label === "string" ? exerciseObj.unit_label.trim() : "";
+  if (!unitLabel) {
+    throw new Error("unit_label doit être une chaîne non vide.");
+  }
+
+  const defaultSets = Number(exerciseObj.default_sets);
+  const defaultReps = Number(exerciseObj.default_reps);
+  if (!Number.isFinite(defaultSets) || defaultSets <= 0) {
+    throw new Error("default_sets doit être un nombre fini > 0.");
+  }
+  if (!Number.isFinite(defaultReps) || defaultReps <= 0) {
+    throw new Error("default_reps doit être un nombre fini > 0.");
+  }
+
+  let betaEcc;
+  if (pole === "DUMBBELL") {
+    betaEcc = Number(exerciseObj.beta_ecc);
+    if (!Number.isFinite(betaEcc) || betaEcc <= 0) {
+      throw new Error("beta_ecc doit être un nombre fini > 0 pour le pôle DUMBBELL.");
+    }
+  } else if (exerciseObj.beta_ecc !== undefined && exerciseObj.beta_ecc !== null) {
+    const parsedBeta = Number(exerciseObj.beta_ecc);
+    if (!Number.isFinite(parsedBeta) || parsedBeta <= 0) {
+      throw new Error("beta_ecc doit être un nombre fini > 0.");
+    }
+    betaEcc = parsedBeta;
+  }
+
+  const shortDesc =
+    typeof exerciseObj.short_desc === "string" ? exerciseObj.short_desc.trim() : "";
+  if (!shortDesc) {
+    throw new Error("short_desc est requis.");
+  }
+
+  const rawGuide = exerciseObj.guide;
+  if (!rawGuide || typeof rawGuide !== "object") {
+    throw new Error("guide est requis.");
+  }
+
+  const tempoBadge =
+    typeof rawGuide.tempo_badge === "string" ? rawGuide.tempo_badge.trim() : "";
+  const setup = typeof rawGuide.setup === "string" ? rawGuide.setup.trim() : "";
+  if (!tempoBadge || !setup) {
+    throw new Error("guide.tempo_badge et guide.setup sont requis.");
+  }
+
+  if (
+    !Array.isArray(rawGuide.execution) ||
+    rawGuide.execution.length !== 3 ||
+    rawGuide.execution.some((s) => typeof s !== "string" || !s.trim())
+  ) {
+    throw new Error("guide.execution doit contenir exactement 3 chaînes non vides.");
+  }
+
+  if (
+    !Array.isArray(rawGuide.errors) ||
+    rawGuide.errors.length !== 3 ||
+    rawGuide.errors.some((s) => typeof s !== "string" || !s.trim())
+  ) {
+    throw new Error("guide.errors doit contenir exactement 3 chaînes non vides.");
+  }
+
+  const sanitizedSvg = sanitizeSvgMarkup(
+    exerciseObj.svg_inline ?? rawGuide.svg_inline
+  );
+
+  const pattern =
+    typeof exerciseObj.pattern === "string" && exerciseObj.pattern.trim()
+      ? exerciseObj.pattern.trim()
+      : "CUSTOM";
+
+  /** @type {Record<string, any>} */
+  const normalized = {
+    id,
+    name,
+    pole,
+    pattern,
+    allowed_loads: [...exerciseObj.allowed_loads],
+    parasitic_reps: parasiticReps,
+    unit_tut_sec: unitTutSec,
+    cns_spinal_tax: cnsSpinalTax,
+    is_timed: exerciseObj.is_timed,
+    unit_label: unitLabel,
+    default_sets: Math.round(defaultSets),
+    default_reps: Math.round(defaultReps),
+    short_desc: shortDesc,
+    is_custom: false,
+    is_user_catalog: true,
+    svg_inline: sanitizedSvg,
+    guide: {
+      tempo_badge: tempoBadge,
+      setup,
+      execution: rawGuide.execution.map((s) => s.trim()),
+      errors: rawGuide.errors.map((s) => s.trim()),
+      svg_inline: sanitizedSvg,
+    },
+  };
+
+  if (betaEcc !== undefined) {
+    normalized.beta_ecc = betaEcc;
+  }
+
+  return deepFreeze(normalized);
+}
+
+/**
+ * Persiste le dictionnaire brut des exercices utilisateur dans localStorage ou en mémoire.
+ * @param {Record<string, any>} map
+ */
+function persistUserExercisesMap(map) {
+  const ls = getSafeLocalStorage();
+  if (ls) {
+    try {
+      ls.setItem(USER_EXERCISES_STORAGE_KEY, JSON.stringify(map));
+      return;
+    } catch {
+      // Repli mémoire si le stockage navigateur échoue (quota, mode privé)
+    }
+  }
+  memoryUserExercises = { ...map };
+}
+
+/**
+ * Génère un identifiant déterministe `USER_<SLUG>` à partir d'un nom d'exercice.
+ * Réutilise `USER_<SLUG>` s'il est absent ou déjà associé au même pôle dans `existingMap`.
+ * En cas de collision sur un autre pôle, suffixe `_${pole}` puis `_2`, `_3`…
+ * @param {string} name
+ * @param {Record<string, any> | Map<string, any> | null} [existingMap=null]
+ * @param {string | null} [pole=null]
+ * @returns {string}
+ */
+export function generateUserExerciseId(name, existingMap = null, pole = null) {
+  const rawSlug = String(name ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48)
+    .replace(/_+$/g, "");
+
+  const slug = rawSlug || "EXERCICE";
+  const baseId = `USER_${slug}`;
+  const cleanPole =
+    typeof pole === "string" && pole.trim()
+      ? pole.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_")
+      : null;
+
+  const mapRef = existingMap === null ? loadUserExercises() : existingMap;
+  const getEntry = (candidateId) => {
+    if (!mapRef) return undefined;
+    if (mapRef instanceof Map) return mapRef.get(candidateId);
+    return Object.hasOwn(mapRef, candidateId) ? mapRef[candidateId] : undefined;
+  };
+
+  const canUse = (candidateId) => {
+    const existing = getEntry(candidateId);
+    if (!existing) return true;
+    if (cleanPole && String(existing.pole ?? "").toUpperCase() === cleanPole) {
+      return true;
+    }
+    return false;
+  };
+
+  if (canUse(baseId)) {
+    return baseId;
+  }
+
+  if (cleanPole) {
+    const poleCandidate = `${baseId}_${cleanPole}`;
+    if (canUse(poleCandidate)) {
+      return poleCandidate;
+    }
+  }
+
+  for (let idx = 2; ; idx++) {
+    const numberedCandidate = `${baseId}_${idx}`;
+    if (canUse(numberedCandidate)) {
+      return numberedCandidate;
+    }
+  }
+}
+
+/**
+ * Charge et valide les exercices utilisateur persistés sous `USER_EXERCISES_STORAGE_KEY`.
+ * Retourne `{}` si aucune donnée valide n'est trouvée ou en cas de JSON corrompu.
+ * @returns {Record<string, Readonly<Record<string, any>>>}
+ */
+export function loadUserExercises() {
+  const ls = getSafeLocalStorage();
+  let rawMap = null;
+
+  if (ls) {
+    try {
+      const rawJson = ls.getItem(USER_EXERCISES_STORAGE_KEY);
+      if (!rawJson) {
+        return {};
+      }
+      rawMap = JSON.parse(rawJson);
+    } catch {
+      return {};
+    }
+  } else {
+    rawMap = memoryUserExercises;
+  }
+
+  if (!rawMap || typeof rawMap !== "object" || Array.isArray(rawMap)) {
+    return {};
+  }
+
+  /** @type {Record<string, Readonly<Record<string, any>>>} */
+  const validated = {};
+  for (const [key, entry] of Object.entries(rawMap)) {
+    try {
+      const normalized = normalizeAndValidateUserExercise(entry);
+      if (normalized.id === key) {
+        validated[key] = normalized;
+      }
+    } catch {
+      // Ignore silencieusement les entrées corrompues
+    }
+  }
+  return validated;
+}
+
+/**
+ * Valide, assainit le SVG, persiste et retourne un exercice utilisateur figé.
+ * @param {Record<string, any>} exerciseObj
+ * @returns {Readonly<Record<string, any>>}
+ */
+export function saveUserExercise(exerciseObj) {
+  const normalized = normalizeAndValidateUserExercise(exerciseObj);
+  const current = loadUserExercises();
+  const next = {
+    ...current,
+    [normalized.id]: normalized,
+  };
+  persistUserExercisesMap(next);
+  return normalized;
+}
+
+/**
+ * Supprime un exercice utilisateur par identifiant.
+ * @param {string} id
+ * @returns {boolean}
+ */
+export function removeUserExercise(id) {
+  if (typeof id !== "string" || !id) {
+    return false;
+  }
+  const current = loadUserExercises();
+  if (!Object.hasOwn(current, id)) {
+    return false;
+  }
+  const next = { ...current };
+  delete next[id];
+  persistUserExercisesMap(next);
+  return true;
+}
+
+/**
+ * Vide intégralement le catalogue utilisateur persisté.
+ */
+export function clearUserExercises() {
+  const ls = getSafeLocalStorage();
+  if (ls) {
+    try {
+      ls.removeItem(USER_EXERCISES_STORAGE_KEY);
+    } catch {
+      // Ignore les erreurs d'accès localStorage
+    }
+  }
+  memoryUserExercises = {};
+}
+
+/**
+ * Retourne la liste des exercices utilisateur valides.
+ * @returns {Array<Readonly<Record<string, any>>>}
+ */
+export function getUserExercisesList() {
+  return Object.values(loadUserExercises());
+}
+
+/**
+ * Retourne la liste combinée du catalogue officiel (17) et des exercices utilisateur.
+ * @returns {Array<Readonly<Record<string, any>>>}
+ */
+export function getAllCatalogExercises() {
+  return [...CATALOG, ...getUserExercisesList()];
+}
+
+/**
+ * Exporte le catalogue utilisateur au format JSON prêt à être archivé ou partagé.
+ * @returns {string}
+ */
+export function exportUserExercisesJson() {
+  const items = getUserExercisesList().map((ex) => {
+    /** @type {Record<string, any>} */
+    const exported = {
+      id: ex.id,
+      name: ex.name,
+      pole: ex.pole,
+      pattern: ex.pattern,
+      allowed_loads: [...ex.allowed_loads],
+      parasitic_reps: ex.parasitic_reps,
+      unit_tut_sec: ex.unit_tut_sec,
+    };
+    if (ex.beta_ecc !== undefined) {
+      exported.beta_ecc = ex.beta_ecc;
+    }
+    exported.cns_spinal_tax = ex.cns_spinal_tax;
+    exported.is_timed = ex.is_timed;
+    exported.unit_label = ex.unit_label;
+    exported.default_sets = ex.default_sets;
+    exported.default_reps = ex.default_reps;
+    exported.short_desc = ex.short_desc;
+    exported.guide = {
+      tempo_badge: ex.guide.tempo_badge,
+      setup: ex.guide.setup,
+      execution: [...ex.guide.execution],
+      errors: [...ex.guide.errors],
+    };
+    exported.svg_inline = ex.svg_inline;
+    return exported;
+  });
+  return JSON.stringify(items, null, 2);
+}
+
+/**
+ * Récupère un exercice du catalogue (officiel, utilisateur ou modèle libre) par son identifiant.
  * Lève une erreur explicite si l'identifiant est inconnu.
  * @param {string} id
- * @returns {Readonly<typeof RAW_CATALOG[number] | typeof CUSTOM_TEMPLATES[keyof typeof CUSTOM_TEMPLATES]>}
+ * @returns {Readonly<Record<string, any>>}
  */
 export function getCatalogExercise(id) {
   if (typeof id === "string") {
     if (Object.hasOwn(CATALOG_BY_ID, id)) {
       return CATALOG_BY_ID[id];
+    }
+    const userExercises = loadUserExercises();
+    if (Object.hasOwn(userExercises, id)) {
+      return userExercises[id];
     }
     if (Object.hasOwn(CUSTOM_TEMPLATES, id)) {
       return CUSTOM_TEMPLATES[id];

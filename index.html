@@ -200,6 +200,14 @@
             >
               Importer JSON
             </button>
+            <button
+              type="button"
+              id="vault-export-custom-exos-btn"
+              class="btn btn-secondary"
+              disabled
+            >
+              📦 Exporter exos ajoutés (JSON)
+            </button>
             <input
               id="vault-import-file"
               type="file"
@@ -431,6 +439,13 @@
             aria-label="Règles symboliques actives"
           ></div>
         </article>
+
+        <p
+          id="step2-promote-status"
+          class="status-message"
+          role="status"
+          aria-live="polite"
+        ></p>
 
         <article class="card timers-card" aria-label="Chronomètre et minuteur de repos">
           <div class="timer-panel">

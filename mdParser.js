@@ -4,7 +4,11 @@
  * compatible avec le moteur biomécanique (`engine.js`) et le Mode Libre.
  */
 
-import { CATALOG, CUSTOM_TEMPLATES, getCatalogExercise } from "./catalog.js";
+import {
+  CUSTOM_TEMPLATES,
+  getAllCatalogExercises,
+  getCatalogExercise,
+} from "./catalog.js";
 import { sanitizeCustomLabel } from "./engine.js";
 
 /**
@@ -206,35 +210,53 @@ const CATALOG_SYNONYMS = [
   { id: "CORE_MCGILL_BIG3", phrases: ["mcgill", "big 3", "big3", "curl up", "bird dog"] },
 ];
 
-const ALL_IDS_BY_UPPER = new Map([
-  ...CATALOG.map((ex) => [ex.id.toUpperCase(), ex.id]),
-  ...Object.keys(CUSTOM_TEMPLATES).map((id) => [id.toUpperCase(), id]),
-]);
+/**
+ * Construit dynamiquement la table d'indexation des identifiants connus
+ * (catalogue officiel + exercices utilisateur + modèles libres).
+ * @param {Array<ReturnType<typeof getCatalogExercise>>} allExercises
+ * @returns {Map<string, string>}
+ */
+function buildIdsByUpperMap(allExercises) {
+  return new Map([
+    ...allExercises.map((ex) => [ex.id.toUpperCase(), ex.id]),
+    ...Object.keys(CUSTOM_TEMPLATES).map((id) => [id.toUpperCase(), id]),
+  ]);
+}
 
 /**
- * Tente d'associer un libellé brut à un exercice officiel du catalogue.
+ * Tente d'associer un libellé brut à un exercice du catalogue (officiel ou utilisateur).
  * Retourne l'ID catalogue ou `null` si aucune correspondance fiable.
  * @param {string} rawText
  * @returns {string | null}
  */
 function matchCatalogExerciseId(rawText) {
+  const allExercises = getAllCatalogExercises();
+  const idsByUpper = buildIdsByUpperMap(allExercises);
+
   const upperTrimmed = rawText.trim().toUpperCase();
-  if (ALL_IDS_BY_UPPER.has(upperTrimmed)) {
-    return ALL_IDS_BY_UPPER.get(upperTrimmed);
+  if (idsByUpper.has(upperTrimmed)) {
+    return idsByUpper.get(upperTrimmed);
   }
 
-  // Recherche d'un ID explicite dans les tokens (ex: `KBOX_SQUAT_BELT`)
-  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM)_[A-Z0-9_]+\b/g);
+  // Recherche d'un ID explicite dans les tokens (ex: `KBOX_SQUAT_BELT` ou `USER_PLAN_GAINAGE`)
+  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM|USER)_[A-Z0-9_]+\b/g);
   if (idTokens) {
     for (const token of idTokens) {
-      if (ALL_IDS_BY_UPPER.has(token)) {
-        return ALL_IDS_BY_UPPER.get(token);
+      if (idsByUpper.has(token)) {
+        return idsByUpper.get(token);
       }
     }
   }
 
   const norm = normalizeLexical(rawText);
   if (!norm) return null;
+
+  // Priorité à une correspondance exacte normalisée sur les exercices utilisateur promus
+  for (const ex of allExercises) {
+    if (ex.is_user_catalog && normalizeLexical(ex.name) === norm) {
+      return ex.id;
+    }
+  }
 
   // Règle explicite : rdl + kbox -> KBOX_RDL
   if (/\brdl\b/.test(norm) && /\bkbox\b/.test(norm)) {
@@ -250,7 +272,7 @@ function matchCatalogExerciseId(rawText) {
     }
   }
 
-  // Score par mots-clés exacts sur le nom officiel du catalogue
+  // Score par mots-clés exacts sur le nom officiel (catalogue officiel + utilisateur)
   const stopWords = new Set(["avec", "pour", "dans", "sans", "sur", "libre", "tempo", "haut", "bas"]);
   const inputTokens = new Set(
     norm.split(" ").filter((t) => t.length >= 4 && !stopWords.has(t))
@@ -262,7 +284,7 @@ function matchCatalogExerciseId(rawText) {
   let bestId = null;
   let bestScore = 0;
 
-  for (const ex of CATALOG) {
+  for (const ex of allExercises) {
     const nameTokens = normalizeLexical(ex.name)
       .split(" ")
       .filter((t) => t.length >= 4 && !stopWords.has(t));
