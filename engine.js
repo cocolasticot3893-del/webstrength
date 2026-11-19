@@ -50,8 +50,25 @@ export function mapRpeToFeeling(rpe) {
 }
 
 /**
+ * Assainit un libellé personnalisé (supprime balises HTML, caractères de contrôle et pipes `|`)
+ * puis tronque à 80 caractères.
+ * @param {unknown} label
+ * @returns {string}
+ */
+export function sanitizeCustomLabel(label) {
+  if (typeof label !== "string") return "";
+  return label
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\u0000-\u001F\u007F|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80)
+    .trim();
+}
+
+/**
  * Calcule la contribution TUT et Strain Excentrique pour un exercice unitaire.
- * @param {{ id: string, sets: number, reps: number, load: number, completion: number }} ex
+ * @param {{ id: string, sets: number, reps: number, load: number, completion: number, is_timed?: boolean }} ex
  * @param {number} k_ecc
  * @param {number} rir
  * @returns {{ cat: ReturnType<typeof getCatalogExercise>, tut: number, strain: number, weightedDone: number, weightedTotal: number }}
@@ -76,7 +93,9 @@ function computeExerciseContribution(ex, k_ecc, rir) {
       k_ecc *
       cat.cns_spinal_tax;
   } else if (cat.pole === "DUMBBELL") {
-    const rNorm = cat.is_timed ? reps / 4 : reps;
+    const isTimed =
+      typeof ex.is_timed === "boolean" ? ex.is_timed : cat.is_timed;
+    const rNorm = isTimed ? reps / 4 : reps;
     const betaEcc = cat.beta_ecc ?? 1.0;
     strain =
       sEff * rNorm * (load / 10) * ((10 - rir) / 10) * betaEcc * 0.8;
@@ -333,16 +352,20 @@ export function buildManualActivityPayload({
     const blockNum = ex.block ?? (idx < 2 ? 1 : idx < 4 ? 2 : 3);
     const contrib = computeExerciseContribution(ex, k_ecc, rir);
     const { cat, tut, strain } = contrib;
-    const unitSuffix = cat.is_timed ? "s" : "";
+    const customLabel = sanitizeCustomLabel(ex.custom_label);
+    const displayName = customLabel || cat.name;
+    const isTimed =
+      typeof ex.is_timed === "boolean" ? ex.is_timed : cat.is_timed;
+    const unitSuffix = isTimed ? "s" : "";
     const loadStr = formatLoadLabel(ex.load, cat);
     const volStr = `${ex.sets}×${ex.reps}${unitSuffix}`;
     const statusStr = formatCompletionStatus(Number(ex.completion) || 0);
 
     lines.push(
-      `| B${blockNum} | ${cat.name} | ${loadStr} | ${volStr} | ${statusStr} | ${Math.round(tut)}s | ${Math.round(strain)} |`
+      `| B${blockNum} | ${displayName} | ${loadStr} | ${volStr} | ${statusStr} | ${Math.round(tut)}s | ${Math.round(strain)} |`
     );
 
-    return {
+    const compact = {
       id: ex.id,
       block: blockNum,
       sets: Number(ex.sets),
@@ -353,6 +376,13 @@ export function buildManualActivityPayload({
       l: Number(ex.load),
       c: Number(ex.completion),
     };
+    if (customLabel) {
+      compact.custom_label = customLabel;
+    }
+    if (isTimed !== cat.is_timed) {
+      compact.is_timed = isTimed;
+    }
+    return compact;
   });
 
   if (notes && notes.trim().length > 0) {

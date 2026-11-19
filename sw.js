@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.5.0";
+const CACHE_NAME = "webstrength-v1.6.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -16,6 +16,7 @@ const PRECACHE_ASSETS = [
   "./catalog.js",
   "./engine.js",
   "./fallbackGenerator.js",
+  "./mdParser.js",
   "./vault.js",
   "./outbox.js",
   "./intervalsClient.js",
@@ -42,13 +43,26 @@ const PRECACHE_ASSETS = [
 ];
 
 /**
- * Pré-cache tous les assets applicatifs locaux lors de l'installation.
+ * Pré-cache tous les assets applicatifs locaux lors de l'installation
+ * en contournant le cache HTTP navigateur.
  */
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then((cache) =>
+        Promise.all(
+          PRECACHE_ASSETS.map(async (assetUrl) => {
+            const response = await fetch(assetUrl, { cache: "no-cache" });
+            if (!response.ok) {
+              throw new Error(
+                `Échec du pré-cache (${response.status}) : ${assetUrl}`
+              );
+            }
+            return cache.put(assetUrl, response);
+          })
+        )
+      )
       .then(() => self.skipWaiting())
   );
 });
@@ -109,7 +123,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: "no-cache" })
       .then((networkResponse) => {
         if (
           networkResponse &&

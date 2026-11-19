@@ -524,17 +524,89 @@ export const CATALOG_BY_ID = deepFreeze(
 /** Liste immuable des identifiants valides du catalogue. */
 export const EXERCISE_IDS = deepFreeze(CATALOG.map((ex) => ex.id));
 
+/** Modèles génériques hors-catalogue pour le mode libre et l'import Markdown. */
+export const CUSTOM_TEMPLATES = deepFreeze({
+  CUSTOM_KBOX: {
+    id: "CUSTOM_KBOX",
+    pole: "KBOX",
+    name: "Exercice kBox Libre",
+    short_desc:
+      "Exercice isoinertiel hors-catalogue (calcul exact sur inertie kBox).",
+    pattern: "CUSTOM",
+    allowed_loads: [0.025, 0.05, 0.075],
+    parasitic_reps: 2,
+    unit_tut_sec: 3.0,
+    cns_spinal_tax: 1.3,
+    is_timed: false,
+    unit_label: "kg·m²",
+    default_sets: 3,
+    default_reps: 8,
+    is_custom: true,
+    guide: null,
+  },
+  CUSTOM_DUMBBELL: {
+    id: "CUSTOM_DUMBBELL",
+    pole: "DUMBBELL",
+    name: "Exercice Haltères Libre",
+    short_desc: "Exercice charge additionnelle hors-catalogue.",
+    pattern: "CUSTOM",
+    allowed_loads: [2, 4, 6, 8, 10, 12, 16, 20],
+    parasitic_reps: 0,
+    unit_tut_sec: 3.5,
+    beta_ecc: 1.0,
+    cns_spinal_tax: 1.0,
+    is_timed: false,
+    unit_label: "kg",
+    default_sets: 3,
+    default_reps: 10,
+    is_custom: true,
+    guide: null,
+  },
+  CUSTOM_BAND_CORE: {
+    id: "CUSTOM_BAND_CORE",
+    pole: "BAND_CORE",
+    name: "Exercice Élastique / PDC Libre",
+    short_desc:
+      "Exercice poids de corps, gainage ou élastique hors-catalogue.",
+    pattern: "CUSTOM",
+    allowed_loads: [0, 1, 2, 3, 4],
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 0.5,
+    is_timed: true,
+    unit_label: "niv.",
+    default_sets: 3,
+    default_reps: 45,
+    is_custom: true,
+    guide: null,
+  },
+});
+
+/** Liste immuable des identifiants des modèles libres. */
+export const CUSTOM_TEMPLATE_IDS = deepFreeze(Object.keys(CUSTOM_TEMPLATES));
+
+/** Liste immuable de tous les identifiants valides (catalogue + modèles libres). */
+export const ALL_EXERCISE_IDS = deepFreeze([
+  ...EXERCISE_IDS,
+  ...CUSTOM_TEMPLATE_IDS,
+]);
+
 /**
- * Récupère un exercice du catalogue par son identifiant.
+ * Récupère un exercice du catalogue (ou un modèle libre) par son identifiant.
  * Lève une erreur explicite si l'identifiant est inconnu.
  * @param {string} id
- * @returns {Readonly<typeof RAW_CATALOG[number]>}
+ * @returns {Readonly<typeof RAW_CATALOG[number] | typeof CUSTOM_TEMPLATES[keyof typeof CUSTOM_TEMPLATES]>}
  */
 export function getCatalogExercise(id) {
-  if (typeof id !== "string" || !Object.hasOwn(CATALOG_BY_ID, id)) {
-    throw new Error(
-      `Exercice inconnu dans le catalogue WebStrength : "${String(id)}". IDs valides : ${EXERCISE_IDS.join(", ")}`
-    );
+  if (typeof id === "string") {
+    if (Object.hasOwn(CATALOG_BY_ID, id)) {
+      return CATALOG_BY_ID[id];
+    }
+    if (Object.hasOwn(CUSTOM_TEMPLATES, id)) {
+      return CUSTOM_TEMPLATES[id];
+    }
   }
-  return CATALOG_BY_ID[id];
+  throw new Error(
+    `Exercice inconnu dans le catalogue WebStrength : "${String(id)}". IDs valides : ${EXERCISE_IDS.join(", ")}`
+  );
 }

@@ -390,6 +390,18 @@
             aria-live="polite"
           ></p>
         </section>
+
+        <section class="free-modes-section" aria-label="Modes libres et import Markdown">
+          <h2>Modes Libres (Offline &amp; Import)</h2>
+          <div class="free-modes-row">
+            <button type="button" id="open-free-builder-btn" class="btn btn-secondary free-mode-btn">
+              ✏️ Construire une Séance Libre
+            </button>
+            <button type="button" id="open-md-import-btn" class="btn btn-secondary free-mode-btn">
+              📥 Importer un Markdown
+            </button>
+          </div>
+        </section>
       </section>
 
       <!-- ÉTAPE 2 : EXÉCUTION & VALIDATION TACTILE -->
@@ -832,6 +844,218 @@
             🔍 Voir une démo vidéo sur YouTube
           </a>
         </footer>
+      </div>
+    </dialog>
+
+    <dialog
+      id="free-builder-modal"
+      class="guide-modal"
+      closedby="any"
+      aria-labelledby="free-builder-title"
+    >
+      <div class="guide-modal-inner">
+        <header class="guide-modal-head">
+          <div class="guide-title-wrap">
+            <h2 id="free-builder-title">Constructeur de Séance Libre</h2>
+          </div>
+          <button
+            type="button"
+            id="free-builder-close-btn"
+            class="btn btn-ghost btn-sm guide-close-btn"
+            aria-label="Fermer le constructeur de séance libre"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="field-group">
+          <label for="free-session-title">Titre de la séance</label>
+          <input
+            type="text"
+            id="free-session-title"
+            value="Séance Libre PPG / kBox"
+            maxlength="80"
+          />
+        </div>
+
+        <section class="guide-section" aria-label="Catalogue officiel">
+          <h3>Catalogue (17 exercices)</h3>
+          <div class="segmented" role="group" aria-label="Filtrer par pôle matériel">
+            <button
+              type="button"
+              class="seg-btn is-active"
+              data-free-pole="ALL"
+              aria-pressed="true"
+            >
+              Tous
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              data-free-pole="KBOX"
+              aria-pressed="false"
+            >
+              kBox
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              data-free-pole="DUMBBELL"
+              aria-pressed="false"
+            >
+              Haltères
+            </button>
+            <button
+              type="button"
+              class="seg-btn"
+              data-free-pole="BAND_CORE"
+              aria-pressed="false"
+            >
+              Élast./Core
+            </button>
+          </div>
+          <div id="free-catalog-picker" class="free-picker-list"></div>
+        </section>
+
+        <section class="guide-section" aria-label="Exercice hors-catalogue">
+          <h3>Hors-catalogue (CUSTOM)</h3>
+          <div class="custom-exo-grid">
+            <div class="field-group custom-exo-name-field">
+              <label for="custom-exo-name">Nom de l'exercice</label>
+              <input
+                type="text"
+                id="custom-exo-name"
+                placeholder="Ex. Curl Marteau, Tractions, Planche"
+                maxlength="80"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="custom-exo-pole">Pôle matériel</label>
+              <select id="custom-exo-pole">
+                <option value="CUSTOM_KBOX">kBox (Inertie)</option>
+                <option value="CUSTOM_DUMBBELL" selected>Haltères / Charge (kg)</option>
+                <option value="CUSTOM_BAND_CORE">Élastique / PDC / Gainage</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="custom-exo-load">Charge</label>
+              <select id="custom-exo-load"></select>
+            </div>
+
+            <div class="field-group">
+              <label for="custom-exo-sets">Séries</label>
+              <input
+                type="number"
+                id="custom-exo-sets"
+                min="1"
+                max="10"
+                value="3"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="custom-exo-reps">Reps / Durée</label>
+              <input
+                type="number"
+                id="custom-exo-reps"
+                min="1"
+                max="300"
+                value="8"
+              />
+            </div>
+
+            <label class="custom-exo-timed-check" for="custom-exo-timed">
+              <input type="checkbox" id="custom-exo-timed" />
+              <span>Temps (sec)</span>
+            </label>
+
+            <button
+              type="button"
+              id="custom-exo-add-btn"
+              class="btn btn-secondary btn-sm custom-exo-add-btn"
+            >
+              + Ajouter
+            </button>
+          </div>
+        </section>
+
+        <section class="guide-section" aria-label="Sélection en cours">
+          <h3>Sélection en cours</h3>
+          <ul id="free-selected-list" class="free-selected-list"></ul>
+          <p
+            id="free-builder-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <button
+            type="button"
+            id="free-launch-btn"
+            class="btn btn-primary btn-block"
+          >
+            🚀 Lancer la séance (Étape 2)
+          </button>
+        </section>
+      </div>
+    </dialog>
+
+    <dialog
+      id="md-import-modal"
+      class="guide-modal"
+      closedby="any"
+      aria-labelledby="md-import-title"
+    >
+      <div class="guide-modal-inner">
+        <header class="guide-modal-head">
+          <div class="guide-title-wrap">
+            <h2 id="md-import-title">Importer une Séance Markdown</h2>
+          </div>
+          <button
+            type="button"
+            id="md-import-close-btn"
+            class="btn btn-ghost btn-sm guide-close-btn"
+            aria-label="Fermer l'import Markdown"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="field-group">
+          <label for="md-import-input">Séance Markdown / texte libre</label>
+          <textarea
+            id="md-import-input"
+            class="md-import-textarea"
+            rows="8"
+            placeholder="Collez une séance générée par Gemini ou utilisez le format rapide :&#10;KBOX_SQUAT_BELT | 0.050 | 4x8&#10;Curl Marteau | 10kg | 3x12&#10;- Planche | 0 | 3x60s"
+          ></textarea>
+          <small class="field-hint">Syntaxe offline : <code>ID_OU_NOM | Charge | SériesxReps</code> (ex. <code>KBOX_SQUAT_BELT | 0.050 | 4x8</code> ou <code>Tractions | 0 | 4x10</code>).</small>
+        </div>
+
+        <p
+          id="md-import-status"
+          class="status-message"
+          role="status"
+          aria-live="polite"
+        ></p>
+
+        <div class="md-import-actions">
+          <button
+            type="button"
+            id="md-import-gemini-btn"
+            class="btn btn-primary"
+          >
+            ✨ Convertir via Gemini
+          </button>
+          <button
+            type="button"
+            id="md-import-offline-btn"
+            class="btn btn-secondary"
+          >
+            ⚡ Parseur Rapide Offline
+          </button>
+        </div>
       </div>
     </dialog>
   </body>

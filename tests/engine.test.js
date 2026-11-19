@@ -13,16 +13,25 @@ import {
   CATALOG,
   CATALOG_BY_ID,
   EXERCISE_IDS,
+  CUSTOM_TEMPLATES,
+  CUSTOM_TEMPLATE_IDS,
+  ALL_EXERCISE_IDS,
   getCatalogExercise,
 } from "../catalog.js";
 import {
   formatExternalId,
   mapRpeToFeeling,
+  sanitizeCustomLabel,
   calculateSessionMetrics,
   buildSessionName,
   buildManualActivityPayload,
   parseTelemetryJsonFromDescription,
 } from "../engine.js";
+import {
+  snapLoadToTemplate,
+  buildFreeSessionPlan,
+  parseMarkdownOffline,
+} from "../mdParser.js";
 import {
   determineDominantPattern,
   enforceSymbolicConstraints,
@@ -50,10 +59,12 @@ import {
   MODELS_CACHE_KEY,
   OBSOLETE_MODELS,
   buildResponseSchema,
+  buildMarkdownParserSchema,
   scoreGeminiModel,
   fetchAvailableGeminiModels,
   pickBestAvailableModel,
   generateSessionWithGemini,
+  parseMarkdownWithGemini,
 } from "../geminiClient.js";
 import {
   INTERVALS_BASE_URL,
@@ -1840,5 +1851,258 @@ describe("6. Résilience Stockage & Clients (vault.js, outbox.js, geminiClient.j
       PpgEffectiveTut: 360,
       StrengthCompliancePct: 100,
     });
+  });
+});
+
+// ============================================================================
+// 7. Mode Séance Libre (CUSTOM_*) & Import Markdown
+// ============================================================================
+
+describe("7. Mode Séance Libre (CUSTOM_*) & Import Markdown", () => {
+  let restoreLocalStorage;
+  let restoreFetch;
+  let restoreNavigator;
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+  });
+
+  afterEach(() => {
+    restoreFetch?.();
+    restoreNavigator?.();
+    restoreLocalStorage?.();
+  });
+
+  it("CUSTOM_TEMPLATES figés, ALL_EXERCISE_IDS.length === 20 et résolution via getCatalogExercise", () => {
+    assert.equal(Object.isFrozen(CUSTOM_TEMPLATES), true);
+    assert.deepEqual(
+      [...CUSTOM_TEMPLATE_IDS].sort(),
+      ["CUSTOM_BAND_CORE", "CUSTOM_DUMBBELL", "CUSTOM_KBOX"]
+    );
+
+    for (const id of ["CUSTOM_KBOX", "CUSTOM_DUMBBELL", "CUSTOM_BAND_CORE"]) {
+      assert.equal(Object.isFrozen(CUSTOM_TEMPLATES[id]), true);
+      assert.equal(Object.isFrozen(CUSTOM_TEMPLATES[id].allowed_loads), true);
+      const resolved = getCatalogExercise(id);
+      assert.equal(resolved.id, id);
+      assert.equal(resolved.is_custom, true);
+      assert.equal(resolved.guide, null);
+    }
+
+    assert.equal(Object.isFrozen(ALL_EXERCISE_IDS), true);
+    assert.equal(ALL_EXERCISE_IDS.length, 20);
+    assert.equal(CATALOG.length + CUSTOM_TEMPLATE_IDS.length, 20);
+
+    const schema = buildMarkdownParserSchema();
+    const idEnum = schema.properties.exercises.items.properties.id.enum;
+    assert.equal(idEnum.length, 20);
+    assert.ok(idEnum.includes("CUSTOM_DUMBBELL"));
+  });
+
+  it("calculateSessionMetrics & buildManualActivityPayload supportent mix CATALOG + CUSTOM_*, custom_label et is_timed: false sur CUSTOM_BAND_CORE", () => {
+    const exercises = [
+      {
+        id: "KBOX_SQUAT_BELT",
+        block: 2,
+        sets: 4,
+        reps: 8,
+        load: 0.05,
+        completion: 1,
+      },
+      {
+        id: "CUSTOM_DUMBBELL",
+        block: 3,
+        sets: 3,
+        reps: 12,
+        load: 10,
+        completion: 1,
+        custom_label: "Curl Marteau",
+        is_timed: false,
+      },
+      {
+        id: "CUSTOM_BAND_CORE",
+        block: 1,
+        sets: 4,
+        reps: 10,
+        load: 0,
+        completion: 1,
+        custom_label: "Tractions Pronation",
+        is_timed: false,
+      },
+    ];
+
+    const metrics = calculateSessionMetrics({
+      exercises,
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      elapsed_time_sec: 2100,
+    });
+
+    // KBOX_SQUAT_BELT: 4*(8+0.3*2)*3.5 = 120.4s
+    // CUSTOM_DUMBBELL: 3*12*3.5 = 126s
+    // CUSTOM_BAND_CORE: 4*10*1.0 = 40s -> total TUT = 286.4 -> 286
+    assert.equal(metrics.PpgEffectiveTut, 286);
+    assert.equal(metrics.StrengthCompliancePct, 100);
+    assert.ok(metrics.EccentricStrainIndex > 0);
+
+    const payload = buildManualActivityPayload({
+      dateObj: new Date("2026-11-19T08:00:00"),
+      theme: "Séance Mixte Libre",
+      rationale: "Test mixte catalogue + custom",
+      gate: "ORANGE",
+      readiness: "OPTIMAL",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      lumbar_flag: false,
+      elapsed_time_sec: 2100,
+      exercises,
+    });
+
+    assert.ok(payload.description.includes("| Curl Marteau | 10 kg | 3×12 |"));
+    assert.ok(
+      payload.description.includes("| Tractions Pronation | 0 niv. | 4×10 |")
+    );
+    assert.ok(!payload.description.includes("| Tractions Pronation | 0 niv. | 4×10s |"));
+
+    const telemetry = parseTelemetryJsonFromDescription(payload.description);
+    assert.ok(telemetry);
+    assert.equal(telemetry.ex.length, 3);
+
+    const curlJson = telemetry.ex.find((e) => e.id === "CUSTOM_DUMBBELL");
+    assert.ok(curlJson);
+    assert.equal(curlJson.custom_label, "Curl Marteau");
+
+    const pullupJson = telemetry.ex.find((e) => e.id === "CUSTOM_BAND_CORE");
+    assert.ok(pullupJson);
+    assert.equal(pullupJson.custom_label, "Tractions Pronation");
+    assert.equal(pullupJson.is_timed, false);
+  });
+
+  it("parseMarkdownOffline parse un exemple Markdown mixte réel (catalogue + CUSTOM_* + temps/reps)", () => {
+    const rawMd = [
+      "# Séance Mixte Automne",
+      "KBOX_SQUAT_BELT | 0.050 | 4x8",
+      "- Curl Marteau | 10kg | 3x12",
+      "- Planche | 0 | 3x60s",
+      "- Tractions Pronation 4x10",
+    ].join("\n");
+
+    const plan = parseMarkdownOffline(rawMd);
+    assert.equal(plan.theme, "Séance Mixte Automne");
+    assert.equal(plan.is_free_mode, true);
+    assert.deepEqual(plan.applied_rules, ["MODE_LIBRE"]);
+    assert.equal(plan.exercises.length, 4);
+
+    const [squat, curl, plank, pullups] = plan.exercises;
+
+    assert.equal(squat.id, "KBOX_SQUAT_BELT");
+    assert.equal(squat.load, 0.05);
+    assert.equal(squat.sets, 4);
+    assert.equal(squat.reps, 8);
+
+    assert.equal(curl.id, "CUSTOM_DUMBBELL");
+    assert.equal(curl.custom_label, "Curl Marteau");
+    assert.equal(curl.load, 10);
+    assert.equal(curl.sets, 3);
+    assert.equal(curl.reps, 12);
+    assert.equal(curl.is_timed, false);
+
+    assert.equal(plank.id, "CUSTOM_BAND_CORE");
+    assert.equal(plank.custom_label, "Planche");
+    assert.equal(plank.load, 0);
+    assert.equal(plank.sets, 3);
+    assert.equal(plank.reps, 60);
+    assert.equal(plank.is_timed, true);
+
+    assert.equal(pullups.id, "CUSTOM_BAND_CORE");
+    assert.equal(pullups.custom_label, "Tractions Pronation");
+    assert.equal(pullups.load, 0);
+    assert.equal(pullups.sets, 4);
+    assert.equal(pullups.reps, 10);
+    assert.equal(pullups.is_timed, false);
+  });
+
+  it("parseMarkdownWithGemini bascule offline sans clé API et parse une réponse Gemini mockée (CUSTOM_DUMBBELL + custom_label)", async () => {
+    let fetchCalls = 0;
+    restoreFetch = stubGlobalProperty("fetch", {
+      value: async () => {
+        fetchCalls++;
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({
+                        theme: "Force & Bras Gemini",
+                        rationale: "Conversion structurée via Gemini",
+                        recommended_k_ecc: 1.3,
+                        recommended_rir: 2,
+                        recommended_rpe: 7,
+                        target_duration_sec: 1800,
+                        exercises: [
+                          {
+                            id: "KBOX_SQUAT_BELT",
+                            block: 2,
+                            sets: 4,
+                            reps: 8,
+                            load: 0.05,
+                            is_timed: false,
+                          },
+                          {
+                            id: "CUSTOM_DUMBBELL",
+                            block: 3,
+                            sets: 3,
+                            reps: 12,
+                            load: 11,
+                            custom_label: "Curl Marteau <script>alert(1)</script>",
+                            is_timed: false,
+                          },
+                        ],
+                      }),
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const mdSample = "KBOX_SQUAT_BELT | 0.050 | 4x8\n- Curl Marteau | 11kg | 3x12";
+
+    // 1. Sans clé API -> bascule immédiate sur OFFLINE_PARSER sans appel réseau
+    const offlineRes = await parseMarkdownWithGemini(mdSample, "");
+    assert.equal(offlineRes.source, "OFFLINE_PARSER");
+    assert.equal(fetchCalls, 0);
+    assert.equal(offlineRes.plan.exercises.length, 2);
+
+    // 2. Avec clé API -> appel Gemini mocké, snap charge 11kg -> 10kg et sanitisation custom_label
+    const geminiRes = await parseMarkdownWithGemini(
+      mdSample,
+      "dummy_gemini_key",
+      "gemini-3.5-flash"
+    );
+    assert.equal(fetchCalls, 1);
+    assert.equal(geminiRes.source, "GEMINI_PARSER");
+    assert.equal(geminiRes.model, "gemini-3.5-flash");
+    assert.equal(geminiRes.plan.theme, "Force & Bras Gemini");
+    assert.equal(geminiRes.plan.is_free_mode, true);
+
+    const customEx = geminiRes.plan.exercises[1];
+    assert.equal(customEx.id, "CUSTOM_DUMBBELL");
+    assert.equal(customEx.load, snapLoadToTemplate(11, getCatalogExercise("CUSTOM_DUMBBELL")));
+    assert.equal(customEx.load, 10);
+    assert.equal(customEx.custom_label, sanitizeCustomLabel("Curl Marteau <script>alert(1)</script>"));
+    assert.equal(customEx.custom_label, "Curl Marteau alert(1)");
+    assert.equal(customEx.is_timed, false);
   });
 });

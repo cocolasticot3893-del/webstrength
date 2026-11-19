@@ -3,7 +3,7 @@
  * Architecture Vanilla JS ES2024+ zéro-build, manipulation DOM sécurisée (`textContent`).
  */
 
-import { getCatalogExercise } from "./catalog.js";
+import { CATALOG, CUSTOM_TEMPLATES, getCatalogExercise } from "./catalog.js";
 import {
   buildManualActivityPayload,
   calculateSessionMetrics,
@@ -13,6 +13,7 @@ import {
   MODELS_CACHE_KEY,
   fetchAvailableGeminiModels,
   generateSessionWithGemini,
+  parseMarkdownWithGemini,
   pickBestAvailableModel,
 } from "./geminiClient.js";
 import {
@@ -20,6 +21,7 @@ import {
   fetchAthleteContext,
   postManualActivity,
 } from "./intervalsClient.js";
+import { buildFreeSessionPlan, parseMarkdownOffline } from "./mdParser.js";
 import {
   flushOutbox,
   getOutboxCount,
@@ -54,6 +56,7 @@ const RULE_LABELS = Object.freeze({
   "RÈGLE_3_GREEN_OPTIMAL": "Règle 3 · GREEN + OPTIMAL → Palier 0.075 kg·m² autorisé",
   "RÈGLE_4_ALTERNANCE_KNEE_DOMINANT": "Règle 4 · Alternance → Dominante Genou (Knee)",
   "RÈGLE_4_ALTERNANCE_HIP_DOMINANT": "Règle 4 · Alternance → Dominante Hanche (Hip)",
+  MODE_LIBRE: "Mode Libre · Séance personnalisée",
 });
 
 const COMPLETION_OPTIONS = Object.freeze([
@@ -1061,6 +1064,8 @@ function updateGlobalSelectorsUI() {
 
 function createExerciseCard(ex, index) {
   const cat = getCatalogExercise(ex.id);
+  const displayName = ex.custom_label || cat.name;
+  const isTimed = typeof ex.is_timed === "boolean" ? ex.is_timed : cat.is_timed;
 
   const card = document.createElement("article");
   card.className = "exercise-card";
@@ -1077,25 +1082,33 @@ function createExerciseCard(ex, index) {
 
   const nameEl = document.createElement("h3");
   nameEl.className = "exo-name";
-  nameEl.textContent = cat.name;
+  nameEl.textContent = displayName;
 
-  const guideBtn = document.createElement("button");
-  guideBtn.type = "button";
-  guideBtn.className = "exo-guide-btn";
-  guideBtn.dataset.guideExo = cat.id;
-  guideBtn.textContent = "🎬 Voir l'exo";
-  guideBtn.addEventListener("click", () => {
-    void openExerciseGuideModal(cat.id);
-  });
-
-  headTop.append(nameEl, guideBtn);
+  if (cat.is_custom || !cat.guide) {
+    const libreBadge = document.createElement("span");
+    libreBadge.className = "exo-libre-badge";
+    libreBadge.textContent = "Libre";
+    headTop.append(nameEl, libreBadge);
+  } else {
+    const guideBtn = document.createElement("button");
+    guideBtn.type = "button";
+    guideBtn.className = "exo-guide-btn";
+    guideBtn.dataset.guideExo = cat.id;
+    guideBtn.textContent = "🎬 Voir l'exo";
+    guideBtn.addEventListener("click", () => {
+      void openExerciseGuideModal(cat.id);
+    });
+    headTop.append(nameEl, guideBtn);
+  }
 
   const badges = document.createElement("div");
   badges.className = "exo-badges";
 
   const poleBadge = document.createElement("span");
-  poleBadge.className = `exo-badge pole-${cat.pole}`;
-  poleBadge.textContent = cat.pole;
+  poleBadge.className = cat.is_custom
+    ? "exo-badge pole-CUSTOM"
+    : `exo-badge pole-${cat.pole}`;
+  poleBadge.textContent = cat.is_custom ? `CUSTOM · ${cat.pole}` : cat.pole;
 
   const patternBadge = document.createElement("span");
   patternBadge.className = "exo-badge";
@@ -1113,7 +1126,7 @@ function createExerciseCard(ex, index) {
   metaLineEl.className = "exo-meta-line";
   const parasiticPart =
     cat.parasitic_reps > 0 ? ` · +${cat.parasitic_reps} reps élan` : "";
-  metaLineEl.textContent = `TUT: ${cat.unit_tut_sec}s/${cat.is_timed ? "s" : "rep"} · Taxe SNC: ${cat.cns_spinal_tax}${parasiticPart}`;
+  metaLineEl.textContent = `TUT: ${cat.unit_tut_sec}s/${isTimed ? "s" : "rep"} · Taxe SNC: ${cat.cns_spinal_tax}${parasiticPart}`;
 
   // Libellé complétion + Boutons 1-tap (100% | 75% | 50% | 0%)
   const compLabel = document.createElement("span");
@@ -1123,7 +1136,7 @@ function createExerciseCard(ex, index) {
   const compRow = document.createElement("div");
   compRow.className = "completion-row";
   compRow.setAttribute("role", "group");
-  compRow.setAttribute("aria-label", `Complétion ${cat.name}`);
+  compRow.setAttribute("aria-label", `Complétion ${displayName}`);
 
   const compButtons = [];
   for (const opt of COMPLETION_OPTIONS) {
@@ -1206,13 +1219,13 @@ function createExerciseCard(ex, index) {
     },
   });
 
-  const repsStep = cat.is_timed ? 5 : 1;
-  const repsMax = cat.is_timed ? 300 : 50;
+  const repsStep = isTimed ? 5 : 1;
+  const repsMax = isTimed ? 300 : 50;
   const repsValueEl = document.createElement("strong");
-  repsValueEl.textContent = cat.is_timed ? `${ex.reps}s` : String(ex.reps);
+  repsValueEl.textContent = isTimed ? `${ex.reps}s` : String(ex.reps);
 
   const repsBox = buildStepperBox({
-    label: cat.is_timed ? "Durée" : "Reps",
+    label: isTimed ? "Durée" : "Reps",
     valueEl: repsValueEl,
     onDelta: (delta) => {
       const next = Math.max(
@@ -1221,7 +1234,7 @@ function createExerciseCard(ex, index) {
       );
       state.session.exercises[index].reps = next;
       state.session.lastInteractedPole = cat.pole;
-      repsValueEl.textContent = cat.is_timed ? `${next}s` : String(next);
+      repsValueEl.textContent = isTimed ? `${next}s` : String(next);
       updateLiveTelemetryBar();
     },
   });
@@ -1265,15 +1278,25 @@ function renderStep2Plan() {
   const { source, model, fallbackReason } = state.sourceMeta;
 
   const sourceBadge = $("plan-source-badge");
+  sourceBadge.classList.remove("is-gemini", "is-fallback");
   if (source === "GEMINI") {
     sourceBadge.textContent = `Gemini AI (${model ?? "flash"})`;
     sourceBadge.classList.add("is-gemini");
-    sourceBadge.classList.remove("is-fallback");
     sourceBadge.title = "";
+  } else if (source === "GEMINI_PARSER") {
+    sourceBadge.textContent = `Gemini Parser (${model ?? "flash"})`;
+    sourceBadge.classList.add("is-gemini");
+    sourceBadge.title = "";
+  } else if (source === "OFFLINE_PARSER") {
+    sourceBadge.textContent = "Parseur Offline";
+    sourceBadge.classList.add("is-fallback");
+    sourceBadge.title = fallbackReason ?? "Analyse Markdown locale hors-ligne";
+  } else if (source === "FREE_BUILDER" || source === "MODE_LIBRE") {
+    sourceBadge.textContent = "Mode Libre";
+    sourceBadge.title = "Séance libre construite manuellement";
   } else {
     sourceBadge.textContent = "Fallback Local";
     sourceBadge.classList.add("is-fallback");
-    sourceBadge.classList.remove("is-gemini");
     sourceBadge.title = fallbackReason ?? "Génération locale déterministe";
   }
 
@@ -1299,11 +1322,22 @@ function renderStep2Plan() {
     }
   }
 
-  // Rendu des 3 Blocs
+  // Rendu des Blocs (en Mode Libre, on masque les blocs vides)
   const blocksContainer = $("blocks-container");
   blocksContainer.replaceChildren();
 
   for (const blockNum of [1, 2, 3]) {
+    const blockExercises = [];
+    state.session.exercises.forEach((ex, idx) => {
+      if (ex.block === blockNum) {
+        blockExercises.push({ ex, idx });
+      }
+    });
+
+    if (plan?.is_free_mode && blockExercises.length === 0) {
+      continue;
+    }
+
     const section = document.createElement("section");
     section.className = "block-section";
 
@@ -1317,11 +1351,9 @@ function renderStep2Plan() {
     blockDesc.textContent = BLOCK_DESCRIPTIONS[blockNum];
     section.appendChild(blockDesc);
 
-    state.session.exercises.forEach((ex, idx) => {
-      if (ex.block === blockNum) {
-        section.appendChild(createExerciseCard(ex, idx));
-      }
-    });
+    for (const { ex, idx } of blockExercises) {
+      section.appendChild(createExerciseCard(ex, idx));
+    }
 
     blocksContainer.appendChild(section);
   }
@@ -1329,6 +1361,66 @@ function renderStep2Plan() {
   $("session-notes").value = state.session.notes;
   updateGlobalSelectorsUI();
   updateLiveTelemetryBar();
+}
+
+/**
+ * Charge un plan validé (Gatekeeper, Mode Libre ou Import Markdown) dans l'Étape 2.
+ * @param {object} plan
+ * @param {{ source?: string, model?: string | null, fallbackReason?: string | null }} [sourceMeta]
+ */
+function launchPlanIntoStep2(plan, sourceMeta = {}) {
+  state.plan = {
+    ...plan,
+    is_free_mode: Boolean(plan?.is_free_mode),
+  };
+  state.sourceMeta = {
+    source: sourceMeta.source ?? "FALLBACK",
+    model: sourceMeta.model ?? null,
+    fallbackReason: sourceMeta.fallbackReason ?? null,
+  };
+
+  const exercises = (plan.exercises ?? []).map((ex) => {
+    const item = {
+      id: ex.id,
+      block: ex.block,
+      sets: Number(ex.sets),
+      reps: Number(ex.reps),
+      load: Number(ex.load),
+      completion: 1,
+    };
+    if (typeof ex.custom_label === "string" && ex.custom_label.trim()) {
+      item.custom_label = ex.custom_label.trim();
+    }
+    if (typeof ex.is_timed === "boolean") {
+      item.is_timed = ex.is_timed;
+    }
+    return item;
+  });
+
+  const hasKbox = exercises.some(
+    (ex) => getCatalogExercise(ex.id).pole === "KBOX"
+  );
+  const firstPole =
+    exercises.length > 0 ? getCatalogExercise(exercises[0].id).pole : "KBOX";
+
+  state.session = {
+    exercises,
+    k_ecc: snapToNearestPreset(plan.recommended_k_ecc, KECC_PRESETS),
+    rir: snapToNearestPreset(plan.recommended_rir, RIR_PRESETS),
+    rpe: Math.max(
+      1,
+      Math.min(10, Math.round(Number(plan.recommended_rpe) || 7))
+    ),
+    elapsed_time_sec: Number(plan.target_duration_sec) || 2100,
+    notes: "",
+    lastInteractedPole: hasKbox ? "KBOX" : firstPole,
+  };
+
+  state.chrono.seconds = 0;
+  startChrono();
+  stopRestTimer();
+  renderStep2Plan();
+  showStep(2);
 }
 
 async function handleGateSelection(gate) {
@@ -1366,36 +1458,12 @@ async function handleGateSelection(gate) {
       updateServicePills();
     }
 
-    state.plan = result.plan;
-    state.sourceMeta = {
+    launchPlanIntoStep2(result.plan, {
       source: result.source,
       model: result.model ?? null,
       fallbackReason: result.fallbackReason ?? null,
-    };
-
-    state.session = {
-      exercises: result.plan.exercises.map((ex) => ({
-        id: ex.id,
-        block: ex.block,
-        sets: Number(ex.sets),
-        reps: Number(ex.reps),
-        load: Number(ex.load),
-        completion: 1,
-      })),
-      k_ecc: snapToNearestPreset(result.plan.recommended_k_ecc, KECC_PRESETS),
-      rir: snapToNearestPreset(result.plan.recommended_rir, RIR_PRESETS),
-      rpe: Math.max(1, Math.min(10, Math.round(Number(result.plan.recommended_rpe) || 7))),
-      elapsed_time_sec: Number(result.plan.target_duration_sec) || 2100,
-      notes: "",
-      lastInteractedPole: "KBOX",
-    };
-
-    state.chrono.seconds = 0;
-    startChrono();
-    stopRestTimer();
-    renderStep2Plan();
+    });
     setStatusMessage($("generation-status"), "");
-    showStep(2);
   } finally {
     gateButtons.forEach((b) => {
       b.disabled = false;
@@ -1845,13 +1913,14 @@ async function openExerciseGuideModal(exerciseId) {
 }
 
 /**
- * Initialise les événements de fermeture, light-dismiss et contrôles de la modale guide.
+ * Factorise la fermeture bouton, le reset `returnValue` et le light-dismiss pour un `<dialog>`.
+ * @param {HTMLDialogElement | null} dialog
+ * @param {HTMLElement | null} closeBtn
  */
-function initGuideModalEvents() {
-  const dialog = /** @type {HTMLDialogElement | null} */ ($("exercise-guide-modal"));
+function setupNativeDialogDismiss(dialog, closeBtn) {
   if (!dialog) return;
 
-  $("guide-close-btn")?.addEventListener("click", () => {
+  closeBtn?.addEventListener("click", () => {
     dialog.close();
   });
 
@@ -1883,6 +1952,16 @@ function initGuideModalEvents() {
       pointerDownOutside = false;
     });
   }
+}
+
+/**
+ * Initialise les événements de fermeture, light-dismiss et contrôles de la modale guide.
+ */
+function initGuideModalEvents() {
+  const dialog = /** @type {HTMLDialogElement | null} */ ($("exercise-guide-modal"));
+  if (!dialog) return;
+
+  setupNativeDialogDismiss(dialog, $("guide-close-btn"));
 
   $("guide-play-pause-btn")?.addEventListener("click", () => {
     setGuideAnimationState({ playing: !state.guideModal.playing });
@@ -1894,6 +1973,387 @@ function initGuideModalEvents() {
 
   $("guide-speed-05x-btn")?.addEventListener("click", () => {
     setGuideAnimationState({ speed: 0.5 });
+  });
+}
+
+/**
+ * Initialise la modale de construction manuelle de séance libre (catalogue + CUSTOM_*).
+ */
+function initFreeBuilderModal() {
+  const dialog = /** @type {HTMLDialogElement | null} */ ($("free-builder-modal"));
+  const openBtn = $("open-free-builder-btn");
+  if (!dialog || !openBtn) return;
+
+  setupNativeDialogDismiss(dialog, $("free-builder-close-btn"));
+
+  const titleInput = /** @type {HTMLInputElement | null} */ ($("free-session-title"));
+  const poleFilterBtns = Array.from(dialog.querySelectorAll("[data-free-pole]"));
+  const catalogPicker = $("free-catalog-picker");
+  const customNameInput = /** @type {HTMLInputElement | null} */ ($("custom-exo-name"));
+  const customPoleSelect = /** @type {HTMLSelectElement | null} */ ($("custom-exo-pole"));
+  const customLoadSelect = /** @type {HTMLSelectElement | null} */ ($("custom-exo-load"));
+  const customSetsInput = /** @type {HTMLInputElement | null} */ ($("custom-exo-sets"));
+  const customRepsInput = /** @type {HTMLInputElement | null} */ ($("custom-exo-reps"));
+  const customTimedCheckbox = /** @type {HTMLInputElement | null} */ ($("custom-exo-timed"));
+  const customAddBtn = $("custom-exo-add-btn");
+  const selectedList = $("free-selected-list");
+  const statusEl = $("free-builder-status");
+  const launchBtn = $("free-launch-btn");
+
+  let activePole = "ALL";
+  /** @type {Array<{ id: string, sets: number, reps: number, load: number, custom_label?: string, is_timed?: boolean }>} */
+  const selectedExercises = [];
+
+  const syncCustomTemplateDefaults = () => {
+    if (!customPoleSelect || !customLoadSelect) return;
+    const tplId = customPoleSelect.value;
+    const tpl = Object.hasOwn(CUSTOM_TEMPLATES, tplId)
+      ? CUSTOM_TEMPLATES[tplId]
+      : CUSTOM_TEMPLATES.CUSTOM_DUMBBELL;
+
+    customLoadSelect.replaceChildren(
+      ...tpl.allowed_loads.map((val) => {
+        const opt = document.createElement("option");
+        opt.value = String(val);
+        opt.textContent = formatLoadOption(val, tpl);
+        return opt;
+      })
+    );
+    if (customSetsInput) customSetsInput.value = String(tpl.default_sets);
+    if (customRepsInput) customRepsInput.value = String(tpl.default_reps);
+    if (customTimedCheckbox) customTimedCheckbox.checked = Boolean(tpl.is_timed);
+  };
+
+  const renderSelectedList = () => {
+    if (!selectedList) return;
+    selectedList.replaceChildren();
+
+    if (selectedExercises.length === 0) {
+      const emptyLi = document.createElement("li");
+      emptyLi.className = "free-selected-empty";
+      emptyLi.textContent =
+        "Aucun exercice sélectionné. Ajoutez-en depuis le catalogue ou hors-catalogue.";
+      selectedList.appendChild(emptyLi);
+      return;
+    }
+
+    selectedExercises.forEach((item, idx) => {
+      const cat = getCatalogExercise(item.id);
+      const isTimed =
+        typeof item.is_timed === "boolean" ? item.is_timed : cat.is_timed;
+
+      const li = document.createElement("li");
+      li.className = "free-selected-row";
+
+      const info = document.createElement("div");
+      info.className = "free-selected-info";
+
+      const title = document.createElement("span");
+      title.className = "free-selected-title";
+      title.textContent = item.custom_label || cat.name;
+
+      const meta = document.createElement("span");
+      meta.className = "free-selected-meta";
+      meta.textContent = `${item.sets}×${item.reps}${isTimed ? "s" : ""} · ${formatLoadOption(item.load, cat)}`;
+      info.append(title, meta);
+
+      const controls = document.createElement("div");
+      controls.className = "free-selected-controls";
+
+      const loadSelect = document.createElement("select");
+      loadSelect.className = "free-selected-load";
+      loadSelect.setAttribute(
+        "aria-label",
+        `Charge pour ${item.custom_label || cat.name}`
+      );
+      for (const allowedLoad of cat.allowed_loads) {
+        const opt = document.createElement("option");
+        opt.value = String(allowedLoad);
+        opt.textContent = formatLoadOption(allowedLoad, cat);
+        if (Math.abs(allowedLoad - item.load) < 1e-6) {
+          opt.selected = true;
+        }
+        loadSelect.appendChild(opt);
+      }
+      loadSelect.addEventListener("change", () => {
+        selectedExercises[idx].load = Number(loadSelect.value);
+        meta.textContent = `${item.sets}×${item.reps}${isTimed ? "s" : ""} · ${formatLoadOption(selectedExercises[idx].load, cat)}`;
+      });
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn-ghost btn-sm";
+      removeBtn.textContent = "✕";
+      removeBtn.setAttribute(
+        "aria-label",
+        `Retirer ${item.custom_label || cat.name}`
+      );
+      removeBtn.addEventListener("click", () => {
+        selectedExercises.splice(idx, 1);
+        renderSelectedList();
+      });
+
+      controls.append(loadSelect, removeBtn);
+      li.append(info, controls);
+      selectedList.appendChild(li);
+    });
+  };
+
+  const renderCatalogPicker = () => {
+    if (!catalogPicker) return;
+    catalogPicker.replaceChildren();
+
+    const filtered =
+      activePole === "ALL"
+        ? CATALOG
+        : CATALOG.filter((ex) => ex.pole === activePole);
+
+    for (const cat of filtered) {
+      const row = document.createElement("div");
+      row.className = "free-picker-item";
+
+      const info = document.createElement("div");
+      info.className = "free-picker-info";
+
+      const title = document.createElement("span");
+      title.className = "free-picker-title";
+      title.textContent = cat.name;
+
+      const meta = document.createElement("div");
+      meta.className = "free-picker-meta";
+
+      const poleBadge = document.createElement("span");
+      poleBadge.className = `exo-badge pole-${cat.pole}`;
+      poleBadge.textContent = cat.pole;
+
+      const defaultSets = cat.default_sets ?? 3;
+      const defaultReps = cat.default_reps ?? (cat.is_timed ? 45 : cat.pole === "KBOX" ? 6 : 10);
+
+      const defaultMeta = document.createElement("span");
+      defaultMeta.textContent = `${defaultSets}×${defaultReps}${cat.is_timed ? "s" : ""} · ${formatLoadOption(cat.allowed_loads[0], cat)}`;
+
+      meta.append(poleBadge, defaultMeta);
+      info.append(title, meta);
+
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "btn btn-secondary btn-sm free-picker-add-btn";
+      addBtn.textContent = "+ Ajouter";
+      addBtn.addEventListener("click", () => {
+        selectedExercises.push({
+          id: cat.id,
+          sets: defaultSets,
+          reps: defaultReps,
+          load: cat.allowed_loads[0],
+        });
+        setStatusMessage(statusEl, "");
+        renderSelectedList();
+      });
+
+      row.append(info, addBtn);
+      catalogPicker.appendChild(row);
+    }
+  };
+
+  for (const btn of poleFilterBtns) {
+    btn.addEventListener("click", () => {
+      activePole = btn.dataset.freePole || "ALL";
+      for (const sibling of poleFilterBtns) {
+        const isCurrent = sibling === btn;
+        sibling.classList.toggle("is-active", isCurrent);
+        sibling.setAttribute("aria-pressed", String(isCurrent));
+      }
+      renderCatalogPicker();
+    });
+  }
+
+  customPoleSelect?.addEventListener("change", syncCustomTemplateDefaults);
+
+  customAddBtn?.addEventListener("click", () => {
+    const rawName = customNameInput?.value.trim() ?? "";
+    if (!rawName) {
+      setStatusMessage(
+        statusEl,
+        "Saisissez un nom d'exercice personnalisé.",
+        "error"
+      );
+      customNameInput?.focus();
+      return;
+    }
+
+    const tplId = customPoleSelect?.value || "CUSTOM_DUMBBELL";
+    const tpl = Object.hasOwn(CUSTOM_TEMPLATES, tplId)
+      ? CUSTOM_TEMPLATES[tplId]
+      : CUSTOM_TEMPLATES.CUSTOM_DUMBBELL;
+
+    const loadVal = Number(customLoadSelect?.value);
+    const load = Number.isFinite(loadVal) ? loadVal : tpl.allowed_loads[0];
+
+    const rawSets = Math.round(Number(customSetsInput?.value));
+    const sets = Number.isFinite(rawSets)
+      ? Math.max(1, Math.min(10, rawSets))
+      : tpl.default_sets;
+
+    const rawReps = Math.round(Number(customRepsInput?.value));
+    const reps = Number.isFinite(rawReps)
+      ? Math.max(1, Math.min(300, rawReps))
+      : tpl.default_reps;
+
+    const isTimed = customTimedCheckbox
+      ? Boolean(customTimedCheckbox.checked)
+      : tpl.is_timed;
+
+    selectedExercises.push({
+      id: tpl.id,
+      sets,
+      reps,
+      load,
+      custom_label: rawName,
+      is_timed: isTimed,
+    });
+
+    if (customNameInput) customNameInput.value = "";
+    setStatusMessage(statusEl, "");
+    renderSelectedList();
+  });
+
+  openBtn.addEventListener("click", () => {
+    setStatusMessage(statusEl, "");
+    renderCatalogPicker();
+    renderSelectedList();
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  });
+
+  launchBtn?.addEventListener("click", () => {
+    if (selectedExercises.length === 0) {
+      setStatusMessage(
+        statusEl,
+        "Ajoutez au moins un exercice avant de lancer la séance.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const plan = buildFreeSessionPlan({
+        title: titleInput?.value ?? "Séance Libre PPG / kBox",
+        exercises: selectedExercises,
+        sourceLabel: "Mode Libre",
+        gate: state.gate,
+        readiness: state.readiness,
+      });
+      setStatusMessage(statusEl, "");
+      dialog.close();
+      launchPlanIntoStep2(plan, { source: "FREE_BUILDER" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur de construction.";
+      setStatusMessage(statusEl, msg, "error");
+    }
+  });
+
+  syncCustomTemplateDefaults();
+  renderCatalogPicker();
+  renderSelectedList();
+}
+
+/**
+ * Initialise la modale d'import Markdown (Gemini Parser + Parseur Rapide Offline).
+ */
+function initMarkdownImportModal() {
+  const dialog = /** @type {HTMLDialogElement | null} */ ($("md-import-modal"));
+  const openBtn = $("open-md-import-btn");
+  if (!dialog || !openBtn) return;
+
+  setupNativeDialogDismiss(dialog, $("md-import-close-btn"));
+
+  const input = /** @type {HTMLTextAreaElement | null} */ ($("md-import-input"));
+  const statusEl = $("md-import-status");
+  const geminiBtn = /** @type {HTMLButtonElement | null} */ ($("md-import-gemini-btn"));
+  const offlineBtn = /** @type {HTMLButtonElement | null} */ ($("md-import-offline-btn"));
+
+  openBtn.addEventListener("click", () => {
+    setStatusMessage(statusEl, "");
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+  });
+
+  offlineBtn?.addEventListener("click", () => {
+    const raw = input?.value ?? "";
+    if (!raw.trim()) {
+      setStatusMessage(
+        statusEl,
+        "Collez un texte ou une liste Markdown à importer.",
+        "error"
+      );
+      input?.focus();
+      return;
+    }
+
+    try {
+      const plan = parseMarkdownOffline(raw);
+      setStatusMessage(statusEl, "");
+      dialog.close();
+      launchPlanIntoStep2(plan, {
+        source: "OFFLINE_PARSER",
+        fallbackReason: "Parseur rapide offline",
+      });
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Erreur lors du parsing offline.";
+      setStatusMessage(statusEl, msg, "error");
+    }
+  });
+
+  geminiBtn?.addEventListener("click", async () => {
+    const raw = input?.value ?? "";
+    if (!raw.trim()) {
+      setStatusMessage(
+        statusEl,
+        "Collez un texte ou une liste Markdown à importer.",
+        "error"
+      );
+      input?.focus();
+      return;
+    }
+
+    if (geminiBtn) geminiBtn.disabled = true;
+    if (offlineBtn) offlineBtn.disabled = true;
+    setStatusMessage(statusEl, "Conversion Markdown via Gemini en cours…");
+
+    try {
+      const result = await parseMarkdownWithGemini(
+        raw,
+        state.vault.GEMINI_API_KEY,
+        state.vault.LLM_MODEL || "gemini-3.5-flash",
+        { timeoutMs: 8000 }
+      );
+
+      if (result.autoUpgradedFrom) {
+        state.vault = loadVault();
+        populateVaultForm();
+        updateServicePills();
+      }
+
+      setStatusMessage(statusEl, "");
+      dialog.close();
+      launchPlanIntoStep2(result.plan, {
+        source: result.source,
+        model: result.model ?? null,
+        fallbackReason: result.fallbackReason ?? null,
+      });
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Impossible de convertir ce Markdown.";
+      setStatusMessage(statusEl, msg, "error");
+    } finally {
+      if (geminiBtn) geminiBtn.disabled = false;
+      if (offlineBtn) offlineBtn.disabled = false;
+    }
   });
 }
 
@@ -1913,6 +2373,8 @@ async function bootstrap() {
 
   initVaultControls();
   initGuideModalEvents();
+  initFreeBuilderModal();
+  initMarkdownImportModal();
   initStep1Events();
   initStep2Events();
   initStep3Events();
