@@ -358,6 +358,36 @@ function scopeKeyframeId(exerciseId) {
 }
 
 /**
+ * Normalise un libellé en supprimant les diacritiques pour la détection de motifs.
+ * @param {unknown} text
+ * @returns {string}
+ */
+function stripDiacritics(text) {
+  return String(text ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Détecte le sous-mode biomécanique pour le pôle `BAND_CORE`.
+ * @param {unknown} displayName
+ * @returns {"FLOOR_CORE" | "HORIZONTAL_ROW" | "GENERIC"}
+ */
+function detectBandCoreSubmode(displayName) {
+  const normalized = stripDiacritics(displayName);
+  const isFloorCore =
+    /\b(planche|plank|gainage|hollow|deadbug|abdo|core)\b/i.test(normalized) &&
+    !/\b(elastique|tirage|row|band|pallof)\b/i.test(normalized);
+  if (isFloorCore) {
+    return "FLOOR_CORE";
+  }
+  if (/\b(tirage|row|traction|pull)\b/i.test(normalized)) {
+    return "HORIZONTAL_ROW";
+  }
+  return "GENERIC";
+}
+
+/**
  * Génère un SVG biomécanique animé paramétrique de repli selon le pôle matériel.
  * Respecte strictement la charte WebStrength (`viewBox="0 0 240 220"`, fond `#0d1117`,
  * gainage `#10b981` et variables CSS `--base-dur`, `--anim-speed`, `--anim-state`).
@@ -449,6 +479,128 @@ export function buildFallbackParametricSvg(
   }
 
   if (normalizedPole === "BAND_CORE") {
+    const submode = detectBandCoreSubmode(displayName);
+
+    if (submode === "FLOOR_CORE") {
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="${safeLabel} gainage au sol">
+  <style>
+    .${scope}_plank {
+      --base-dur: 3.6s;
+      animation: ${scope}_brace calc(var(--base-dur, 3.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .${scope}_spine {
+      --base-dur: 3.6s;
+      animation: ${scope}_lumbar calc(var(--base-dur, 3.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .${scope}_sag {
+      --base-dur: 3.6s;
+      animation: ${scope}_lift calc(var(--base-dur, 3.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes ${scope}_brace {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-1.5px); }
+    }
+    @keyframes ${scope}_lumbar {
+      0%, 100% { opacity: 0.72; }
+      50% { opacity: 1; }
+    }
+    @keyframes ${scope}_lift {
+      0%, 100% { transform: translateY(2px); opacity: 0.45; }
+      50% { transform: translateY(-2px); opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="170" x2="220" y2="170" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+  <rect x="28" y="162" width="184" height="6" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="120" y="22" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">${safeLabel}</text>
+  <g class="${scope}_sag" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M122 157 L122 146 M119 150 L122 145 L125 150"/>
+    <path d="M138 157 L138 146 M135 150 L138 145 L141 150"/>
+  </g>
+  <path d="M46 160 L68 160 L68 128" fill="none" stroke="#94a3b8" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M193 144 L193 160 L201 160" fill="none" stroke="#cbd5e1" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="${scope}_plank">
+    <line x1="133" y1="136" x2="193" y2="144" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round"/>
+    <line class="${scope}_spine" x1="68" y1="128" x2="133" y2="136" stroke="#10b981" stroke-width="5.5" stroke-linecap="round"/>
+    <circle cx="46" cy="123" r="9.5" fill="#cbd5e1"/>
+    <circle cx="68" cy="128" r="3.5" fill="#22d3ee"/>
+    <circle cx="133" cy="136" r="3.5" fill="#22d3ee"/>
+  </g>
+  <text x="120" y="208" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Transverse engagé • Bassin neutre</text>
+</svg>`;
+    }
+
+    if (submode === "HORIZONTAL_ROW") {
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="${safeLabel} tirage horizontal à l'élastique">
+  <style>
+    .${scope}_band {
+      --base-dur: 3.2s;
+      transform-origin: 24px 104px;
+      animation: ${scope}_stretch calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .${scope}_upper {
+      --base-dur: 3.2s;
+      transform-origin: 152px 74px;
+      animation: ${scope}_pull calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .${scope}_forearm {
+      --base-dur: 3.2s;
+      transform-origin: 120px 92px;
+      animation: ${scope}_elbow calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .${scope}_scap {
+      --base-dur: 3.2s;
+      animation: ${scope}_retract calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes ${scope}_stretch {
+      0%, 100% { transform: rotate(0deg) scaleX(1); }
+      21%, 79% { transform: rotate(8.3deg) scaleX(1.39); }
+      42%, 58% { transform: rotate(-0.5deg) scaleX(1.83); }
+    }
+    @keyframes ${scope}_pull {
+      0%, 100% { transform: rotate(0deg); }
+      42%, 58% { transform: rotate(-103.5deg); }
+    }
+    @keyframes ${scope}_elbow {
+      0%, 100% { transform: rotate(0deg); }
+      42%, 58% { transform: rotate(121.7deg); }
+    }
+    @keyframes ${scope}_retract {
+      0%, 20%, 80%, 100% { opacity: 0.25; }
+      42%, 58% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="16" y1="192" x2="224" y2="192" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+  <rect x="16" y="42" width="8" height="150" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+  <circle cx="24" cy="104" r="4" fill="#f59e0b"/>
+  <text x="120" y="22" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">${safeLabel}</text>
+  <line class="${scope}_band" x1="24" y1="104" x2="90" y2="104" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+  <line x1="148" y1="122" x2="132" y2="190" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="158" y1="122" x2="174" y2="190" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>
+  <line x1="154" y1="122" x2="154" y2="70" stroke="#10b981" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="152" cy="48" r="10" fill="#cbd5e1"/>
+  <g class="${scope}_upper">
+    <line x1="152" y1="74" x2="120" y2="92" stroke="#cbd5e1" stroke-width="4.8" stroke-linecap="round"/>
+    <g class="${scope}_forearm">
+      <line x1="120" y1="92" x2="90" y2="104" stroke="#e2e8f0" stroke-width="4.2" stroke-linecap="round"/>
+      <circle cx="90" cy="104" r="3.5" fill="#22d3ee"/>
+    </g>
+    <circle cx="120" cy="92" r="3.5" fill="#22d3ee"/>
+  </g>
+  <circle cx="152" cy="74" r="3.8" fill="#22d3ee"/>
+  <path class="${scope}_scap" d="M174 74 L194 74 M188 69 L195 74 L188 79" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="120" y="208" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Omoplates serrées • Coudes bas</text>
+</svg>`;
+    }
+
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="${safeLabel} gainage et élastique">
   <style>
     .${scope}_band {
@@ -581,6 +733,62 @@ export function buildFallbackExerciseGuide({
   }
 
   if (normalizedPole === "BAND_CORE") {
+    const submode = detectBandCoreSubmode(cleanName);
+
+    if (submode === "FLOOR_CORE") {
+      const tempoBadge = isTimed
+        ? "Tapis / PDC • Maintien strict"
+        : "Gainage dynamique • Contrôle lent";
+      return {
+        short_desc: `${cleanName} — gainage profond au sol, stabilité lombo-pelvienne et contrôle du transverse.`,
+        guide: {
+          tempo_badge: tempoBadge,
+          setup:
+            "Installe les appuis au sol dans l'alignement des épaules, aspire le nombril pour engager le transverse et place le bassin en rétroversion neutre.",
+          execution: [
+            isTimed
+              ? "Maintiens l'alignement oreille-épaule-hanche-cheville tout en conservant une respiration diaphragmatique régulière."
+              : "Exécute chaque répétition avec lenteur et contrôle en maintenant les côtes abaissées vers le bassin.",
+            "Repousse activement le sol avec les avant-bras ou les appuis pour stabiliser la ceinture scapulaire.",
+            "Conserve la tension abdominale profonde sans relâcher la sangle lombaire jusqu'à la fin de la série.",
+          ],
+          errors: [
+            "Laisser le bassin s'affaisser vers le tapis et cambrer les lombaires (hyperlordose L4-L5).",
+            "Monter les fesses trop haut en toit ou laisser les omoplates se pincer entre les épaules.",
+            "Bloquer la respiration en apnée prolongée au lieu de gainer sur une expiration contrôlée.",
+          ],
+          svg_inline: svgInline,
+        },
+        svg_inline: svgInline,
+      };
+    }
+
+    if (submode === "HORIZONTAL_ROW") {
+      const tempoBadge = isTimed
+        ? "Élastique • Maintien rétraction"
+        : "Élastique • Tempo 2-1-2";
+      return {
+        short_desc: `${cleanName} — tirage horizontal à l'élastique axé sur la rétraction scapulaire et le verrouillage du buste.`,
+        guide: {
+          tempo_badge: tempoBadge,
+          setup:
+            "Ancre l'élastique à hauteur du sternum ou des côtes basses, place-toi en fente athlétique stable face au point d'attache et abaisse les épaules.",
+          execution: [
+            "Amorce le tirage en resserrant d'abord les omoplates vers la colonne vertébrale avant de fléchir les coudes.",
+            "Tire les coudes bas le long des côtes en gardant le buste strictement verrouillé sans balancement.",
+            "Marque une pause d'1 seconde en rétraction scapulaire maximale puis freine lentement le retour.",
+          ],
+          errors: [
+            "Hausser les épaules vers les oreilles et surcharger les trapèzes supérieurs.",
+            "Écarter les coudes à l'horizontale au lieu de les garder bas près du buste.",
+            "Donner un à-coup lombaire vers l'arrière en fin de tirage ou relâcher brusquement l'élastique.",
+          ],
+          svg_inline: svgInline,
+        },
+        svg_inline: svgInline,
+      };
+    }
+
     const tempoBadge = isTimed
       ? "Gainage / Élastique • Maintien strict"
       : "Élastique / PDC • Tempo 2-1-2";

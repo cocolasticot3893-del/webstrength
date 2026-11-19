@@ -16,6 +16,8 @@ import {
   CUSTOM_TEMPLATES,
   CUSTOM_TEMPLATE_IDS,
   ALL_EXERCISE_IDS,
+  INTEGRATED_USER_EXERCISES,
+  INTEGRATED_USER_EXERCISES_BY_ID,
   USER_EXERCISES_STORAGE_KEY,
   generateUserExerciseId,
   loadUserExercises,
@@ -2152,15 +2154,15 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
 
   it("generateUserExerciseId déterministe, collision multi-pôle, persistance USER_* et invariant EXERCISE_IDS.length === 17", () => {
     const id1 = generateUserExerciseId(
-      "Tirage Horizontal Élastique",
+      "Rowing Inversé Anneaux",
       {},
       "BAND_CORE"
     );
-    assert.equal(id1, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(id1, "USER_ROWING_INVERSE_ANNEAUX");
 
     const tplBand = getCatalogExercise("CUSTOM_BAND_CORE");
     const guide1 = buildFallbackExerciseGuide({
-      name: "Tirage Horizontal Élastique",
+      name: "Rowing Inversé Anneaux",
       pole: "BAND_CORE",
       isTimed: false,
       exerciseId: id1,
@@ -2168,7 +2170,7 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
 
     const saved1 = saveUserExercise({
       id: id1,
-      name: "Tirage Horizontal Élastique",
+      name: "Rowing Inversé Anneaux",
       pole: tplBand.pole,
       pattern: tplBand.pattern,
       allowed_loads: [...tplBand.allowed_loads],
@@ -2196,34 +2198,36 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     );
 
     const idSamePole = generateUserExerciseId(
-      "Tirage Horizontal Élastique",
+      "Rowing Inversé Anneaux",
       existingMap,
       "BAND_CORE"
     );
     assert.equal(idSamePole, id1);
 
     const idOtherPole = generateUserExerciseId(
-      "Tirage Horizontal Élastique",
+      "Rowing Inversé Anneaux",
       existingMap,
       "DUMBBELL"
     );
-    assert.equal(idOtherPole, "USER_TIRAGE_HORIZONTAL_ELASTIQUE_DUMBBELL");
+    assert.equal(idOtherPole, "USER_ROWING_INVERSE_ANNEAUX_DUMBBELL");
 
     const resolved = getCatalogExercise(id1);
     assert.equal(resolved.id, id1);
-    assert.equal(resolved.name, "Tirage Horizontal Élastique");
+    assert.equal(resolved.name, "Rowing Inversé Anneaux");
 
     const all = getAllCatalogExercises();
-    assert.equal(all.length, 18);
+    assert.equal(all.length, CATALOG.length + INTEGRATED_USER_EXERCISES.length + 1);
+    assert.equal(all.length, 20);
     assert.ok(all.some((ex) => ex.id === id1));
 
     // Invariant strict du catalogue officiel
     assert.equal(EXERCISE_IDS.length, 17);
     assert.equal(CATALOG.length, 17);
 
-    // Suppression unitaire propre
+    // Suppression unitaire propre -> retour à 19 exercices (17 officiels + 2 intégrés)
     assert.equal(removeUserExercise(id1), true);
     assert.equal(getUserExercisesList().length, 0);
+    assert.equal(getAllCatalogExercises().length, 19);
   });
 
   it("Parité mathématique exacte entre CUSTOM_BAND_CORE et sa version promue USER_*", () => {
@@ -2572,5 +2576,124 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     assert.equal(exportedItem.guide.svg_inline, undefined);
     assert.ok(typeof exportedItem.svg_inline === "string");
     assert.equal(/<script/i.test(exportedItem.svg_inline), false);
+  });
+
+  it("Exercices intégrés v1.7.1 : priorité, anti-doublon, SVG différenciés sur disque, fallback BAND_CORE et parseMarkdownOffline", () => {
+    // 1. Immuabilité et présence des 2 exercices intégrés dans INTEGRATED_USER_EXERCISES
+    assert.equal(Object.isFrozen(INTEGRATED_USER_EXERCISES), true);
+    assert.equal(Object.isFrozen(INTEGRATED_USER_EXERCISES_BY_ID), true);
+    assert.equal(INTEGRATED_USER_EXERCISES.length, 2);
+
+    const plank = getCatalogExercise("USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND");
+    const row = getCatalogExercise("USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(plank.id, "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND");
+    assert.equal(plank.is_timed, true);
+    assert.equal(plank.is_integrated_user, true);
+    assert.equal(plank.is_user_catalog, true);
+    assert.equal(plank.is_custom, false);
+    assert.equal(row.id, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(row.is_timed, false);
+    assert.equal(row.is_integrated_user, true);
+    assert.equal(row.is_user_catalog, true);
+    assert.equal(row.is_custom, false);
+
+    // 2. Priorité sur localStorage & anti-doublon dans getAllCatalogExercises()
+    const tplBand = getCatalogExercise("CUSTOM_BAND_CORE");
+    const staleGuide = buildFallbackExerciseGuide({
+      name: "Tirage Horizontal Élastique",
+      pole: "BAND_CORE",
+      isTimed: false,
+      exerciseId: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+    });
+    saveUserExercise({
+      id: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+      name: "Tirage Horizontal Élastique (ancien local)",
+      pole: tplBand.pole,
+      pattern: tplBand.pattern,
+      allowed_loads: [...tplBand.allowed_loads],
+      parasitic_reps: tplBand.parasitic_reps,
+      unit_tut_sec: tplBand.unit_tut_sec,
+      cns_spinal_tax: tplBand.cns_spinal_tax,
+      unit_label: tplBand.unit_label,
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 12,
+      short_desc: staleGuide.short_desc,
+      guide: staleGuide.guide,
+      svg_inline: staleGuide.svg_inline,
+    });
+
+    const resolvedRow = getCatalogExercise("USER_TIRAGE_HORIZONTAL_ELASTIQUE");
+    assert.equal(
+      resolvedRow.guide.svg_path,
+      "./assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg"
+    );
+    assert.equal(resolvedRow.is_integrated_user, true);
+
+    const allWithStale = getAllCatalogExercises();
+    const matchingRowEntries = allWithStale.filter(
+      (ex) => ex.id === "USER_TIRAGE_HORIZONTAL_ELASTIQUE"
+    );
+    assert.equal(matchingRowEntries.length, 1);
+    assert.equal(allWithStale.length, 19);
+
+    // 3. Vérification des 2 fichiers SVG sur disque
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const svgFiles = [
+      "assets/exos/USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND.svg",
+      "assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg",
+    ];
+    const svgContents = [];
+
+    for (const relPath of svgFiles) {
+      const fullPath = path.join(rootDir, relPath);
+      assert.equal(fs.existsSync(fullPath), true, `Fichier manquant : ${relPath}`);
+      const stat = fs.statSync(fullPath);
+      assert.ok(stat.size < 8192, `SVG trop lourd (${stat.size} o) : ${relPath}`);
+      const raw = fs.readFileSync(fullPath, "utf8");
+      const clean = sanitizeSvgMarkup(raw);
+      assert.ok(clean.includes('viewBox="0 0 240 220"'));
+      assert.ok(clean.includes("#0d1117"));
+      assert.ok(clean.includes("#10b981"));
+      assert.ok(clean.includes("--anim-speed"));
+      assert.ok(clean.includes("--anim-state"));
+      assert.equal(/<script/i.test(clean), false);
+      assert.equal(/<foreignObject/i.test(clean), false);
+      assert.equal(/\bon[a-z]+\s*=/i.test(clean), false);
+      svgContents.push(clean);
+    }
+
+    assert.notEqual(svgContents[0], svgContents[1]);
+    assert.equal(/élastique|elastique/i.test(svgContents[0]), false);
+    assert.equal(/#f59e0b/i.test(svgContents[0]), false);
+
+    // 4. Schémas paramétriques de repli distincts pour BAND_CORE (planche vs tirage)
+    const fallbackPlank = buildFallbackParametricSvg(
+      "BAND_CORE",
+      "Planche ventrale test",
+      "USER_TEST_PLANK"
+    );
+    const fallbackRow = buildFallbackParametricSvg(
+      "BAND_CORE",
+      "Tirage élastique test",
+      "USER_TEST_ROW"
+    );
+    assert.notEqual(fallbackPlank, fallbackRow);
+    assert.equal(/#f59e0b/i.test(fallbackPlank), false);
+    assert.ok(/#f59e0b/i.test(fallbackRow));
+
+    // 5. Résolution Markdown hors-ligne vers les 2 IDs intégrés
+    const parsed = parseMarkdownOffline(
+      [
+        "Gainage planche ventrale gainage profond | 0 | 3x45s",
+        "Tirage horizontal élastique | 1 | 3x12",
+      ].join("\n")
+    );
+    assert.equal(parsed.exercises.length, 2);
+    assert.equal(
+      parsed.exercises[0].id,
+      "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND"
+    );
+    assert.equal(parsed.exercises[1].id, "USER_TIRAGE_HORIZONTAL_ELASTIQUE");
   });
 });

@@ -593,6 +593,91 @@ export const ALL_EXERCISE_IDS = deepFreeze([
   ...CUSTOM_TEMPLATE_IDS,
 ]);
 
+/**
+ * Exercices utilisateur intégrés nativement au catalogue officiel (v1.7.1)
+ * avec schémas SVG différenciés sur disque et fiches biomécaniques dédiées.
+ */
+const RAW_INTEGRATED_USER_EXERCISES = [
+  {
+    id: "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND",
+    name: "Gainage Planche Ventrale (Gainage Profond)",
+    pole: "BAND_CORE",
+    pattern: "LUMBO_PELVIC",
+    allowed_loads: [0, 1, 2, 3, 4],
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 0.5,
+    is_timed: true,
+    unit_label: "niv.",
+    default_sets: 3,
+    default_reps: 45,
+    is_custom: false,
+    is_user_catalog: true,
+    is_integrated_user: true,
+    short_desc:
+      "Transverse & caisson abdominal profond — verrouillage lombo-pelvien isométrique sans cisaillement L4-L5.",
+    guide: {
+      svg_path: "./assets/exos/USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND.svg",
+      tempo_badge: "Isométrique • Maintien strict 45s",
+      setup:
+        "En planche ventrale sur avant-bras et pointes de pieds sur tapis, coudes exactement à l'aplomb des épaules, regard au sol et rétroversion pelvienne neutre.",
+      execution: [
+        "Auto-grandis la colonne de la nuque jusqu'aux talons en repoussant activement le tapis avec les avant-bras.",
+        "Engage le transverse (nombril rentré vers le rachis) tout en maintenant une respiration diaphragmatique fluide et régulière.",
+        "Conserve une tension globale homogène des épaules aux talons via un serrage modéré des fessiers et quadriceps.",
+      ],
+      errors: [
+        "Creuser les lombaires (hyperlordose L4-L5) par relâchement de la sangle abdominale profonde.",
+        "Monter le bassin trop haut en V inversé pour décharger le caisson antérieur.",
+        "Bloquer la respiration en apnée (manœuvre de Valsalva) au lieu de ventiler calmement.",
+      ],
+    },
+  },
+  {
+    id: "USER_TIRAGE_HORIZONTAL_ELASTIQUE",
+    name: "Tirage Horizontal Élastique",
+    pole: "BAND_CORE",
+    pattern: "UPPER_PULL",
+    allowed_loads: [0, 1, 2, 3, 4],
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 0.5,
+    is_timed: false,
+    unit_label: "niv.",
+    default_sets: 3,
+    default_reps: 12,
+    is_custom: false,
+    is_user_catalog: true,
+    is_integrated_user: true,
+    short_desc:
+      "Rhomboïdes, trapèzes moyens & dorsaux — rééquilibrage postural contre l'enroulement thoracique du cycliste.",
+    guide: {
+      svg_path: "./assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg",
+      tempo_badge: "Tirage horizontal • Tempo 2-1-2",
+      setup:
+        "Posture en fente athlétique stable face au point d'ancrage réglé à hauteur du sternum / côtes basses, côtes abaissées et bras tendus sous pré-tension sans protraction excessive.",
+      execution: [
+        "Initie chaque répétition par le serrage et l'abaissement contrôlé des omoplates loin des oreilles.",
+        "Tire les coudes bas le long des côtes vers les hanches jusqu'au contact des mains près du buste avec une pause isométrique d'1s.",
+        "Freine le retour sur 2s en gardant le tronc verrouillé et la tension continue dans l'élastique.",
+      ],
+      errors: [
+        "Hausser les épaules vers les oreilles en sur-recrutant les trapèzes supérieurs.",
+        "Cambrer les lombaires ou balancer le buste vers l'arrière pour terminer le tirage.",
+        "Relâcher brusquement l'élastique en phase excentrique en perdant le contrôle scapulaire.",
+      ],
+    },
+  },
+];
+
+/** Liste immuable des exercices utilisateur intégrés nativement au catalogue. */
+export const INTEGRATED_USER_EXERCISES = deepFreeze(RAW_INTEGRATED_USER_EXERCISES);
+
+/** Dictionnaire immuable indexé par ID des exercices utilisateur intégrés. */
+export const INTEGRATED_USER_EXERCISES_BY_ID = deepFreeze(
+  Object.fromEntries(INTEGRATED_USER_EXERCISES.map((ex) => [ex.id, ex]))
+);
+
 /** Clé de persistance localStorage pour les exercices promus dans le catalogue utilisateur. */
 export const USER_EXERCISES_STORAGE_KEY = "WEBSTRENGTH_USER_EXERCISES_V1";
 
@@ -955,11 +1040,15 @@ export function getUserExercisesList() {
 }
 
 /**
- * Retourne la liste combinée du catalogue officiel (17) et des exercices utilisateur.
+ * Retourne la liste combinée du catalogue officiel (17), des exercices utilisateur intégrés
+ * et des exercices utilisateur dynamiques sans doublon.
  * @returns {Array<Readonly<Record<string, any>>>}
  */
 export function getAllCatalogExercises() {
-  return [...CATALOG, ...getUserExercisesList()];
+  const dynamicOnly = getUserExercisesList().filter(
+    (ex) => !Object.hasOwn(INTEGRATED_USER_EXERCISES_BY_ID, ex.id)
+  );
+  return [...CATALOG, ...INTEGRATED_USER_EXERCISES, ...dynamicOnly];
 }
 
 /**
@@ -1000,7 +1089,7 @@ export function exportUserExercisesJson() {
 }
 
 /**
- * Récupère un exercice du catalogue (officiel, utilisateur ou modèle libre) par son identifiant.
+ * Récupère un exercice du catalogue (officiel, intégré, utilisateur dynamique ou modèle libre) par son identifiant.
  * Lève une erreur explicite si l'identifiant est inconnu.
  * @param {string} id
  * @returns {Readonly<Record<string, any>>}
@@ -1009,6 +1098,9 @@ export function getCatalogExercise(id) {
   if (typeof id === "string") {
     if (Object.hasOwn(CATALOG_BY_ID, id)) {
       return CATALOG_BY_ID[id];
+    }
+    if (Object.hasOwn(INTEGRATED_USER_EXERCISES_BY_ID, id)) {
+      return INTEGRATED_USER_EXERCISES_BY_ID[id];
     }
     const userExercises = loadUserExercises();
     if (Object.hasOwn(userExercises, id)) {

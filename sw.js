@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.7.0";
+const CACHE_NAME = "webstrength-v1.7.1";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -41,6 +41,8 @@ const PRECACHE_ASSETS = [
   "./assets/exos/BAND_PSOAS_MARCH.svg",
   "./assets/exos/BAND_FACE_PULL.svg",
   "./assets/exos/CORE_MCGILL_BIG3.svg",
+  "./assets/exos/USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND.svg",
+  "./assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg",
 ];
 
 /**

@@ -2259,6 +2259,10 @@ function initFreeBuilderModal() {
     catalogPicker.replaceChildren();
 
     const allCatalog = getAllCatalogExercises();
+    const catalogHeading = $("free-catalog-heading");
+    if (catalogHeading) {
+      catalogHeading.textContent = `Catalogue (${allCatalog.length} exercices)`;
+    }
     const filtered =
       activePole === "ALL"
         ? allCatalog
