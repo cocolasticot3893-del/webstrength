@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="DB_RENEGADE_ROW : planche dynamique sur haltères et tirage unilatéral">
+  <style>
+    .row-uarm {
+      --base-dur: 3.2s;
+      transform-origin: 146px 120px;
+      animation: DB_RENEGADE_ROW_uarm calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .row-farm {
+      --base-dur: 3.2s;
+      transform-origin: 146px 148px;
+      animation: DB_RENEGADE_ROW_farm calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .anti-rot {
+      --base-dur: 3.2s;
+      animation: DB_RENEGADE_ROW_anti calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes DB_RENEGADE_ROW_uarm {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(52deg); }
+    }
+    @keyframes DB_RENEGADE_ROW_farm {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(-68deg); }
+    }
+    @keyframes DB_RENEGADE_ROW_anti {
+      0%, 100% { opacity: 0.45; }
+      45%, 55% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Pieds écartés en planche -->
+  <line x1="46" y1="182" x2="88" y2="136" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="46" cy="182" r="2.8" fill="#22d3ee"/>
+
+  <!-- Gainage rachis + bassin verrouillé anti-rotation -->
+  <line x1="88" y1="136" x2="146" y2="120" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+  <circle cx="164" cy="110" r="8" fill="#cbd5e1"/>
+
+  <!-- Bras d'appui fixe sur haltère -->
+  <line x1="146" y1="120" x2="154" y2="176" stroke="#64748b" stroke-width="4.8" stroke-linecap="round"/>
+  <rect x="145" y="175" width="18" height="7" rx="2" fill="#64748b" stroke="#94a3b8" stroke-width="1"/>
+
+  <!-- Bras qui tire l'haltère -->
+  <g class="row-uarm">
+    <line x1="146" y1="120" x2="146" y2="148" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round"/>
+    <g class="row-farm">
+      <line x1="146" y1="148" x2="146" y2="176" stroke="#cbd5e1" stroke-width="4.8" stroke-linecap="round"/>
+      <rect x="137" y="174" width="18" height="7" rx="2" fill="#64748b" stroke="#e2e8f0" stroke-width="1.2"/>
+      <rect x="139" y="172" width="4" height="11" rx="1" fill="#e2e8f0"/>
+      <rect x="149" y="172" width="4" height="11" rx="1" fill="#e2e8f0"/>
+    </g>
+    <circle cx="146" cy="148" r="3" fill="#f8fafc"/>
+  </g>
+
+  <circle cx="146" cy="120" r="3" fill="#22d3ee"/>
+  <circle cx="88" cy="136" r="3.4" fill="#22d3ee"/>
+
+  <!-- Repère anti-rotation bassin -->
+  <g class="anti-rot">
+    <path d="M74 118 A18 18 0 0 1 102 118" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="3 2"/>
+    <line x1="88" y1="126" x2="88" y2="146" stroke="#10b981" stroke-width="1.8"/>
+    <text x="120" y="203" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">ANTI-ROTATION BASSIN VERROUILLÉ</text>
+  </g>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">DB · RENEGADE ROW</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">PLANCHE GAINÉE</text>
+</svg>

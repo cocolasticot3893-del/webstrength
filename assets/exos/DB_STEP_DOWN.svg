@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="DB_STEP_DOWN : step-down excentrique lent 4s depuis box avec haltères">
+  <style>
+    .shin {
+      --base-dur: 4.5s;
+      transform-origin: 102px 144px;
+      animation: DB_STEP_DOWN_shin calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .thigh {
+      --base-dur: 4.5s;
+      transform-origin: 102px 108px;
+      animation: DB_STEP_DOWN_thigh calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .torso {
+      --base-dur: 4.5s;
+      transform-origin: 102px 72px;
+      animation: DB_STEP_DOWN_torso calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .free-leg {
+      --base-dur: 4.5s;
+      transform-origin: 102px 72px;
+      animation: DB_STEP_DOWN_fleg calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ecc-ind {
+      --base-dur: 4.5s;
+      animation: DB_STEP_DOWN_ecc calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes DB_STEP_DOWN_shin {
+      0%, 100% { transform: rotate(2deg); }
+      65%, 75% { transform: rotate(24deg); }
+    }
+    @keyframes DB_STEP_DOWN_thigh {
+      0%, 100% { transform: rotate(-4deg); }
+      65%, 75% { transform: rotate(-64deg); }
+    }
+    @keyframes DB_STEP_DOWN_torso {
+      0%, 100% { transform: rotate(8deg); }
+      65%, 75% { transform: rotate(52deg); }
+    }
+    @keyframes DB_STEP_DOWN_fleg {
+      0%, 100% { transform: rotate(-2deg); }
+      65%, 75% { transform: rotate(42deg); }
+    }
+    @keyframes DB_STEP_DOWN_ecc {
+      0%, 82%, 100% { opacity: 0.2; }
+      20%, 68% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="186" x2="220" y2="186" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Box pliométrique -->
+  <rect x="64" y="144" width="58" height="42" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Repère descente 4s ECC -->
+  <g class="ecc-ind">
+    <path d="M168 108 L168 176 M163 170 L168 177 L173 170" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="176" y="146" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="9" font-weight="600">4s ECC</text>
+  </g>
+
+  <!-- Pied d'appui sur box -->
+  <path d="M98 144 L116 144" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <g class="shin">
+    <line x1="102" y1="144" x2="102" y2="108" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+    <g class="thigh">
+      <line x1="102" y1="108" x2="102" y2="72" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+      <!-- Jambe libre descendant vers le sol -->
+      <g class="free-leg">
+        <line x1="102" y1="72" x2="128" y2="112" stroke="#64748b" stroke-width="5.5" stroke-linecap="round"/>
+        <line x1="128" y1="112" x2="138" y2="148" stroke="#64748b" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="128" cy="112" r="2.6" fill="#94a3b8"/>
+      </g>
+      <!-- Buste vert neutre + haltère -->
+      <g class="torso">
+        <line x1="102" y1="72" x2="102" y2="34" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="104" cy="21" r="8" fill="#cbd5e1"/>
+        <line x1="102" y1="38" x2="108" y2="78" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round"/>
+        <rect x="100" y="76" width="16" height="6" rx="2" fill="#64748b" stroke="#e2e8f0" stroke-width="1"/>
+        <circle cx="102" cy="36" r="3" fill="#22d3ee"/>
+      </g>
+      <circle cx="102" cy="72" r="3.4" fill="#22d3ee"/>
+    </g>
+    <circle cx="102" cy="108" r="3.2" fill="#f8fafc"/>
+  </g>
+  <circle cx="102" cy="144" r="2.8" fill="#22d3ee"/>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">DB · STEP-DOWN</text>
+  <text x="224" y="24" text-anchor="end" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="9">GENOU STABLE</text>
+</svg>

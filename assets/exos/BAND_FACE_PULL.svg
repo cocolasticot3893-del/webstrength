@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Face Pull avec rotation externe scapulaire">
+  <style>
+    .bfp-anim {
+      --base-dur: 3.2s;
+      animation-duration: calc(var(--base-dur, 3.2s) / var(--anim-speed, 1));
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bfp-upper { transform-origin: 152px 72px; animation-name: bfp-humerus; }
+    .bfp-elbow { animation-name: bfp-elbow-track; }
+    .bfp-forearm { transform-origin: 112px 72px; animation-name: bfp-extrot; }
+    .bfp-band { transform-origin: 24px 72px; animation-name: bfp-stretch; }
+    .bfp-scap { animation-name: bfp-ind; }
+    @keyframes bfp-humerus {
+      0%, 100% { transform: scaleX(1); }
+      42%, 58% { transform: scaleX(-0.55); }
+    }
+    @keyframes bfp-elbow-track {
+      0%, 100% { transform: translateX(0px); }
+      42%, 58% { transform: translateX(62px); }
+    }
+    @keyframes bfp-extrot {
+      0%, 100% { transform: rotate(0deg); }
+      42%, 58% { transform: rotate(62deg); }
+    }
+    @keyframes bfp-stretch {
+      0%, 100% { transform: rotate(0deg) scaleX(1); }
+      21%, 79% { transform: rotate(-8.7deg) scaleX(1.585); }
+      42%, 58% { transform: rotate(-10.2deg) scaleX(2.32); }
+    }
+    @keyframes bfp-ind {
+      0%, 100% { opacity: 0.3; }
+      42%, 58% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="12" fill="#0d1117" />
+  <line x1="16" y1="194" x2="224" y2="194" stroke="#1e293b" stroke-width="2" />
+  <text x="120" y="20" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="9" font-weight="600" letter-spacing="0.8">FACE PULL • ROTATION EXTERNE</text>
+
+  <!-- Point d'ancrage haut gauche -->
+  <rect x="16" y="42" width="8" height="152" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+  <circle cx="24" cy="72" r="4.5" fill="#38bdf8" />
+
+  <!-- Posture fente athlétique face à gauche -->
+  <circle cx="152" cy="46" r="11" fill="#1e293b" stroke="#94a3b8" stroke-width="2" />
+  <path d="M142 64 L164 64 L162 122 L144 122 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" />
+  <!-- Rachis neutre verrouillé (pas d'hyperlordose) -->
+  <line x1="156" y1="66" x2="156" y2="120" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Jambes stables -->
+  <path d="M148 122 L134 156 L132 190 L120 191" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M158 122 L170 156 L176 190 L164 191" fill="none" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="153" cy="122" r="4" fill="#22d3ee" />
+  <circle cx="134" cy="156" r="3.5" fill="#22d3ee" />
+  <circle cx="170" cy="156" r="3.5" fill="#22d3ee" />
+
+  <!-- Élastique cyan double brin -->
+  <line x1="24" y1="72" x2="84" y2="72" stroke="#38bdf8" stroke-width="3.2" stroke-linecap="round" vector-effect="non-scaling-stroke" class="bfp-anim bfp-band" />
+
+  <!-- Humérus haut (coude reste à hauteur d'épaule) -->
+  <line x1="152" y1="72" x2="112" y2="72" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" class="bfp-anim bfp-upper" />
+  <circle cx="152" cy="72" r="4.5" fill="#22d3ee" />
+
+  <!-- Coude & avant-bras en rotation externe (pouces vers l'arrière) -->
+  <g class="bfp-anim bfp-elbow">
+    <g class="bfp-anim bfp-forearm">
+      <line x1="112" y1="72" x2="84" y2="72" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round" />
+      <circle cx="84" cy="72" r="4" fill="#22d3ee" />
+    </g>
+    <circle cx="112" cy="72" r="4" fill="#22d3ee" />
+  </g>
+
+  <!-- Repère rétraction scapulaire -->
+  <path d="M180 62 A18 18 0 0 1 182 84" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" class="bfp-anim bfp-scap" />
+  <text x="120" y="210" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Coudes hauts • Pouces arrière • Côtes basses</text>
+</svg>

@@ -5,6 +5,9 @@
 
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   CATALOG,
@@ -352,6 +355,77 @@ describe("1. Intégrité du Catalogue (catalog.js)", () => {
         (err) =>
           err instanceof Error &&
           err.message.includes("Exercice inconnu dans le catalogue WebStrength")
+      );
+    }
+  });
+
+  it("chaque exercice possède un guide figé et un SVG animé valide, léger (< 8192 o) et sûr sur disque", () => {
+    const testDir = path.dirname(fileURLToPath(import.meta.url));
+    const rootDir = path.resolve(testDir, "..");
+
+    for (const ex of CATALOG) {
+      assert.ok(ex.guide && typeof ex.guide === "object", `${ex.id}.guide doit exister`);
+      assert.equal(Object.isFrozen(ex.guide), true, `${ex.id}.guide doit être figé`);
+      assert.equal(ex.guide.svg_path, `./assets/exos/${ex.id}.svg`);
+      assert.equal(
+        typeof ex.guide.tempo_badge === "string" && ex.guide.tempo_badge.trim().length > 0,
+        true,
+        `${ex.id}.guide.tempo_badge doit être non vide`
+      );
+      assert.equal(
+        typeof ex.guide.setup === "string" && ex.guide.setup.trim().length > 0,
+        true,
+        `${ex.id}.guide.setup doit être non vide`
+      );
+      assert.equal(
+        Array.isArray(ex.guide.execution) && ex.guide.execution.length >= 2,
+        true,
+        `${ex.id}.guide.execution doit contenir au moins 2 consignes`
+      );
+      assert.equal(
+        Array.isArray(ex.guide.errors) && ex.guide.errors.length >= 2,
+        true,
+        `${ex.id}.guide.errors doit contenir au moins 2 erreurs`
+      );
+
+      const svgFullPath = path.join(rootDir, "assets", "exos", `${ex.id}.svg`);
+      assert.equal(fs.existsSync(svgFullPath), true, `Fichier SVG manquant : ${svgFullPath}`);
+
+      const stat = fs.statSync(svgFullPath);
+      assert.equal(
+        stat.size < 8192,
+        true,
+        `${ex.id}.svg pèse ${stat.size} octets (limite < 8192)`
+      );
+
+      const svgContent = fs.readFileSync(svgFullPath, "utf8");
+      const trimmed = svgContent.trim();
+      assert.equal(trimmed.startsWith("<svg"), true, `${ex.id}.svg doit commencer par <svg`);
+      assert.equal(trimmed.includes("</svg>"), true, `${ex.id}.svg doit contenir </svg>`);
+      assert.equal(
+        svgContent.includes("--anim-speed"),
+        true,
+        `${ex.id}.svg doit utiliser --anim-speed`
+      );
+      assert.equal(
+        svgContent.includes("--anim-state"),
+        true,
+        `${ex.id}.svg doit utiliser --anim-state`
+      );
+      assert.equal(
+        /<script\b/i.test(svgContent),
+        false,
+        `${ex.id}.svg ne doit contenir aucun <script`
+      );
+      assert.equal(
+        /<foreignObject\b/i.test(svgContent),
+        false,
+        `${ex.id}.svg ne doit contenir aucun <foreignObject`
+      );
+      assert.equal(
+        /\son[a-z]+\s*=/i.test(svgContent),
+        false,
+        `${ex.id}.svg ne doit contenir aucun attribut événementiel on*`
       );
     }
   });

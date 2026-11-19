@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="KBOX_RDL : soulevé de terre roumain barre sur kBox">
+  <style>
+    .kbox-fly {
+      --base-dur: 1.6s;
+      transform-origin: 120px 179px;
+      animation: KBOX_RDL_fly calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .thigh {
+      --base-dur: 3.6s;
+      transform-origin: 124px 134px;
+      animation: KBOX_RDL_thigh calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .torso {
+      --base-dur: 3.6s;
+      transform-origin: 120px 96px;
+      animation: KBOX_RDL_torso calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .arms {
+      --base-dur: 3.6s;
+      transform-origin: 124px 56px;
+      animation: KBOX_RDL_arms calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .strap {
+      --base-dur: 3.6s;
+      transform-origin: 120px 172px;
+      animation: KBOX_RDL_strap calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ecc-zone {
+      --base-dur: 3.6s;
+      animation: KBOX_RDL_ecc calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .con-arrow {
+      --base-dur: 3.6s;
+      animation: KBOX_RDL_con calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KBOX_RDL_fly {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes KBOX_RDL_thigh {
+      0%, 100% { transform: rotate(-4deg); }
+      45%, 55% { transform: rotate(-28deg); }
+    }
+    @keyframes KBOX_RDL_torso {
+      0%, 100% { transform: rotate(8deg); }
+      45%, 55% { transform: rotate(96deg); }
+    }
+    @keyframes KBOX_RDL_arms {
+      0%, 100% { transform: rotate(-4deg); }
+      45%, 55% { transform: rotate(-68deg); }
+    }
+    @keyframes KBOX_RDL_strap {
+      0%, 100% { transform: scaleY(1); }
+      45%, 55% { transform: scaleY(0.55); }
+    }
+    @keyframes KBOX_RDL_ecc {
+      0%, 24%, 72%, 100% { opacity: 0.12; }
+      38%, 55% { opacity: 0.95; }
+    }
+    @keyframes KBOX_RDL_con {
+      0%, 55%, 95%, 100% { opacity: 0.15; }
+      68%, 85% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Plateforme kBox4 -->
+  <rect x="62" y="172" width="116" height="16" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="120" cy="179" r="9" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <g class="kbox-fly">
+    <line x1="120" y1="171" x2="120" y2="187" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="112" y1="179" x2="128" y2="179" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Zone freinage bas RDL -->
+  <g class="ecc-zone">
+    <rect x="92" y="128" width="84" height="32" rx="6" fill="#ef4444" fill-opacity="0.14" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
+    <path d="M52 124 L52 152 M47 146 L52 153 L57 146" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Flèche concentrique -->
+  <g class="con-arrow">
+    <path d="M192 142 L192 86 M187 93 L192 85 L197 93" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sangle kBox vers barre -->
+  <line class="strap" x1="120" y1="172" x2="132" y2="104" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 3" stroke-linecap="round"/>
+
+  <!-- Tibia quasi vertical -->
+  <path d="M118 170 L138 170" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="122" y1="170" x2="124" y2="134" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+
+  <g class="thigh">
+    <line x1="124" y1="134" x2="120" y2="96" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+    <g class="torso">
+      <!-- Dos plat vert neutre -->
+      <line x1="120" y1="96" x2="124" y2="56" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="126" cy="40" r="8.5" fill="#cbd5e1"/>
+      <g class="arms">
+        <line x1="124" y1="56" x2="132" y2="104" stroke="#e2e8f0" stroke-width="4.8" stroke-linecap="round"/>
+        <!-- Barre proche tibias -->
+        <line x1="122" y1="104" x2="144" y2="104" stroke="#cbd5e1" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="133" cy="104" r="3" fill="#f59e0b"/>
+      </g>
+      <circle cx="124" cy="56" r="3" fill="#22d3ee"/>
+    </g>
+    <circle cx="120" cy="96" r="3.4" fill="#22d3ee"/>
+  </g>
+  <circle cx="124" cy="134" r="3.2" fill="#f8fafc"/>
+  <circle cx="122" cy="170" r="2.8" fill="#22d3ee"/>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox4 · RDL BARRE</text>
+  <text x="224" y="24" text-anchor="end" fill="#ef4444" font-family="system-ui,sans-serif" font-size="9">CHARNIÈRE + FREIN</text>
+</svg>

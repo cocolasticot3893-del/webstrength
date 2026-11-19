@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://intervals.icu https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://intervals.icu https://generativelanguage.googleapis.com; object-src 'none'; base-uri 'self';"
     />
     <meta
       name="viewport"
@@ -753,5 +753,86 @@
         </button>
       </section>
     </main>
+
+    <dialog
+      id="exercise-guide-modal"
+      class="guide-modal"
+      closedby="any"
+      aria-labelledby="guide-modal-title"
+    >
+      <div class="guide-modal-inner">
+        <header class="guide-modal-head">
+          <div class="guide-title-wrap">
+            <h2 id="guide-modal-title">Guide Exercice</h2>
+            <span id="guide-tempo-badge" class="guide-tempo-badge"></span>
+          </div>
+          <button
+            type="button"
+            id="guide-close-btn"
+            class="btn btn-ghost btn-sm guide-close-btn"
+            aria-label="Fermer la fiche exercice"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="guide-visual-wrap">
+          <div id="guide-svg-stage" class="guide-svg-stage" aria-live="polite"></div>
+          <div class="guide-controls" role="group" aria-label="Contrôles animation biomécanique">
+            <button
+              type="button"
+              id="guide-play-pause-btn"
+              class="btn btn-secondary btn-sm"
+              aria-pressed="false"
+            >
+              ⏸ Pause
+            </button>
+            <button
+              type="button"
+              id="guide-speed-1x-btn"
+              class="seg-btn is-active"
+              aria-pressed="true"
+            >
+              1.0x (Réel)
+            </button>
+            <button
+              type="button"
+              id="guide-speed-05x-btn"
+              class="seg-btn"
+              aria-pressed="false"
+            >
+              0.5x (Ralenti)
+            </button>
+          </div>
+        </div>
+
+        <section class="guide-section">
+          <h3>⚙️ Installation (Setup)</h3>
+          <p id="guide-setup-text" class="guide-setup-text"></p>
+        </section>
+
+        <section class="guide-section">
+          <h3>✅ Comment bien le faire</h3>
+          <ul id="guide-execution-list" class="guide-list"></ul>
+        </section>
+
+        <section class="guide-section guide-section-errors">
+          <h3>⚠️ Erreurs à ne pas faire</h3>
+          <ul id="guide-errors-list" class="guide-list guide-errors-list"></ul>
+        </section>
+
+        <footer class="guide-modal-foot">
+          <a
+            id="guide-youtube-link"
+            class="guide-youtube-link"
+            href="https://www.youtube.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            🔍 Voir une démo vidéo sur YouTube
+          </a>
+        </footer>
+      </div>
+    </dialog>
   </body>
 </html>

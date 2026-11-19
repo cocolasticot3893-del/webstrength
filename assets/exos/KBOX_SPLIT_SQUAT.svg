@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="KBOX_SPLIT_SQUAT : squat bulgare unilatéral sur kBox">
+  <style>
+    .kbox-fly {
+      --base-dur: 1.6s;
+      transform-origin: 148px 179px;
+      animation: KBOX_SPLIT_SQUAT_fly calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .body-drop {
+      --base-dur: 3.4s;
+      animation: KBOX_SPLIT_SQUAT_drop calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .front-shin {
+      --base-dur: 3.4s;
+      transform-origin: 152px 170px;
+      animation: KBOX_SPLIT_SQUAT_fshin calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .front-thigh {
+      --base-dur: 3.4s;
+      transform-origin: 152px 132px;
+      animation: KBOX_SPLIT_SQUAT_fthigh calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .rear-leg {
+      --base-dur: 3.4s;
+      transform-origin: 58px 132px;
+      animation: KBOX_SPLIT_SQUAT_rleg calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .strap {
+      --base-dur: 3.4s;
+      transform-origin: 144px 172px;
+      animation: KBOX_SPLIT_SQUAT_strap calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ecc-zone {
+      --base-dur: 3.4s;
+      animation: KBOX_SPLIT_SQUAT_ecc calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .con-arrow {
+      --base-dur: 3.4s;
+      animation: KBOX_SPLIT_SQUAT_con calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KBOX_SPLIT_SQUAT_fly {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_drop {
+      0%, 100% { transform: translate(0px, 0px); }
+      45%, 55% { transform: translate(0px, 32px); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_fshin {
+      0%, 100% { transform: rotate(2deg); }
+      45%, 55% { transform: rotate(15deg); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_fthigh {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(-16deg); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_rleg {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(18deg); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_strap {
+      0%, 100% { transform: scaleY(1); }
+      45%, 55% { transform: scaleY(0.56); }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_ecc {
+      0%, 24%, 72%, 100% { opacity: 0.12; }
+      38%, 55% { opacity: 0.95; }
+    }
+    @keyframes KBOX_SPLIT_SQUAT_con {
+      0%, 55%, 95%, 100% { opacity: 0.15; }
+      68%, 85% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Bloc arrière surélevé -->
+  <rect x="42" y="132" width="32" height="56" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Plateforme kBox4 -->
+  <rect x="96" y="172" width="104" height="16" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="148" cy="179" r="9" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <g class="kbox-fly">
+    <line x1="148" y1="171" x2="148" y2="187" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="140" y1="179" x2="156" y2="179" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Zone freinage bas -->
+  <g class="ecc-zone">
+    <rect x="104" y="130" width="78" height="30" rx="6" fill="#ef4444" fill-opacity="0.14" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
+    <path d="M90 124 L90 152 M85 146 L90 153 L95 146" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Flèche concentrique -->
+  <g class="con-arrow">
+    <path d="M196 144 L196 92 M191 99 L196 91 L201 99" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sangle kBox -->
+  <line class="strap" x1="144" y1="172" x2="126" y2="100" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 3" stroke-linecap="round"/>
+
+  <!-- Jambe arrière -->
+  <g class="rear-leg">
+    <line x1="58" y1="132" x2="88" y2="132" stroke="#64748b" stroke-width="5.5" stroke-linecap="round"/>
+    <line x1="88" y1="132" x2="120" y2="100" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="88" cy="132" r="2.8" fill="#94a3b8"/>
+  </g>
+
+  <!-- Jambe avant -->
+  <path d="M148 170 L166 170" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <g class="front-shin">
+    <line x1="152" y1="170" x2="152" y2="132" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="152" cy="132" r="3.2" fill="#f8fafc"/>
+  </g>
+  <circle cx="152" cy="170" r="2.8" fill="#22d3ee"/>
+
+  <!-- Bassin + rachis neutre descendant -->
+  <g class="body-drop">
+    <line x1="156" y1="128" x2="120" y2="96" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="120" y1="96" x2="124" y2="54" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+    <rect x="112" y="92" width="16" height="6" rx="3" fill="#f59e0b"/>
+    <polyline points="124,60 134,76 128,90" fill="none" stroke="#e2e8f0" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="126" cy="40" r="8.5" fill="#cbd5e1"/>
+    <circle cx="120" cy="96" r="3.4" fill="#22d3ee"/>
+    <circle cx="124" cy="57" r="3" fill="#22d3ee"/>
+  </g>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox4 · BULGARE UNI</text>
+  <text x="224" y="24" text-anchor="end" fill="#ef4444" font-family="system-ui,sans-serif" font-size="9">FREIN BAS</text>
+</svg>

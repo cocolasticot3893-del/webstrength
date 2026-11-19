@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Flexion de hanche résistée Psoas March">
+  <style>
+    .bpm-anim {
+      --base-dur: 3.0s;
+      animation-duration: calc(var(--base-dur, 3.0s) / var(--anim-speed, 1));
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bpm-thigh { transform-origin: 108px 120px; animation-name: bpm-hip-flex; }
+    .bpm-shin { transform-origin: 108px 156px; animation-name: bpm-knee-keep; }
+    .bpm-band { transform-origin: 108px 190px; animation-name: bpm-band-pull; }
+    .bpm-pulse { animation-name: bpm-ind; }
+    @keyframes bpm-hip-flex {
+      0%, 100% { transform: rotate(0deg); }
+      42%, 58% { transform: rotate(-102deg); }
+    }
+    @keyframes bpm-knee-keep {
+      0%, 100% { transform: rotate(0deg); }
+      42%, 58% { transform: rotate(102deg); }
+    }
+    @keyframes bpm-band-pull {
+      0%, 100% { transform: rotate(0deg) scaleX(1); }
+      21%, 79% { transform: rotate(-19.5deg) scaleX(3.35); }
+      42%, 58% { transform: rotate(-43.5deg) scaleX(5.25); }
+    }
+    @keyframes bpm-ind {
+      0%, 100% { opacity: 0.35; }
+      42%, 58% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="12" fill="#0d1117" />
+  <line x1="20" y1="194" x2="220" y2="194" stroke="#1e293b" stroke-width="2" />
+  <line x1="108" y1="120" x2="178" y2="120" stroke="#10b981" stroke-width="1" stroke-dasharray="4 4" opacity="0.4" />
+  <text x="120" y="20" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="9" font-weight="600" letter-spacing="0.8">PSOAS MARCH • FLEXION HANCHE &gt;90°</text>
+
+  <!-- Tête et tronc droit (profil droite) -->
+  <circle cx="110" cy="44" r="11" fill="#1e293b" stroke="#94a3b8" stroke-width="2" />
+  <path d="M98 62 L118 62 L116 120 L100 120 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" />
+  <!-- Rachis neutre vert rigide -->
+  <line x1="105" y1="64" x2="105" y2="118" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+  <!-- Bras stabilisateur -->
+  <path d="M108 68 L94 94 L108 112" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Jambe d'appui fixe au sol -->
+  <path d="M108 120 L106 156 L108 190 L122 191" fill="none" stroke="#64748b" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="106" cy="156" r="3.5" fill="#22d3ee" opacity="0.7" />
+  <circle cx="108" cy="190" r="3.5" fill="#22d3ee" />
+
+  <!-- Élastique cyan ancré sous le pied d'appui -->
+  <line x1="108" y1="190" x2="120" y2="190" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" vector-effect="non-scaling-stroke" class="bpm-anim bpm-band" />
+
+  <!-- Jambe mobile en flexion de hanche > 90 deg -->
+  <g class="bpm-anim bpm-thigh">
+    <line x1="108" y1="120" x2="108" y2="156" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round" />
+    <g class="bpm-anim bpm-shin">
+      <path d="M108 156 L108 190 L122 190" fill="none" stroke="#e2e8f0" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="108" cy="190" r="3.5" fill="#22d3ee" />
+    </g>
+    <circle cx="108" cy="156" r="4" fill="#22d3ee" />
+  </g>
+  <circle cx="108" cy="120" r="4.5" fill="#22d3ee" />
+
+  <!-- Arc repère > 90 deg -->
+  <path d="M158 120 A36 36 0 0 0 152 104" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" class="bpm-anim bpm-pulse" />
+  <text x="120" y="210" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Genou &gt;90° • Zéro rétroversion lombaire</text>
+</svg>

@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="KBOX_HIP_THRUST : hip thrust ceinture sur kBox">
+  <style>
+    .kbox-fly {
+      --base-dur: 1.6s;
+      transform-origin: 132px 179px;
+      animation: KBOX_HIP_THRUST_fly calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .torso {
+      --base-dur: 3.4s;
+      transform-origin: 68px 124px;
+      animation: KBOX_HIP_THRUST_torso calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .thigh {
+      --base-dur: 3.4s;
+      transform-origin: 122px 124px;
+      animation: KBOX_HIP_THRUST_thigh calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .strap {
+      --base-dur: 3.4s;
+      transform-origin: 132px 172px;
+      animation: KBOX_HIP_THRUST_strap calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ecc-zone {
+      --base-dur: 3.4s;
+      animation: KBOX_HIP_THRUST_ecc calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .con-arrow {
+      --base-dur: 3.4s;
+      animation: KBOX_HIP_THRUST_con calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KBOX_HIP_THRUST_fly {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes KBOX_HIP_THRUST_torso {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(32deg); }
+    }
+    @keyframes KBOX_HIP_THRUST_thigh {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(-62deg); }
+    }
+    @keyframes KBOX_HIP_THRUST_strap {
+      0%, 100% { transform: scaleY(1); }
+      45%, 55% { transform: scaleY(0.45); }
+    }
+    @keyframes KBOX_HIP_THRUST_ecc {
+      0%, 24%, 72%, 100% { opacity: 0.12; }
+      38%, 55% { opacity: 0.95; }
+    }
+    @keyframes KBOX_HIP_THRUST_con {
+      0%, 55%, 95%, 100% { opacity: 0.15; }
+      68%, 85% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Banc appui scapulaire -->
+  <rect x="34" y="124" width="38" height="64" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- Plateforme kBox4 sous bassin -->
+  <rect x="92" y="172" width="102" height="16" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="132" cy="179" r="9" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <g class="kbox-fly">
+    <line x1="132" y1="171" x2="132" y2="187" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="124" y1="179" x2="140" y2="179" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Zone freinage bas -->
+  <g class="ecc-zone">
+    <rect x="94" y="138" width="60" height="28" rx="6" fill="#ef4444" fill-opacity="0.14" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
+    <path d="M84 128 L84 156 M79 150 L84 157 L89 150" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Flèche extension hanche -->
+  <g class="con-arrow">
+    <path d="M122 152 L122 102 M117 109 L122 101 L127 109" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sangle ceinture inguinale -->
+  <line class="strap" x1="132" y1="172" x2="122" y2="126" stroke="#38bdf8" stroke-width="2.6" stroke-dasharray="5 3" stroke-linecap="round"/>
+
+  <!-- Tibia avant -->
+  <path d="M174 170 L192 170" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <line x1="176" y1="170" x2="172" y2="124" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="176" cy="170" r="2.8" fill="#22d3ee"/>
+
+  <!-- Buste + bassin + cuisse -->
+  <g class="torso">
+    <line x1="68" y1="124" x2="122" y2="124" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="54" cy="112" r="8" fill="#cbd5e1"/>
+    <polyline points="68,124 84,110 96,120" fill="none" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="thigh">
+      <line x1="122" y1="124" x2="172" y2="124" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+      <circle cx="172" cy="124" r="3.2" fill="#f8fafc"/>
+    </g>
+    <!-- Ceinture pli inguinal -->
+    <rect x="117" y="118" width="9" height="12" rx="3" fill="#f59e0b"/>
+    <circle cx="122" cy="124" r="3.4" fill="#22d3ee"/>
+    <circle cx="68" cy="124" r="3" fill="#22d3ee"/>
+  </g>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox4 · HIP THRUST</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">EXT. HANCHE</text>
+</svg>

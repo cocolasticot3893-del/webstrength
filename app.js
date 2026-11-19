@@ -117,6 +117,11 @@ const state = {
   },
   lastPayload: null,
   audioCtx: null,
+  guideModal: {
+    speed: 1,
+    playing: true,
+    activeRequestId: 0,
+  },
 };
 
 /** Raccourci sûr de sélection par ID. */
@@ -1067,9 +1072,23 @@ function createExerciseCard(ex, index) {
   const head = document.createElement("div");
   head.className = "exo-head";
 
+  const headTop = document.createElement("div");
+  headTop.className = "exo-head-top";
+
   const nameEl = document.createElement("h3");
   nameEl.className = "exo-name";
   nameEl.textContent = cat.name;
+
+  const guideBtn = document.createElement("button");
+  guideBtn.type = "button";
+  guideBtn.className = "exo-guide-btn";
+  guideBtn.dataset.guideExo = cat.id;
+  guideBtn.textContent = "🎬 Voir l'exo";
+  guideBtn.addEventListener("click", () => {
+    void openExerciseGuideModal(cat.id);
+  });
+
+  headTop.append(nameEl, guideBtn);
 
   const badges = document.createElement("div");
   badges.className = "exo-badges";
@@ -1083,7 +1102,7 @@ function createExerciseCard(ex, index) {
   patternBadge.textContent = cat.pattern;
 
   badges.append(poleBadge, patternBadge);
-  head.append(nameEl, badges);
+  head.append(headTop, badges);
 
   // Description rapide & repères biomécaniques
   const descEl = document.createElement("p");
@@ -1661,6 +1680,223 @@ function initStep3Events() {
   });
 }
 
+/**
+ * Parse et assainit un document SVG XML avant injection DOM sans `innerHTML`.
+ * @param {string} svgText
+ * @returns {SVGElement}
+ */
+function sanitizeAndImportSvg(svgText) {
+  const parser = new DOMParser();
+  const parsedDoc = parser.parseFromString(String(svgText ?? ""), "image/svg+xml");
+
+  if (parsedDoc.getElementsByTagName("parsererror").length > 0) {
+    throw new Error("Erreur de parsing XML du schéma SVG.");
+  }
+
+  const root = parsedDoc.documentElement;
+  if (!root || root.tagName.toLowerCase() !== "svg") {
+    throw new Error("Le document chargé n'est pas un élément <svg> valide.");
+  }
+
+  const forbiddenTags = new Set(["script", "foreignobject", "iframe", "object", "embed"]);
+  for (const el of Array.from(root.getElementsByTagName("*"))) {
+    const tag = (el.localName ?? el.tagName ?? "").toLowerCase();
+    if (forbiddenTags.has(tag)) {
+      el.remove();
+    }
+  }
+
+  for (const el of [root, ...Array.from(root.getElementsByTagName("*"))]) {
+    for (const attr of Array.from(el.attributes)) {
+      const attrName = attr.name.toLowerCase();
+      const attrLocal = (attr.localName ?? "").toLowerCase();
+      const isHref = attrName === "href" || attrName === "xlink:href" || attrLocal === "href";
+      const hasJsScheme = attr.value.toLowerCase().replace(/\s+/g, "").includes("javascript:");
+      if (attrName.startsWith("on") || (isHref && hasJsScheme)) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  }
+
+  return /** @type {SVGElement} */ (document.importNode(root, true));
+}
+
+/**
+ * Met à jour les variables CSS et l'état des contrôles de lecture de l'animation SVG.
+ * @param {{ speed?: number, playing?: boolean }} [params]
+ */
+function setGuideAnimationState({ speed, playing } = {}) {
+  if (speed !== undefined) {
+    state.guideModal.speed = Number(speed) === 0.5 ? 0.5 : 1;
+  }
+  if (playing !== undefined) {
+    state.guideModal.playing = Boolean(playing);
+  }
+
+  const stage = $("guide-svg-stage");
+  if (stage) {
+    stage.style.setProperty("--anim-speed", String(state.guideModal.speed));
+    stage.style.setProperty("--anim-state", state.guideModal.playing ? "running" : "paused");
+  }
+
+  const playPauseBtn = $("guide-play-pause-btn");
+  if (playPauseBtn) {
+    const isPaused = !state.guideModal.playing;
+    playPauseBtn.textContent = state.guideModal.playing ? "⏸ Pause" : "▶ Lecture";
+    playPauseBtn.setAttribute("aria-pressed", String(isPaused));
+    playPauseBtn.classList.toggle("is-active", isPaused);
+  }
+
+  const speed1xBtn = $("guide-speed-1x-btn");
+  const speed05xBtn = $("guide-speed-05x-btn");
+  const is1x = state.guideModal.speed === 1;
+  if (speed1xBtn) {
+    speed1xBtn.classList.toggle("is-active", is1x);
+    speed1xBtn.setAttribute("aria-pressed", String(is1x));
+  }
+  if (speed05xBtn) {
+    speed05xBtn.classList.toggle("is-active", !is1x);
+    speed05xBtn.setAttribute("aria-pressed", String(!is1x));
+  }
+}
+
+/**
+ * Charge un fichier SVG avec priorité au cache et repli réseau standard.
+ * @param {string} svgPath
+ * @returns {Promise<string>}
+ */
+async function fetchExerciseSvgText(svgPath) {
+  try {
+    const cachedRes = await fetch(svgPath, { cache: "force-cache" });
+    if (cachedRes.ok) {
+      return await cachedRes.text();
+    }
+  } catch {
+    // Repli sur un fetch standard si le cache échoue
+  }
+
+  const fallbackRes = await fetch(svgPath);
+  if (!fallbackRes.ok) {
+    throw new Error(`HTTP ${fallbackRes.status} lors du chargement de ${svgPath}`);
+  }
+  return await fallbackRes.text();
+}
+
+/**
+ * Ouvre la modale native de guide biomécanique pour un exercice du catalogue.
+ * @param {string} exerciseId
+ */
+async function openExerciseGuideModal(exerciseId) {
+  const cat = getCatalogExercise(exerciseId);
+  const guide = cat.guide;
+  const dialog = /** @type {HTMLDialogElement | null} */ ($("exercise-guide-modal"));
+  if (!dialog) return;
+
+  $("guide-modal-title").textContent = cat.name;
+  $("guide-tempo-badge").textContent = guide.tempo_badge;
+  $("guide-setup-text").textContent = guide.setup;
+
+  const execList = $("guide-execution-list");
+  execList.replaceChildren(
+    ...guide.execution.map((step) => {
+      const li = document.createElement("li");
+      li.textContent = step;
+      return li;
+    })
+  );
+
+  const errList = $("guide-errors-list");
+  errList.replaceChildren(
+    ...guide.errors.map((errText) => {
+      const li = document.createElement("li");
+      li.textContent = errText;
+      return li;
+    })
+  );
+
+  const ytLink = /** @type {HTMLAnchorElement} */ ($("guide-youtube-link"));
+  ytLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${cat.name} exercice`)}`;
+
+  setGuideAnimationState({ speed: 1, playing: true });
+
+  const stage = $("guide-svg-stage");
+  const loadingMsg = document.createElement("p");
+  loadingMsg.className = "guide-svg-status";
+  loadingMsg.textContent = "Chargement du schéma…";
+  stage.replaceChildren(loadingMsg);
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  const reqId = ++state.guideModal.activeRequestId;
+  try {
+    const svgText = await fetchExerciseSvgText(guide.svg_path);
+    if (reqId !== state.guideModal.activeRequestId) return;
+    const importedSvg = sanitizeAndImportSvg(svgText);
+    stage.replaceChildren(importedSvg);
+  } catch {
+    if (reqId !== state.guideModal.activeRequestId) return;
+    const errorMsg = document.createElement("p");
+    errorMsg.className = "guide-svg-status";
+    errorMsg.textContent = "Schéma biomécanique indisponible.";
+    stage.replaceChildren(errorMsg);
+  }
+}
+
+/**
+ * Initialise les événements de fermeture, light-dismiss et contrôles de la modale guide.
+ */
+function initGuideModalEvents() {
+  const dialog = /** @type {HTMLDialogElement | null} */ ($("exercise-guide-modal"));
+  if (!dialog) return;
+
+  $("guide-close-btn")?.addEventListener("click", () => {
+    dialog.close();
+  });
+
+  dialog.addEventListener("close", () => {
+    dialog.returnValue = "";
+  });
+
+  if (!("closedBy" in HTMLDialogElement.prototype)) {
+    let pointerDownOutside = false;
+    const isOutsideDialog = (event) => {
+      if (!dialog.open) return false;
+      const rect = dialog.getBoundingClientRect();
+      return (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      );
+    };
+
+    dialog.addEventListener("pointerdown", (event) => {
+      pointerDownOutside = event.target === dialog && isOutsideDialog(event);
+    });
+
+    dialog.addEventListener("pointerup", (event) => {
+      if (pointerDownOutside && event.target === dialog && isOutsideDialog(event)) {
+        dialog.close();
+      }
+      pointerDownOutside = false;
+    });
+  }
+
+  $("guide-play-pause-btn")?.addEventListener("click", () => {
+    setGuideAnimationState({ playing: !state.guideModal.playing });
+  });
+
+  $("guide-speed-1x-btn")?.addEventListener("click", () => {
+    setGuideAnimationState({ speed: 1 });
+  });
+
+  $("guide-speed-05x-btn")?.addEventListener("click", () => {
+    setGuideAnimationState({ speed: 0.5 });
+  });
+}
+
 function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {
@@ -1676,6 +1912,7 @@ async function bootstrap() {
   registerServiceWorker();
 
   initVaultControls();
+  initGuideModalEvents();
   initStep1Events();
   initStep2Events();
   initStep3Events();

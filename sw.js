@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.4.0";
+const CACHE_NAME = "webstrength-v1.5.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -22,6 +22,23 @@ const PRECACHE_ASSETS = [
   "./geminiClient.js",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./assets/exos/KBOX_SQUAT_HARNESS.svg",
+  "./assets/exos/KBOX_SQUAT_BELT.svg",
+  "./assets/exos/KBOX_SPLIT_SQUAT.svg",
+  "./assets/exos/KBOX_RDL.svg",
+  "./assets/exos/KBOX_HIP_THRUST.svg",
+  "./assets/exos/KBOX_CALF_ECC.svg",
+  "./assets/exos/KBOX_HIGH_PULL.svg",
+  "./assets/exos/DB_SL_RDL.svg",
+  "./assets/exos/DB_STEP_DOWN.svg",
+  "./assets/exos/DB_COPENHAGEN.svg",
+  "./assets/exos/DB_RENEGADE_ROW.svg",
+  "./assets/exos/DB_FARMER_UNI.svg",
+  "./assets/exos/BAND_MONSTER_WALK.svg",
+  "./assets/exos/BAND_PALLOF_PRESS.svg",
+  "./assets/exos/BAND_PSOAS_MARCH.svg",
+  "./assets/exos/BAND_FACE_PULL.svg",
+  "./assets/exos/CORE_MCGILL_BIG3.svg",
 ];
 
 /**

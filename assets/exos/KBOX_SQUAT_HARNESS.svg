@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="KBOX_SQUAT_HARNESS : squat bilatéral harnais sur kBox">
+  <style>
+    .kbox-fly {
+      --base-dur: 1.6s;
+      transform-origin: 120px 179px;
+      animation: KBOX_SQUAT_HARNESS_fly calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .shin {
+      --base-dur: 3.4s;
+      transform-origin: 124px 170px;
+      animation: KBOX_SQUAT_HARNESS_shin calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .thigh {
+      --base-dur: 3.4s;
+      transform-origin: 124px 132px;
+      animation: KBOX_SQUAT_HARNESS_thigh calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .torso {
+      --base-dur: 3.4s;
+      transform-origin: 124px 94px;
+      animation: KBOX_SQUAT_HARNESS_torso calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .strap {
+      --base-dur: 3.4s;
+      transform-origin: 120px 172px;
+      animation: KBOX_SQUAT_HARNESS_strap calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ecc-zone {
+      --base-dur: 3.4s;
+      animation: KBOX_SQUAT_HARNESS_ecc calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .con-arrow {
+      --base-dur: 3.4s;
+      animation: KBOX_SQUAT_HARNESS_con calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KBOX_SQUAT_HARNESS_fly {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_shin {
+      0%, 100% { transform: rotate(4deg); }
+      45%, 55% { transform: rotate(22deg); }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_thigh {
+      0%, 100% { transform: rotate(-10deg); }
+      45%, 55% { transform: rotate(-88deg); }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_torso {
+      0%, 100% { transform: rotate(10deg); }
+      45%, 55% { transform: rotate(92deg); }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_strap {
+      0%, 100% { transform: scaleY(1); }
+      45%, 55% { transform: scaleY(0.56); }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_ecc {
+      0%, 22%, 70%, 100% { opacity: 0.12; }
+      38%, 55% { opacity: 0.95; }
+    }
+    @keyframes KBOX_SQUAT_HARNESS_con {
+      0%, 55%, 95%, 100% { opacity: 0.15; }
+      68%, 85% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Plateforme kBox4 -->
+  <rect x="62" y="172" width="116" height="16" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <circle cx="120" cy="179" r="9" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <g class="kbox-fly">
+    <line x1="120" y1="171" x2="120" y2="187" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="112" y1="179" x2="128" y2="179" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Zone freinage excentrique tardif -->
+  <g class="ecc-zone">
+    <rect x="76" y="128" width="88" height="32" rx="6" fill="#ef4444" fill-opacity="0.14" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3"/>
+    <path d="M50 124 L50 152 M45 146 L50 153 L55 146" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Flèche concentrique verte -->
+  <g class="con-arrow">
+    <path d="M190 144 L190 92 M185 99 L190 91 L195 99" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sangle centrale dynamique -->
+  <line class="strap" x1="120" y1="172" x2="120" y2="96" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 3" stroke-linecap="round"/>
+
+  <!-- Silhouette articulée -->
+  <path d="M118 170 L138 170" stroke="#94a3b8" stroke-width="5" stroke-linecap="round"/>
+  <g class="shin">
+    <line x1="124" y1="170" x2="124" y2="132" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+    <g class="thigh">
+      <line x1="124" y1="132" x2="124" y2="94" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+      <g class="torso">
+        <!-- L4-L5 gainage vert neutre -->
+        <line x1="124" y1="94" x2="124" y2="54" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+        <!-- Harnais épaules -->
+        <path d="M116 54 L132 54 M120 55 L118 92" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Bras maintien harnais -->
+        <polyline points="124,58 136,72 132,58" fill="none" stroke="#e2e8f0" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Tête -->
+        <circle cx="126" cy="40" r="8.5" fill="#cbd5e1"/>
+        <!-- Articulations -->
+        <circle cx="124" cy="56" r="3" fill="#22d3ee"/>
+      </g>
+      <circle cx="124" cy="94" r="3.4" fill="#22d3ee"/>
+    </g>
+    <circle cx="124" cy="132" r="3.2" fill="#f8fafc"/>
+  </g>
+  <circle cx="124" cy="170" r="2.8" fill="#22d3ee"/>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox4 · HARNAIS</text>
+  <text x="224" y="24" text-anchor="end" fill="#ef4444" font-family="system-ui,sans-serif" font-size="9">FREIN BAS</text>
+</svg>

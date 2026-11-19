@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Marche latérale Monster Walk avec mini-bande">
+  <style>
+    .bmw-anim {
+      --base-dur: 3.2s;
+      animation-duration: calc(var(--base-dur, 3.2s) / var(--anim-speed, 1));
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bmw-body { animation-name: bmw-shift; }
+    .bmw-leg-r { transform-origin: 126px 118px; animation-name: bmw-step-r; }
+    .bmw-band { transform-origin: 94px 176px; animation-name: bmw-stretch; }
+    .bmw-pulse { animation-name: bmw-glow; }
+    @keyframes bmw-shift {
+      0%, 100% { transform: translateX(-8px); }
+      35%, 55% { transform: translateX(8px); }
+    }
+    @keyframes bmw-step-r {
+      0%, 100% { transform: translate(0px, 0px); }
+      20% { transform: translate(14px, -5px); }
+      35%, 55% { transform: translate(26px, 0px); }
+      78% { transform: translate(12px, -4px); }
+    }
+    @keyframes bmw-stretch {
+      0%, 100% { transform: scaleX(1); }
+      35%, 55% { transform: scaleX(1.68); }
+    }
+    @keyframes bmw-glow {
+      0%, 100% { opacity: 0.45; }
+      35%, 55% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="12" fill="#0d1117" />
+  <line x1="20" y1="194" x2="220" y2="194" stroke="#1e293b" stroke-width="2" />
+  <line x1="36" y1="118" x2="204" y2="118" stroke="#10b981" stroke-width="1" stroke-dasharray="4 4" opacity="0.35" />
+  <text x="120" y="20" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="9" font-weight="600" letter-spacing="0.8">MONSTER WALK • MOYEN FESSIER</text>
+
+  <g class="bmw-anim bmw-body">
+    <!-- Tronc et rachis neutre vertical -->
+    <path d="M96 66 L124 66 L126 118 L94 118 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" />
+    <circle cx="110" cy="46" r="11" fill="#1e293b" stroke="#94a3b8" stroke-width="2" />
+    <!-- Bras en garde athlétique -->
+    <path d="M96 70 L82 92 L96 102 M124 70 L138 92 L124 102" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Verrouillage rachis & bassin horizontal -->
+    <line x1="110" y1="68" x2="110" y2="116" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+    <line x1="91" y1="118" x2="129" y2="118" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- Jambe gauche d'appui (alignée, anti-valgus) -->
+    <path d="M94 118 L86 152 L92 188 L82 192" fill="none" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="94" cy="118" r="4" fill="#22d3ee" />
+    <circle cx="86" cy="152" r="4" fill="#22d3ee" />
+    <circle cx="92" cy="188" r="3.5" fill="#22d3ee" />
+
+    <!-- Jambe droite en abduction latérale -->
+    <g class="bmw-anim bmw-leg-r">
+      <path d="M126 118 L134 152 L128 188 L138 192" fill="none" stroke="#e2e8f0" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="126" cy="118" r="4" fill="#22d3ee" />
+      <circle cx="134" cy="152" r="4" fill="#22d3ee" />
+      <circle cx="128" cy="188" r="3.5" fill="#22d3ee" />
+    </g>
+
+    <!-- Mini-bande élastique cyan chevilles -->
+    <g class="bmw-anim bmw-band">
+      <rect x="90" y="173" width="40" height="7" rx="3.5" fill="none" stroke="#38bdf8" stroke-width="3" vector-effect="non-scaling-stroke" />
+    </g>
+
+    <!-- Indicateur moyen fessier actif -->
+    <circle cx="129" cy="113" r="6" fill="none" stroke="#38bdf8" stroke-width="2" class="bmw-anim bmw-pulse" />
+  </g>
+
+  <path d="M174 176 L192 176 M187 171 L193 176 L187 181" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bmw-anim bmw-pulse" />
+  <text x="120" y="210" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Bassin horizontal • Genoux dans l'axe</text>
+</svg>

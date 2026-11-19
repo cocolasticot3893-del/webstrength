@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Pallof Press anti-rotation à l'élastique">
+  <style>
+    .bpp-anim {
+      --base-dur: 3.4s;
+      animation-duration: calc(var(--base-dur, 3.4s) / var(--anim-speed, 1));
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bpp-hands { animation-name: bpp-press; }
+    .bpp-elbow-l { animation-name: bpp-elb-l; }
+    .bpp-elbow-r { animation-name: bpp-elb-r; }
+    .bpp-band { transform-origin: 24px 104px; animation-name: bpp-tension; }
+    .bpp-lock { animation-name: bpp-shield; }
+    @keyframes bpp-press {
+      0%, 100% { transform: translate(0px, 0px) scale(1); }
+      40%, 60% { transform: translate(0px, 16px) scale(1.12); }
+    }
+    @keyframes bpp-elb-l {
+      0%, 100% { transform: translate(0px, 0px); }
+      40%, 60% { transform: translate(8px, 6px); }
+    }
+    @keyframes bpp-elb-r {
+      0%, 100% { transform: translate(0px, 0px); }
+      40%, 60% { transform: translate(-8px, 6px); }
+    }
+    @keyframes bpp-tension {
+      0%, 100% { transform: rotate(0deg) scaleX(1); }
+      40%, 60% { transform: rotate(7.2deg) scaleX(1.015); }
+    }
+    @keyframes bpp-shield {
+      0%, 100% { opacity: 0.45; }
+      40%, 60% { opacity: 1; }
+    }
+  </style>
+  <rect width="240" height="220" rx="12" fill="#0d1117" />
+  <line x1="16" y1="194" x2="224" y2="194" stroke="#1e293b" stroke-width="2" />
+  <text x="120" y="20" text-anchor="middle" fill="#64748b" font-family="system-ui,sans-serif" font-size="9" font-weight="600" letter-spacing="0.8">PALLOF PRESS • ANTI-ROTATION</text>
+
+  <!-- Point d'ancrage latéral gauche -->
+  <rect x="16" y="46" width="8" height="148" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+  <circle cx="24" cy="104" r="4.5" fill="#38bdf8" />
+
+  <!-- Posture athlétique statique (zéro rotation du tronc) -->
+  <path d="M132 66 L168 66 L164 122 L136 122 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" />
+  <circle cx="150" cy="46" r="11" fill="#1e293b" stroke="#94a3b8" stroke-width="2" />
+
+  <!-- Jambes ancrées en quart de squat -->
+  <path d="M138 122 L130 156 L132 190 L122 192" fill="none" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M162 122 L170 156 L168 190 L178 192" fill="none" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="138" cy="122" r="3.8" fill="#22d3ee" />
+  <circle cx="162" cy="122" r="3.8" fill="#22d3ee" />
+  <circle cx="130" cy="156" r="3.8" fill="#22d3ee" />
+  <circle cx="170" cy="156" r="3.8" fill="#22d3ee" />
+  <circle cx="132" cy="190" r="3.2" fill="#22d3ee" />
+  <circle cx="168" cy="190" r="3.2" fill="#22d3ee" />
+
+  <!-- Verrouillage rachis vert + repères anti-rotation -->
+  <line x1="150" y1="68" x2="150" y2="120" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+  <line x1="130" y1="66" x2="170" y2="66" stroke="#10b981" stroke-width="2.5" stroke-dasharray="3 3" class="bpp-anim bpp-lock" />
+  <line x1="134" y1="122" x2="166" y2="122" stroke="#10b981" stroke-width="2.5" stroke-dasharray="3 3" class="bpp-anim bpp-lock" />
+
+  <!-- Élastique cyan latéral -->
+  <line x1="24" y1="104" x2="150" y2="104" stroke="#38bdf8" stroke-width="3.2" stroke-linecap="round" vector-effect="non-scaling-stroke" class="bpp-anim bpp-band" />
+
+  <!-- Bras s'étendant devant le sternum -->
+  <g stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round" fill="none">
+    <line x1="132" y1="70" x2="126" y2="96" class="bpp-anim bpp-elbow-l" />
+    <line x1="168" y1="70" x2="174" y2="96" class="bpp-anim bpp-elbow-r" />
+  </g>
+  <g class="bpp-anim bpp-hands" style="transform-origin: 150px 104px;">
+    <line x1="128" y1="98" x2="150" y2="104" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round" />
+    <line x1="172" y1="98" x2="150" y2="104" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="150" cy="104" r="5.5" fill="#22d3ee" stroke="#0d1117" stroke-width="1.5" />
+  </g>
+  <circle cx="132" cy="70" r="3.8" fill="#22d3ee" />
+  <circle cx="168" cy="70" r="3.8" fill="#22d3ee" />
+
+  <text x="120" y="210" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">Zéro rotation lombaire • Bras axe sternum</text>
+</svg>

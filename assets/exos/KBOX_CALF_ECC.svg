@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="KBOX_CALF_ECC : extension mollets excentrique sur cale kBox">
+  <style>
+    .kbox-fly {
+      --base-dur: 1.6s;
+      transform-origin: 120px 179px;
+      animation: KBOX_CALF_ECC_fly calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .body-calf {
+      --base-dur: 3.6s;
+      animation: KBOX_CALF_ECC_lift calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .foot {
+      --base-dur: 3.6s;
+      transform-origin: 132px 156px;
+      animation: KBOX_CALF_ECC_foot calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .strap {
+      --base-dur: 3.6s;
+      transform-origin: 120px 172px;
+      animation: KBOX_CALF_ECC_strap calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .achilles {
+      --base-dur: 3.6s;
+      animation: KBOX_CALF_ECC_achilles calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .con-arrow {
+      --base-dur: 3.6s;
+      animation: KBOX_CALF_ECC_con calc(var(--base-dur, 3.2s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KBOX_CALF_ECC_fly {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes KBOX_CALF_ECC_lift {
+      0%, 100% { transform: translateY(-10px); }
+      50%, 60% { transform: translateY(10px); }
+    }
+    @keyframes KBOX_CALF_ECC_foot {
+      0%, 100% { transform: rotate(-28deg); }
+      50%, 60% { transform: rotate(22deg); }
+    }
+    @keyframes KBOX_CALF_ECC_strap {
+      0%, 100% { transform: scaleY(1.08); }
+      50%, 60% { transform: scaleY(0.88); }
+    }
+    @keyframes KBOX_CALF_ECC_achilles {
+      0%, 25%, 75%, 100% { opacity: 0.25; }
+      42%, 62% { opacity: 1; }
+    }
+    @keyframes KBOX_CALF_ECC_con {
+      0%, 62%, 95%, 100% { opacity: 0.15; }
+      74%, 90% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Plateforme kBox4 + cale avant -->
+  <rect x="62" y="172" width="116" height="16" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <rect x="122" y="158" width="26" height="14" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
+  <circle cx="120" cy="179" r="9" fill="#0f172a" stroke="#475569" stroke-width="1.5"/>
+  <g class="kbox-fly">
+    <line x1="120" y1="171" x2="120" y2="187" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="112" y1="179" x2="128" y2="179" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Flèche concentrique -->
+  <g class="con-arrow">
+    <path d="M188 128 L188 82 M183 89 L188 81 L193 89" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sangle harnais -->
+  <line class="strap" x1="120" y1="172" x2="120" y2="92" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 3" stroke-linecap="round"/>
+
+  <!-- Pied pivotant sur cale -->
+  <line class="foot" x1="110" y1="156" x2="136" y2="156" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Corps vertical + tendon d'Achille souligné rouge excentrique -->
+  <g class="body-calf">
+    <line x1="114" y1="154" x2="116" y2="120" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>
+    <!-- Tendon d'Achille excentrique -->
+    <g class="achilles">
+      <line x1="110" y1="154" x2="111" y2="132" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M84 128 L84 156 M79 150 L84 157 L89 150" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <line x1="116" y1="120" x2="118" y2="86" stroke="#cbd5e1" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="118" y1="86" x2="118" y2="48" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+    <path d="M111 48 L125 48" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="119" cy="34" r="8" fill="#cbd5e1"/>
+    <circle cx="114" cy="154" r="2.8" fill="#22d3ee"/>
+    <circle cx="116" cy="120" r="3" fill="#f8fafc"/>
+    <circle cx="118" cy="86" r="3.2" fill="#22d3ee"/>
+    <circle cx="118" cy="50" r="2.8" fill="#22d3ee"/>
+  </g>
+
+  <text x="16" y="24" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox4 · MOLLETS ECC</text>
+  <text x="224" y="24" text-anchor="end" fill="#ef4444" font-family="system-ui,sans-serif" font-size="9">TENDON ACHILLE</text>
+</svg>
