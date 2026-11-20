@@ -2003,23 +2003,82 @@ dialog.guide-modal::backdrop {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-  padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 0.85rem 0.7rem;
+  gap: 0.45rem 0.6rem;
+  padding: calc(0.55rem + env(safe-area-inset-top, 0px)) 0.75rem 0.55rem;
   background: #0d1117;
   border: 1px solid #30363d;
   border-radius: var(--radius-md);
 }
 
 .directory-view-title {
-  font-size: 1.12rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
+  margin-inline-end: auto;
+  min-inline-size: 0;
+}
+
+.directory-builder-toggle {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.directory-builder-toggle.has-items {
+  border-color: rgba(16, 185, 129, 0.7);
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+
+.directory-builder-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.55rem 0.85rem;
+  background: #0f1a1f;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: var(--radius-md);
+}
+
+.directory-builder-ribbon-text {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #d1fae5;
+}
+
+.directory-builder-ribbon-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .directory-search-box {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.directory-search-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.directory-search-row .free-search-input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+#directory-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.directory-search-clear-btn {
+  min-height: 44px;
+  flex-shrink: 0;
 }
 
 .directory-filter-row {
@@ -2154,6 +2213,219 @@ dialog.guide-modal::backdrop {
   text-align: center;
 }
 
+.directory-empty.is-url-warning {
+  background: #131b2b;
+  border: 1px solid rgba(245, 158, 11, 0.55);
+  border-inline-start: 4px solid var(--accent-cyan);
+  color: var(--text-primary);
+}
+
+.directory-url-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+}
+
+/* ==========================================================================
+   Constructeur de Séance (#directory-builder-panel)
+   ========================================================================== */
+
+.directory-builder-panel {
+  background: var(--bg-surface);
+  border: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: var(--radius-lg);
+}
+
+.directory-builder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.directory-builder-head h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.directory-builder-title-field input {
+  font-size: max(1rem, 1em);
+  min-height: 44px;
+}
+
+.directory-builder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.builder-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-md);
+  min-inline-size: 0;
+}
+
+.builder-item-top,
+.builder-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-inline-size: 0;
+}
+
+.builder-item-thumb {
+  width: 48px;
+  height: 44px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.builder-item-thumb img,
+.builder-item-thumb svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.builder-item-info {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.builder-item-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+}
+
+.builder-item-id {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.builder-item-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.builder-order-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.builder-order-btns button,
+.builder-order-btns .btn {
+  min-block-size: 40px;
+  min-inline-size: 40px;
+  padding: 0.35rem 0.55rem;
+}
+
+.builder-item-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (max-width: 479px) {
+  .builder-item-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .builder-item-controls > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+.builder-item-controls label,
+.builder-control-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-inline-size: 0;
+}
+
+.builder-item-controls input,
+.builder-item-controls select {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-height: 42px;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #30363d;
+  background: #0d1117;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: max(1rem, 1em);
+}
+
+.directory-builder-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+
+.builder-vigilance-note {
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.directory-builder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.directory-builder-actions .btn,
+.directory-builder-actions button {
+  min-block-size: 44px;
+  flex: 1 1 auto;
+}
+
 /* ==========================================================================
    Cibles Tactiles >= 48px sur Écrans Tactiles (Pixel 7/8)
    ========================================================================== */
@@ -2175,7 +2447,12 @@ dialog.guide-modal::backdrop {
   .exo-guide-btn,
   .exo-promote-btn,
   .guide-close-btn,
-  .guide-youtube-link {
+  .guide-youtube-link,
+  .directory-search-clear-btn,
+  .directory-builder-actions .btn,
+  .directory-builder-actions button,
+  .builder-order-btns button,
+  .builder-order-btns .btn {
     min-block-size: 48px;
   }
 }

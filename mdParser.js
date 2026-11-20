@@ -95,6 +95,7 @@ function inferDefaultBlockForPole(pole) {
  * @param {string} [params.rationale]
  * @param {string} [params.gate]
  * @param {string} [params.readiness]
+ * @param {boolean} [params.preserveOrder]
  */
 export function buildFreeSessionPlan({
   title,
@@ -103,6 +104,7 @@ export function buildFreeSessionPlan({
   rationale = "",
   gate,
   readiness,
+  preserveOrder = false,
 } = {}) {
   if (!Array.isArray(exercises) || exercises.length === 0) {
     throw new Error("Aucun exercice valide fourni pour construire la séance libre.");
@@ -182,6 +184,7 @@ export function buildFreeSessionPlan({
     target_duration_sec,
     applied_rules: ["MODE_LIBRE"],
     is_free_mode: true,
+    preserve_order: Boolean(preserveOrder),
     exercises: normalizedExercises,
   };
 }
@@ -431,9 +434,9 @@ function extractVolume(text) {
  * @returns {{ load: number | null, rest: string }}
  */
 function extractLoad(text, allowBareNumber = false) {
-  // 1. Inertie kBox explicite (0.025 / 0.050 / 0.075)
+  // 1. Inertie kBox explicite (0.010 / 0.025 / 0.050 / 0.075)
   const inertiaMatch = text.match(
-    /(?:^|\s)(0[.,](?:0?25|0?50?|0?75))\s*(?:kg[·.]?m²|kgm2|inertie)?(?=\s|$)/i
+    /(?:^|\s)(0[.,](?:0?10?|0?25|0?50?|0?75))\s*(?:kg[·.]?m²|kgm2|inertie)?(?=\s|$)/i
   );
   if (inertiaMatch) {
     const val = Number(inertiaMatch[1].replace(",", "."));

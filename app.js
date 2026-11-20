@@ -16,9 +16,19 @@ import {
   getCatalogExercise,
   getExerciseEquipments,
   getUserExercisesList,
+  isUrlSearchQuery,
   loadUserExercises,
   saveUserExercise,
 } from "./catalog.js";
+import {
+  addDraftExercise,
+  buildDirectorySessionPlan,
+  exportDirectoryDraftToMarkdown,
+  moveDraftExercise,
+  removeDraftExercise,
+  summarizeDirectoryDraft,
+  updateDraftExercise,
+} from "./directoryBuilder.js";
 import {
   pushCustomExercisesToDrive,
   validateDriveWebhookUrl,
@@ -153,6 +163,9 @@ const state = {
     category: "ALL",
     equipment: "ALL",
     addedInVisit: 0,
+    draft: [],
+    builderOpen: false,
+    draftTitle: "Séance Catalogue PPG",
   },
 };
 
@@ -1676,40 +1689,62 @@ function renderStep2Plan() {
     }
   }
 
-  // Rendu des Blocs (en Mode Libre, on masque les blocs vides)
+  // Rendu ordonné unique (constructeur Catalogue) ou par Blocs 1, 2, 3
   const blocksContainer = $("blocks-container");
   blocksContainer.replaceChildren();
 
-  for (const blockNum of [1, 2, 3]) {
-    const blockExercises = [];
-    state.session.exercises.forEach((ex, idx) => {
-      if (ex.block === blockNum) {
-        blockExercises.push({ ex, idx });
-      }
-    });
-
-    if (plan?.is_free_mode && blockExercises.length === 0) {
-      continue;
-    }
-
+  if (plan?.preserve_order === true) {
     const section = document.createElement("section");
     section.className = "block-section";
 
     const title = document.createElement("h2");
     title.className = "block-title";
-    title.textContent = BLOCK_TITLES[blockNum];
+    title.textContent = "Ordre de la séance";
     section.appendChild(title);
 
     const blockDesc = document.createElement("p");
     blockDesc.className = "block-desc";
-    blockDesc.textContent = BLOCK_DESCRIPTIONS[blockNum];
+    blockDesc.textContent =
+      "Exercices exécutés dans l'ordre exact défini dans votre séance.";
     section.appendChild(blockDesc);
 
-    for (const { ex, idx } of blockExercises) {
+    state.session.exercises.forEach((ex, idx) => {
       section.appendChild(createExerciseCard(ex, idx));
-    }
+    });
 
     blocksContainer.appendChild(section);
+  } else {
+    for (const blockNum of [1, 2, 3]) {
+      const blockExercises = [];
+      state.session.exercises.forEach((ex, idx) => {
+        if (ex.block === blockNum) {
+          blockExercises.push({ ex, idx });
+        }
+      });
+
+      if (plan?.is_free_mode && blockExercises.length === 0) {
+        continue;
+      }
+
+      const section = document.createElement("section");
+      section.className = "block-section";
+
+      const title = document.createElement("h2");
+      title.className = "block-title";
+      title.textContent = BLOCK_TITLES[blockNum];
+      section.appendChild(title);
+
+      const blockDesc = document.createElement("p");
+      blockDesc.className = "block-desc";
+      blockDesc.textContent = BLOCK_DESCRIPTIONS[blockNum];
+      section.appendChild(blockDesc);
+
+      for (const { ex, idx } of blockExercises) {
+        section.appendChild(createExerciseCard(ex, idx));
+      }
+
+      blocksContainer.appendChild(section);
+    }
   }
 
   $("session-notes").value = state.session.notes;
@@ -1726,6 +1761,7 @@ function launchPlanIntoStep2(plan, sourceMeta = {}, { keepDirectoryOpen = false 
   state.plan = {
     ...plan,
     is_free_mode: Boolean(plan?.is_free_mode),
+    preserve_order: Boolean(plan?.preserve_order),
   };
   state.sourceMeta = {
     source: sourceMeta.source ?? "FALLBACK",
@@ -2915,6 +2951,54 @@ function updateCatalogDirectoryBadge() {
 }
 
 /**
+ * Ajoute la miniature SVG (fichier ou inline nettoyé) d'un exercice dans un conteneur.
+ * @param {HTMLElement} container
+ * @param {Record<string, any>} ex
+ * @param {{ width: number, height: number }} dims
+ */
+function appendDirectoryThumb(container, ex, { width, height }) {
+  const inlineSvg = ex.svg_inline || ex.guide?.svg_inline;
+  if (ex.guide?.svg_path) {
+    const img = document.createElement("img");
+    img.src = ex.guide.svg_path;
+    img.alt = ex.name || ex.id;
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.width = width;
+    img.height = height;
+    container.appendChild(img);
+  } else if (typeof inlineSvg === "string" && inlineSvg.trim()) {
+    try {
+      container.appendChild(sanitizeAndImportSvg(inlineSvg));
+    } catch {
+      // Aperçu ignoré si le SVG inline est invalide
+    }
+  }
+}
+
+/**
+ * Ajoute les badges catégorie et poids de corps (`PDC`) d'un exercice.
+ * @param {HTMLElement} container
+ * @param {Record<string, any>} ex
+ */
+function appendDirectoryCategoryBadges(container, ex) {
+  if (ex.category && Object.hasOwn(CATEGORY_BADGE_META, ex.category)) {
+    appendCategoryAndBodyweightBadges(container, ex);
+    return;
+  }
+  if (
+    ex.category &&
+    Object.hasOwn(DIRECTORY_CATEGORY_LABEL_BY_ID, ex.category)
+  ) {
+    const catBadge = document.createElement("span");
+    catBadge.className = "exo-badge";
+    catBadge.textContent = DIRECTORY_CATEGORY_LABEL_BY_ID[ex.category];
+    container.appendChild(catBadge);
+  }
+  appendCategoryAndBodyweightBadges(container, ex);
+}
+
+/**
  * Ouvre la vue dédiée du catalogue sans altérer la séance ou le chrono en cours.
  */
 function openCatalogDirectory() {
@@ -2923,6 +3007,7 @@ function openCatalogDirectory() {
 
   state.directory.returnStep = state.currentStep;
   state.directory.addedInVisit = 0;
+  state.directory.builderOpen = false;
   state.directory.open = true;
 
   const closeBtn = $("close-catalog-directory-btn");
@@ -2940,6 +3025,7 @@ function openCatalogDirectory() {
     openBtn.setAttribute("aria-expanded", "true");
   }
 
+  renderDirectoryBuilder();
   renderCatalogDirectory();
   window.scrollTo({ top: 0, behavior: "smooth" });
   closeBtn?.focus();
@@ -2954,60 +3040,16 @@ function closeCatalogDirectory() {
 }
 
 /**
- * Ajoute un exercice de l'annuaire à la séance active ou crée une séance libre.
+ * Ajoute un exercice de l'annuaire au brouillon du constructeur de séance.
  * @param {Record<string, any>} ex
  * @param {HTMLButtonElement | null} triggerBtn
  */
 function addExerciseFromDirectory(ex, triggerBtn) {
   if (!ex || !ex.id) return;
 
-  const block = ex.pole === "KBOX" ? 2 : ex.pole === "DUMBBELL" ? 2 : 1;
-  const load = ex.allowed_loads?.[0] ?? 0;
-  const sets = ex.default_sets ?? 3;
-  const reps = ex.default_reps ?? (ex.is_timed ? 45 : 10);
-  const item = {
-    id: ex.id,
-    block,
-    sets,
-    reps,
-    load,
-    completion: 1,
-    ...(ex.is_timed ? { is_timed: true } : {}),
-  };
-
-  const hasActiveSession =
-    Boolean(state.plan) &&
-    Array.isArray(state.session.exercises) &&
-    state.session.exercises.length > 0;
-
-  if (hasActiveSession) {
-    state.session.exercises.push(item);
-    state.plan = {
-      ...state.plan,
-      exercises: [...(state.plan.exercises ?? []), item],
-    };
-    renderStep2Plan();
-    state.directory.returnStep = 2;
-  } else {
-    const plan = buildFreeSessionPlan({
-      title: "Séance Libre Catalogue",
-      exercises: [item],
-      sourceLabel: "Catalogue",
-      gate: state.gate,
-      readiness: state.readiness,
-    });
-    launchPlanIntoStep2(
-      plan,
-      { source: "FREE_BUILDER" },
-      { keepDirectoryOpen: true }
-    );
-  }
-
-  state.directory.addedInVisit += 1;
-  const closeBtn = $("close-catalog-directory-btn");
-  if (closeBtn) {
-    closeBtn.textContent = `← Retour à la séance (+${state.directory.addedInVisit})`;
-  }
+  state.directory.draft = addDraftExercise(state.directory.draft, ex.id);
+  setStatusMessage($("directory-builder-status"), "");
+  renderDirectoryBuilder();
 
   if (triggerBtn) {
     const existingTimer = directoryAddBtnTimers.get(triggerBtn);
@@ -3028,16 +3070,326 @@ function addExerciseFromDirectory(ex, triggerBtn) {
 }
 
 /**
+ * Met à jour uniquement le ruban et le résumé biomécanique du brouillon.
+ * @param {Array<Record<string, any>>} draft
+ */
+function renderDirectoryBuilderSummaryAndRibbon(draft) {
+  const summary = summarizeDirectoryDraft(draft);
+  const ribbonEl = $("directory-builder-ribbon");
+  const ribbonTextEl = $("directory-builder-ribbon-text");
+  if (ribbonEl) {
+    ribbonEl.hidden = !(draft.length > 0 && !state.directory.builderOpen);
+  }
+  if (ribbonTextEl) {
+    const exoLabel = summary.exerciseCount > 1 ? "exercices" : "exercice";
+    const setLabel = summary.totalSets > 1 ? "séries" : "série";
+    ribbonTextEl.textContent = `${summary.exerciseCount} ${exoLabel} · ${summary.totalSets} ${setLabel} · ~${summary.estimatedMinutes} min`;
+  }
+
+  const summaryEl = $("directory-builder-summary");
+  if (!summaryEl) return;
+
+  if (draft.length === 0) {
+    const emptyMsg = document.createElement("p");
+    emptyMsg.textContent =
+      "Brouillon vide : ajoutez des exercices depuis le catalogue ci-dessous.";
+    summaryEl.replaceChildren(emptyMsg);
+    return;
+  }
+
+  const metricsLine = document.createElement("p");
+  const exoWord = summary.exerciseCount > 1 ? "exercices" : "exercice";
+  const setWord = summary.totalSets > 1 ? "séries" : "série";
+  metricsLine.textContent = `${summary.exerciseCount} ${exoWord} · ${summary.totalSets} ${setWord} · ~${summary.estimatedMinutes} min · Strain estimé : ${summary.estimatedStrain}`;
+
+  const summaryFrag = document.createDocumentFragment();
+  summaryFrag.appendChild(metricsLine);
+
+  for (const hint of summary.vigilanceHints) {
+    const noteEl = document.createElement("p");
+    noteEl.className = "builder-vigilance-note";
+    noteEl.textContent = hint;
+    summaryFrag.appendChild(noteEl);
+  }
+
+  summaryEl.replaceChildren(summaryFrag);
+}
+
+/**
+ * Rend le panneau constructeur de séance (#directory-builder-panel) en DOM natif.
+ */
+function renderDirectoryBuilder() {
+  const draft = Array.isArray(state.directory.draft)
+    ? state.directory.draft
+    : [];
+
+  const countEl = $("directory-builder-count");
+  if (countEl) {
+    countEl.textContent = String(draft.length);
+  }
+
+  const toggleBtn = $("directory-builder-toggle-btn");
+  if (toggleBtn) {
+    toggleBtn.classList.toggle("has-items", draft.length > 0);
+    toggleBtn.setAttribute("aria-expanded", String(state.directory.builderOpen));
+  }
+
+  const panel = $("directory-builder-panel");
+  if (panel) {
+    panel.hidden = !state.directory.builderOpen;
+  }
+
+  const titleInput = /** @type {HTMLInputElement | null} */ (
+    $("directory-builder-title-input")
+  );
+  if (titleInput && document.activeElement !== titleInput) {
+    titleInput.value = state.directory.draftTitle || "Séance Catalogue PPG";
+  }
+
+  renderDirectoryBuilderSummaryAndRibbon(draft);
+
+  const listEl = $("directory-builder-list");
+  if (!listEl) return;
+
+  if (draft.length === 0) {
+    listEl.replaceChildren();
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  draft.forEach((item, idx) => {
+    const cat = getCatalogExercise(item.id);
+    const li = document.createElement("li");
+    li.className = "builder-item";
+
+    const topRow = document.createElement("div");
+    topRow.className = "builder-item-top";
+
+    const thumb = document.createElement("div");
+    thumb.className = "builder-item-thumb";
+    appendDirectoryThumb(thumb, cat, { width: 48, height: 44 });
+
+    const info = document.createElement("div");
+    info.className = "builder-item-info";
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "builder-item-name";
+    nameEl.textContent = cat.name || cat.id;
+
+    const idEl = document.createElement("code");
+    idEl.className = "directory-exo-id";
+    idEl.textContent = cat.id;
+
+    const badgesEl = document.createElement("div");
+    badgesEl.className = "builder-item-badges";
+    appendDirectoryCategoryBadges(badgesEl, cat);
+
+    info.append(nameEl, idEl, badgesEl);
+
+    const orderBtns = document.createElement("div");
+    orderBtns.className = "builder-order-btns";
+
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "btn btn-ghost btn-sm";
+    upBtn.textContent = "↑";
+    upBtn.disabled = idx === 0;
+    upBtn.setAttribute("aria-label", `Monter ${cat.name || cat.id}`);
+    upBtn.addEventListener("click", () => {
+      state.directory.draft = moveDraftExercise(state.directory.draft, idx, -1);
+      renderDirectoryBuilder();
+    });
+
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "btn btn-ghost btn-sm";
+    downBtn.textContent = "↓";
+    downBtn.disabled = idx === draft.length - 1;
+    downBtn.setAttribute("aria-label", `Descendre ${cat.name || cat.id}`);
+    downBtn.addEventListener("click", () => {
+      state.directory.draft = moveDraftExercise(state.directory.draft, idx, 1);
+      renderDirectoryBuilder();
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn-ghost btn-sm";
+    removeBtn.textContent = "✕";
+    removeBtn.setAttribute("aria-label", `Retirer ${cat.name || cat.id}`);
+    removeBtn.addEventListener("click", () => {
+      state.directory.draft = removeDraftExercise(state.directory.draft, idx);
+      renderDirectoryBuilder();
+    });
+
+    orderBtns.append(upBtn, downBtn, removeBtn);
+    topRow.append(thumb, info, orderBtns);
+
+    const controls = document.createElement("div");
+    controls.className = "builder-item-controls";
+
+    // Séries (1..10)
+    const setsLabel = document.createElement("label");
+    setsLabel.className = "builder-control-field";
+    setsLabel.textContent = "Séries";
+    const setsInput = document.createElement("input");
+    setsInput.type = "number";
+    setsInput.min = "1";
+    setsInput.max = "10";
+    setsInput.step = "1";
+    setsInput.value = String(item.sets);
+    setsInput.addEventListener("input", () => {
+      if (setsInput.value === "") return;
+      state.directory.draft = updateDraftExercise(state.directory.draft, idx, {
+        sets: Number(setsInput.value),
+      });
+      renderDirectoryBuilderSummaryAndRibbon(state.directory.draft);
+    });
+    setsInput.addEventListener("change", () => {
+      state.directory.draft = updateDraftExercise(state.directory.draft, idx, {
+        sets: Number(setsInput.value),
+      });
+      renderDirectoryBuilder();
+    });
+    setsLabel.appendChild(setsInput);
+
+    // Reps ou Durée (1..300)
+    const repsLabel = document.createElement("label");
+    repsLabel.className = "builder-control-field";
+    repsLabel.textContent = item.is_timed ? "Sec." : "Reps";
+    const repsInput = document.createElement("input");
+    repsInput.type = "number";
+    repsInput.min = "1";
+    repsInput.max = "300";
+    repsInput.step = "1";
+    repsInput.value = String(item.reps);
+    repsInput.addEventListener("input", () => {
+      if (repsInput.value === "") return;
+      state.directory.draft = updateDraftExercise(state.directory.draft, idx, {
+        reps: Number(repsInput.value),
+      });
+      renderDirectoryBuilderSummaryAndRibbon(state.directory.draft);
+    });
+    repsInput.addEventListener("change", () => {
+      state.directory.draft = updateDraftExercise(state.directory.draft, idx, {
+        reps: Number(repsInput.value),
+      });
+      renderDirectoryBuilder();
+    });
+    repsLabel.appendChild(repsInput);
+
+    // Charge (allowed_loads)
+    const loadLabel = document.createElement("label");
+    loadLabel.className = "builder-control-field";
+    loadLabel.textContent = "Charge";
+    const loadSelect = document.createElement("select");
+    const allowedLoads =
+      Array.isArray(cat.allowed_loads) && cat.allowed_loads.length > 0
+        ? cat.allowed_loads
+        : [0];
+    const loadOptions = allowedLoads.some(
+      (val) => Number(val) === Number(item.load)
+    )
+      ? allowedLoads
+      : [Number(item.load) || 0, ...allowedLoads];
+
+    for (const val of loadOptions) {
+      const opt = document.createElement("option");
+      opt.value = String(val);
+      opt.textContent = formatLoadOption(val, cat);
+      if (Number(val) === Number(item.load)) {
+        opt.selected = true;
+      }
+      loadSelect.appendChild(opt);
+    }
+    loadSelect.addEventListener("change", () => {
+      state.directory.draft = updateDraftExercise(state.directory.draft, idx, {
+        load: Number(loadSelect.value),
+      });
+      renderDirectoryBuilder();
+    });
+    loadLabel.appendChild(loadSelect);
+
+    controls.append(setsLabel, repsLabel, loadLabel);
+    li.append(topRow, controls);
+    fragment.appendChild(li);
+  });
+
+  listEl.replaceChildren(fragment);
+}
+
+/**
  * Construit et affiche la grille filtrée de l'annuaire catalogue (DOM natif via createElement / textContent).
  */
 function renderCatalogDirectory() {
   const grid = $("directory-grid");
   if (!grid) return;
 
+  const searchInput = /** @type {HTMLInputElement | null} */ (
+    $("directory-search-input")
+  );
+  const clearBtn = $("directory-search-clear-btn");
+  if (clearBtn) {
+    clearBtn.hidden = state.directory.query.trim().length === 0;
+  }
+
+  const countEl = $("directory-results-count");
+
+  if (isUrlSearchQuery(state.directory.query)) {
+    if (countEl) {
+      countEl.textContent = "URL détectée";
+    }
+
+    const warningBox = document.createElement("div");
+    warningBox.className = "directory-empty is-url-warning";
+
+    const msg = document.createElement("p");
+    msg.textContent =
+      "Ce champ filtre les exercices par nom, ID ou objectif. L'URL du webhook Google Drive se configure dans le coffre-fort (⚙️).";
+
+    const actionsRow = document.createElement("div");
+    actionsRow.className = "directory-url-actions";
+
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.className = "btn btn-secondary btn-sm";
+    resetBtn.textContent = "Effacer la recherche";
+    resetBtn.addEventListener("click", () => {
+      state.directory.query = "";
+      if (searchInput) {
+        searchInput.value = "";
+      }
+      if (clearBtn) {
+        clearBtn.hidden = true;
+      }
+      renderCatalogDirectory();
+      searchInput?.focus();
+    });
+
+    const openVaultBtn = document.createElement("button");
+    openVaultBtn.type = "button";
+    openVaultBtn.className = "btn btn-primary btn-sm";
+    openVaultBtn.textContent = "Ouvrir le coffre-fort (⚙️)";
+    openVaultBtn.addEventListener("click", () => {
+      const drawer = $("vault-drawer");
+      if (drawer?.hidden !== false) {
+        toggleVaultDrawer(true);
+      } else {
+        $("vault-toggle-btn")?.setAttribute("aria-expanded", "true");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      $("vault-drive-webhook-url")?.focus();
+    });
+
+    actionsRow.append(resetBtn, openVaultBtn);
+    warningBox.append(msg, actionsRow);
+    grid.replaceChildren(warningBox);
+    return;
+  }
+
   const all = getAllCatalogExercises();
   const filtered = filterCatalogExercises(all, state.directory);
 
-  const countEl = $("directory-results-count");
   if (countEl) {
     const hasFilter =
       Boolean(state.directory.query.trim()) ||
@@ -3064,23 +3416,7 @@ function renderCatalogDirectory() {
 
     const thumb = document.createElement("div");
     thumb.className = "directory-thumb";
-    const inlineSvg = ex.svg_inline || ex.guide?.svg_inline;
-    if (ex.guide?.svg_path) {
-      const img = document.createElement("img");
-      img.src = ex.guide.svg_path;
-      img.alt = ex.name || ex.id;
-      img.loading = "lazy";
-      img.decoding = "async";
-      img.width = 110;
-      img.height = 100;
-      thumb.appendChild(img);
-    } else if (typeof inlineSvg === "string" && inlineSvg.trim()) {
-      try {
-        thumb.appendChild(sanitizeAndImportSvg(inlineSvg));
-      } catch {
-        // Aperçu ignoré si le SVG inline est invalide
-      }
-    }
+    appendDirectoryThumb(thumb, ex, { width: 110, height: 100 });
 
     const body = document.createElement("div");
     body.className = "directory-card-body";
@@ -3094,20 +3430,7 @@ function renderCatalogDirectory() {
 
     const badges = document.createElement("div");
     badges.className = "directory-badges";
-    if (ex.category && Object.hasOwn(CATEGORY_BADGE_META, ex.category)) {
-      appendCategoryAndBodyweightBadges(badges, ex);
-    } else {
-      if (
-        ex.category &&
-        Object.hasOwn(DIRECTORY_CATEGORY_LABEL_BY_ID, ex.category)
-      ) {
-        const catBadge = document.createElement("span");
-        catBadge.className = "exo-badge";
-        catBadge.textContent = DIRECTORY_CATEGORY_LABEL_BY_ID[ex.category];
-        badges.appendChild(catBadge);
-      }
-      appendCategoryAndBodyweightBadges(badges, ex);
-    }
+    appendDirectoryCategoryBadges(badges, ex);
 
     for (const eqCode of getExerciseEquipments(ex)) {
       if (eqCode === "PDC" && ex.is_bodyweight) continue;
@@ -3158,7 +3481,7 @@ function renderCatalogDirectory() {
 }
 
 /**
- * Branche les événements de navigation, recherche et filtres du catalogue complet.
+ * Branche les événements de navigation, recherche, filtres et constructeur du catalogue complet.
  */
 function initCatalogDirectoryView() {
   const dirView = $("catalog-directory-view");
@@ -3167,6 +3490,7 @@ function initCatalogDirectoryView() {
   const searchInput = /** @type {HTMLInputElement | null} */ (
     $("directory-search-input")
   );
+  const clearBtn = $("directory-search-clear-btn");
   const categoryBtns = Array.from(
     document.querySelectorAll("[data-dir-category]")
   );
@@ -3189,6 +3513,40 @@ function initCatalogDirectoryView() {
     }
   };
 
+  const handleBuilderLaunch = () => {
+    const draft = Array.isArray(state.directory.draft)
+      ? state.directory.draft
+      : [];
+    const statusEl = $("directory-builder-status");
+
+    if (draft.length === 0) {
+      state.directory.builderOpen = true;
+      renderDirectoryBuilder();
+      setStatusMessage(
+        statusEl,
+        "Ajoutez au moins un exercice depuis le catalogue avant de lancer la séance.",
+        "info"
+      );
+      return;
+    }
+
+    const title =
+      ($("directory-builder-title-input")?.value ?? state.directory.draftTitle).trim() ||
+      "Séance Catalogue PPG";
+    state.directory.draftTitle = title;
+
+    const plan = buildDirectorySessionPlan(draft, {
+      title,
+      gate: state.gate,
+      readiness: state.readiness,
+    });
+
+    setStatusMessage(statusEl, "");
+    state.directory.open = false;
+    state.directory.builderOpen = false;
+    launchPlanIntoStep2(plan, { source: "FREE_BUILDER" });
+  };
+
   openBtn?.addEventListener("click", () => {
     openCatalogDirectory();
   });
@@ -3199,9 +3557,22 @@ function initCatalogDirectoryView() {
 
   searchInput?.addEventListener("input", (event) => {
     state.directory.query = event.target.value;
+    if (clearBtn) {
+      clearBtn.hidden = state.directory.query.trim().length === 0;
+    }
     if (state.directory.open || dirView?.hidden === false) {
       renderCatalogDirectory();
     }
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    state.directory.query = "";
+    if (searchInput) {
+      searchInput.value = "";
+    }
+    clearBtn.hidden = true;
+    renderCatalogDirectory();
+    searchInput?.focus();
   });
 
   for (const btn of categoryBtns) {
@@ -3220,7 +3591,86 @@ function initCatalogDirectoryView() {
     });
   }
 
+  $("directory-builder-toggle-btn")?.addEventListener("click", () => {
+    state.directory.builderOpen = !state.directory.builderOpen;
+    renderDirectoryBuilder();
+  });
+
+  $("directory-ribbon-open-btn")?.addEventListener("click", () => {
+    state.directory.builderOpen = true;
+    renderDirectoryBuilder();
+  });
+
+  $("directory-builder-hide-btn")?.addEventListener("click", () => {
+    state.directory.builderOpen = false;
+    renderDirectoryBuilder();
+  });
+
+  $("directory-builder-title-input")?.addEventListener("input", (event) => {
+    state.directory.draftTitle = event.target.value;
+  });
+
+  $("directory-builder-clear-btn")?.addEventListener("click", () => {
+    state.directory.draft = [];
+    setStatusMessage($("directory-builder-status"), "");
+    renderDirectoryBuilder();
+  });
+
+  $("directory-builder-copy-md-btn")?.addEventListener("click", async () => {
+    const statusEl = $("directory-builder-status");
+    const draft = Array.isArray(state.directory.draft)
+      ? state.directory.draft
+      : [];
+    if (draft.length === 0) {
+      setStatusMessage(
+        statusEl,
+        "Ajoutez au moins un exercice avant de copier le Markdown.",
+        "info"
+      );
+      return;
+    }
+
+    const title =
+      ($("directory-builder-title-input")?.value ?? state.directory.draftTitle).trim() ||
+      "Séance Catalogue PPG";
+    const md = exportDirectoryDraftToMarkdown(draft, title);
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API indisponible");
+      }
+      await navigator.clipboard.writeText(md);
+      setStatusMessage(statusEl, "Markdown copié !", "success");
+    } catch {
+      const fallbackArea = document.createElement("textarea");
+      fallbackArea.value = md;
+      fallbackArea.setAttribute("readonly", "");
+      fallbackArea.style.position = "fixed";
+      fallbackArea.style.opacity = "0";
+      document.body.appendChild(fallbackArea);
+      fallbackArea.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      fallbackArea.remove();
+      setStatusMessage(
+        statusEl,
+        copied
+          ? "Markdown copié !"
+          : "Copie impossible automatiquement dans ce navigateur.",
+        copied ? "success" : "error"
+      );
+    }
+  });
+
+  $("directory-builder-launch-btn")?.addEventListener("click", handleBuilderLaunch);
+  $("directory-ribbon-launch-btn")?.addEventListener("click", handleBuilderLaunch);
+
   syncFilterButtons();
+  renderDirectoryBuilder();
 }
 
 async function bootstrap() {

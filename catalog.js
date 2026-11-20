@@ -1418,3 +1418,12 @@ export function getCatalogExercise(id) {
     `Exercice inconnu dans le catalogue WebStrength : "${String(id)}". IDs valides : ${EXERCISE_IDS.join(", ")}`
   );
 }
+
+/**
+ * Détecte si une requête de recherche correspond à une URL HTTP(S).
+ * @param {unknown} query
+ * @returns {boolean}
+ */
+export function isUrlSearchQuery(query) {
+  return /^https?:\/\//i.test(String(query ?? "").trim());
+}

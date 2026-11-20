@@ -886,24 +886,52 @@
           >
             55 exercices
           </span>
+          <button
+            type="button"
+            id="directory-builder-toggle-btn"
+            class="btn btn-secondary btn-sm directory-builder-toggle"
+            aria-controls="directory-builder-panel"
+            aria-expanded="false"
+          >
+            Séance (<span id="directory-builder-count">0</span>)
+          </button>
+        </div>
+
+        <div id="directory-builder-ribbon" class="directory-builder-ribbon" hidden>
+          <span id="directory-builder-ribbon-text" class="directory-builder-ribbon-text">0 exercice sélectionné</span>
+          <div class="directory-builder-ribbon-actions">
+            <button type="button" id="directory-ribbon-open-btn" class="btn btn-secondary btn-sm">Voir la séance</button>
+            <button type="button" id="directory-ribbon-launch-btn" class="btn btn-primary btn-sm">▶ Lancer</button>
+          </div>
         </div>
 
         <search class="directory-search-box">
           <label for="directory-search-input" class="free-search-label">
             Rechercher par nom, ID ou objectif
           </label>
-          <input
-            type="search"
-            id="directory-search-input"
-            name="directory_search"
-            class="free-search-input"
-            placeholder="Ex : traction pronation, pogo, kBox, roue…"
-            autocorrect="off"
-            autocapitalize="none"
-            spellcheck="false"
-            enterkeyhint="search"
-            autocomplete="off"
-          />
+          <div class="directory-search-row">
+            <input
+              type="search"
+              id="directory-search-input"
+              name="directory_search"
+              class="free-search-input"
+              placeholder="Ex : traction pronation, pogo, kBox, roue…"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              enterkeyhint="search"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              id="directory-search-clear-btn"
+              class="btn btn-secondary btn-sm directory-search-clear-btn"
+              hidden
+              aria-label="Effacer la recherche du catalogue"
+            >
+              Effacer
+            </button>
+          </div>
         </search>
 
         <div
@@ -1039,6 +1067,69 @@
             PDC
           </button>
         </div>
+
+        <section
+          id="directory-builder-panel"
+          class="card directory-builder-panel"
+          hidden
+          aria-labelledby="directory-builder-heading"
+        >
+          <div class="directory-builder-head">
+            <h3 id="directory-builder-heading">Brouillon de séance</h3>
+            <button
+              type="button"
+              id="directory-builder-hide-btn"
+              class="btn btn-ghost btn-sm"
+            >
+              Masquer
+            </button>
+          </div>
+          <div class="field-group directory-builder-title-field">
+            <label for="directory-builder-title-input">Nom de la séance</label>
+            <input
+              type="text"
+              id="directory-builder-title-input"
+              value="Séance Catalogue PPG"
+              maxlength="80"
+            />
+          </div>
+          <ol id="directory-builder-list" class="directory-builder-list"></ol>
+          <div
+            id="directory-builder-summary"
+            class="directory-builder-summary"
+            role="status"
+            aria-live="polite"
+          ></div>
+          <p
+            id="directory-builder-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <div class="directory-builder-actions">
+            <button
+              type="button"
+              id="directory-builder-launch-btn"
+              class="btn btn-primary"
+            >
+              ▶ Lancer la séance
+            </button>
+            <button
+              type="button"
+              id="directory-builder-copy-md-btn"
+              class="btn btn-secondary"
+            >
+              📋 Copier Markdown
+            </button>
+            <button
+              type="button"
+              id="directory-builder-clear-btn"
+              class="btn btn-ghost btn-sm"
+            >
+              Vider
+            </button>
+          </div>
+        </section>
 
         <div id="directory-grid" class="directory-grid"></div>
       </section>

@@ -37,6 +37,7 @@ import {
   filterCatalogExercises,
   exportUserExercisesJson,
   getCatalogExercise,
+  isUrlSearchQuery,
 } from "../catalog.js";
 import {
   sanitizeSvgMarkup,
@@ -57,6 +58,16 @@ import {
   buildFreeSessionPlan,
   parseMarkdownOffline,
 } from "../mdParser.js";
+import {
+  createDirectoryDraftItem,
+  addDraftExercise,
+  removeDraftExercise,
+  moveDraftExercise,
+  updateDraftExercise,
+  summarizeDirectoryDraft,
+  exportDirectoryDraftToMarkdown,
+  buildDirectorySessionPlan,
+} from "../directoryBuilder.js";
 import {
   determineDominantPattern,
   enforceSymbolicConstraints,
@@ -3295,11 +3306,11 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     assert.equal(seenPaths.size, 55);
   });
 
-  it("vérifie le Service Worker sw.js v1.10.0 : CACHE_NAME, extendedCatalog.js et pré-cache des 55 SVG", () => {
+  it("vérifie le Service Worker sw.js v1.11.0 : CACHE_NAME, extendedCatalog.js, directoryBuilder.js et pré-cache des 55 SVG", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
 
-    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.10\.0["']\s*;/);
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.11\.0["']\s*;/);
 
     const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
     assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
@@ -3312,6 +3323,11 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
       precachedPaths.has("./extendedCatalog.js"),
       true,
       "./extendedCatalog.js doit être dans PRECACHE_ASSETS"
+    );
+    assert.equal(
+      precachedPaths.has("./directoryBuilder.js"),
+      true,
+      "./directoryBuilder.js doit être dans PRECACHE_ASSETS"
     );
 
     for (const ex of ALL_OFFICIAL_EXERCISES) {
@@ -3756,6 +3772,485 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
       /\binnerHTML\b/i.test(appJs),
       false,
       "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
+    );
+  });
+});
+
+// ============================================================================
+// 12. Correctifs Recherche URL & Constructeur de Séance Catalogue v1.11.0
+// ============================================================================
+
+describe("12. Correctifs Recherche URL & Constructeur de Séance Catalogue v1.11.0", () => {
+  let restoreLocalStorage;
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+    clearUserExercises();
+  });
+
+  afterEach(() => {
+    clearUserExercises();
+    restoreLocalStorage?.();
+    restoreLocalStorage = undefined;
+  });
+
+  it("détecte strictement les requêtes URL HTTP(S) via isUrlSearchQuery", () => {
+    const positives = [
+      "http://script.google.com/...",
+      "https://script.google.com/macros/s/abc/exec",
+      "  HTTPS://example.com  ",
+    ];
+    for (const q of positives) {
+      assert.equal(isUrlSearchQuery(q), true, `Attendu true pour "${q}"`);
+    }
+
+    const negatives = [
+      "kbox",
+      "pull_up_pronation",
+      "http",
+      "ftp://local",
+      "",
+      null,
+      undefined,
+    ];
+    for (const q of negatives) {
+      assert.equal(isUrlSearchQuery(q), false, `Attendu false pour ${String(q)}`);
+    }
+  });
+
+  it("manipule le brouillon de manière immuable (add, move, update, remove) avec bornage et snap", () => {
+    const directItem = createDirectoryDraftItem("PLYO_ANKLE_POGO_DOUBLE");
+    assert.equal(directItem.id, "PLYO_ANKLE_POGO_DOUBLE");
+    assert.equal(directItem.sets, 4);
+    assert.equal(directItem.reps, 15);
+    assert.equal(directItem.load, 0);
+    assert.equal(directItem.is_timed, false);
+    assert.throws(() => createDirectoryDraftItem("EXO_INEXISTANT"));
+
+    const emptyFrozen = Object.freeze([]);
+    const d1 = addDraftExercise(emptyFrozen, "PULL_UP_PRONATION_STRICT_BW");
+    assert.equal(d1.length, 1);
+    assert.equal(emptyFrozen.length, 0);
+    assert.equal(d1[0].id, "PULL_UP_PRONATION_STRICT_BW");
+    assert.equal(d1[0].sets, 3);
+    assert.equal(d1[0].reps, 4);
+    assert.equal(d1[0].load, 0);
+    assert.equal(d1[0].is_timed, false);
+    assert.equal(typeof d1[0].uid === "string" && d1[0].uid.length > 0, true);
+
+    const d2 = addDraftExercise(Object.freeze(d1), "KBOX_HIGH_PULL_VELOCITY");
+    assert.equal(d2.length, 2);
+    assert.equal(d1.length, 1);
+    assert.equal(d2[1].id, "KBOX_HIGH_PULL_VELOCITY");
+    assert.equal(d2[1].sets, 4);
+    assert.equal(d2[1].reps, 6);
+    assert.equal(d2[1].load, 0.01);
+    assert.equal(d2[1].is_timed, false);
+
+    const d3 = addDraftExercise(d2, "PULL_UP_PRONATION_SCAP_ISOMETRIC");
+    assert.equal(d3.length, 3);
+    assert.equal(d3[2].sets, 3);
+    assert.equal(d3[2].reps, 20);
+    assert.equal(d3[2].load, 0);
+    assert.equal(d3[2].is_timed, true);
+    assert.notEqual(d3[0].uid, d3[1].uid);
+    assert.notEqual(d3[1].uid, d3[2].uid);
+
+    // Déplacement immuable (-1 / +1) et no-op aux bornes
+    const frozenSource = Object.freeze(d3.map((item) => Object.freeze({ ...item })));
+    const movedUp = moveDraftExercise(frozenSource, 1, -1);
+    assert.notEqual(movedUp, frozenSource);
+    assert.deepEqual(
+      movedUp.map((x) => x.id),
+      [
+        "KBOX_HIGH_PULL_VELOCITY",
+        "PULL_UP_PRONATION_STRICT_BW",
+        "PULL_UP_PRONATION_SCAP_ISOMETRIC",
+      ]
+    );
+    assert.deepEqual(
+      frozenSource.map((x) => x.id),
+      [
+        "PULL_UP_PRONATION_STRICT_BW",
+        "KBOX_HIGH_PULL_VELOCITY",
+        "PULL_UP_PRONATION_SCAP_ISOMETRIC",
+      ]
+    );
+
+    const movedDown = moveDraftExercise(movedUp, 0, 1);
+    assert.deepEqual(
+      movedDown.map((x) => x.id),
+      [
+        "PULL_UP_PRONATION_STRICT_BW",
+        "KBOX_HIGH_PULL_VELOCITY",
+        "PULL_UP_PRONATION_SCAP_ISOMETRIC",
+      ]
+    );
+
+    for (const [idx, delta] of [
+      [-1, 1],
+      [0, -1],
+      [frozenSource.length - 1, 1],
+      [frozenSource.length, -1],
+      [1, 0],
+      [1.5, 1],
+    ]) {
+      const noop = moveDraftExercise(frozenSource, idx, delta);
+      assert.notEqual(noop, frozenSource);
+      assert.deepEqual(noop, frozenSource);
+    }
+
+    // updateDraftExercise : bornes sets [1, 10], reps [1, 300], snap load, immuabilité
+    const clampedLow = updateDraftExercise(frozenSource, 0, {
+      sets: 0,
+      reps: -12,
+      load: 1, // équidistant entre 0 et 2 -> snap vers 0
+    });
+    assert.equal(clampedLow[0].sets, 1);
+    assert.equal(clampedLow[0].reps, 1);
+    assert.equal(clampedLow[0].load, 0);
+    assert.equal(frozenSource[0].sets, 3);
+    assert.equal(frozenSource[0].reps, 4);
+
+    const clampedHigh = updateDraftExercise(frozenSource, 1, {
+      sets: 99,
+      reps: 500,
+      load: 0.02, // plus proche de 0.025 dans [0.010, 0.025, 0.050]
+    });
+    assert.equal(clampedHigh[1].sets, 10);
+    assert.equal(clampedHigh[1].reps, 300);
+    assert.equal(clampedHigh[1].load, 0.025);
+
+    const invalidPatchValues = updateDraftExercise(frozenSource, 0, {
+      sets: Number.NaN,
+      reps: Infinity,
+      load: 3.5, // plus proche de 4 dans [0, 2, 4, 6]
+      is_timed: true,
+    });
+    assert.equal(invalidPatchValues[0].sets, 3);
+    assert.equal(invalidPatchValues[0].reps, 4);
+    assert.equal(invalidPatchValues[0].load, 4);
+    assert.equal(invalidPatchValues[0].is_timed, true);
+
+    const noopUpdate = updateDraftExercise(frozenSource, 99, { sets: 5 });
+    assert.deepEqual(noopUpdate, frozenSource);
+
+    // removeDraftExercise : immuable et gestion des index hors bornes
+    const removed = removeDraftExercise(frozenSource, 1);
+    assert.equal(removed.length, 2);
+    assert.deepEqual(
+      removed.map((x) => x.id),
+      ["PULL_UP_PRONATION_STRICT_BW", "PULL_UP_PRONATION_SCAP_ISOMETRIC"]
+    );
+    assert.equal(frozenSource.length, 3);
+
+    for (const badIdx of [-1, 3, Number.NaN, 0.5]) {
+      const unchanged = removeDraftExercise(frozenSource, badIdx);
+      assert.notEqual(unchanged, frozenSource);
+      assert.deepEqual(unchanged, frozenSource);
+    }
+  });
+
+  it("calcule summarizeDirectoryDraft et émet des repères de vigilance non bloquants", () => {
+    assert.deepEqual(summarizeDirectoryDraft([]), {
+      exerciseCount: 0,
+      totalSets: 0,
+      estimatedMinutes: 0,
+      estimatedStrain: 0,
+      plyoVelocityCount: 0,
+      plyoVelocityRatio: 0,
+      vigilanceHints: [],
+    });
+
+    // Brouillon modéré sans alerte
+    let calmDraft = addDraftExercise([], "BAND_PALLOF_PRESS");
+    calmDraft = addDraftExercise(calmDraft, "PULL_UP_PRONATION_STRICT_BW");
+    const calmSummary = summarizeDirectoryDraft(calmDraft);
+    assert.equal(calmSummary.exerciseCount, 2);
+    assert.equal(calmSummary.totalSets, 6);
+    assert.equal(calmSummary.estimatedMinutes > 0, true);
+    assert.equal(Number.isFinite(calmSummary.estimatedStrain), true);
+    assert.equal(calmSummary.plyoVelocityCount, 0);
+    assert.equal(calmSummary.plyoVelocityRatio, 0);
+    assert.deepEqual(calmSummary.vigilanceHints, []);
+
+    // Forte proportion pliométrie / vélocité
+    let speedPlyoDraft = addDraftExercise([], "PLYO_ANKLE_POGO_DOUBLE");
+    speedPlyoDraft = addDraftExercise(speedPlyoDraft, "KBOX_HIGH_PULL_VELOCITY");
+    const speedPlyoSummary = summarizeDirectoryDraft(speedPlyoDraft);
+    assert.equal(speedPlyoSummary.exerciseCount, 2);
+    assert.equal(speedPlyoSummary.totalSets, 8);
+    assert.equal(speedPlyoSummary.plyoVelocityCount, 2);
+    assert.equal(speedPlyoSummary.plyoVelocityRatio, 1);
+    assert.equal(
+      speedPlyoSummary.vigilanceHints.some((h) => /pliométrie|vélocité/i.test(h)),
+      true
+    );
+
+    // >= 3 exercices pliométrie / vélocité déclenche aussi le repère même avec ratio < 0.5
+    let threeSpeedLowRatio = [];
+    for (const id of [
+      "PLYO_ANKLE_POGO_DOUBLE",
+      "KBOX_HIGH_PULL_VELOCITY",
+      "PLYO_BOX_JUMP_STEP_DOWN",
+      "BAND_PALLOF_PRESS",
+      "BAND_FACE_PULL",
+      "DB_SL_RDL",
+      "PULL_UP_PRONATION_STRICT_BW",
+    ]) {
+      threeSpeedLowRatio = addDraftExercise(threeSpeedLowRatio, id);
+    }
+    const threeSpeedSummary = summarizeDirectoryDraft(threeSpeedLowRatio);
+    assert.equal(threeSpeedSummary.plyoVelocityCount, 3);
+    assert.equal(threeSpeedSummary.plyoVelocityRatio < 0.5, true);
+    assert.equal(
+      threeSpeedSummary.vigilanceHints.some((h) => /pliométrie|vélocité/i.test(h)),
+      true
+    );
+
+    // Strain > 180 et totalSets > 24 sans bloquer buildDirectorySessionPlan
+    let heavyDraft = addDraftExercise([], "KBOX_RDL");
+    heavyDraft = updateDraftExercise(heavyDraft, 0, {
+      sets: 9,
+      reps: 10,
+      load: 0.075,
+    });
+    heavyDraft = addDraftExercise(heavyDraft, "DB_SL_RDL");
+    heavyDraft = updateDraftExercise(heavyDraft, 1, { sets: 9, reps: 10, load: 10 });
+    heavyDraft = addDraftExercise(heavyDraft, "BAND_PALLOF_PRESS");
+    heavyDraft = updateDraftExercise(heavyDraft, 2, { sets: 9 });
+
+    const heavySummary = summarizeDirectoryDraft(heavyDraft);
+    assert.equal(heavySummary.exerciseCount, 3);
+    assert.equal(heavySummary.totalSets, 27);
+    assert.equal(heavySummary.estimatedStrain > 180, true);
+    assert.equal(
+      heavySummary.vigilanceHints.some((h) => />\s*180/.test(h)),
+      true
+    );
+    assert.equal(
+      heavySummary.vigilanceHints.some((h) => />\s*24 séries/.test(h)),
+      true
+    );
+
+    const nonBlockedPlan = buildDirectorySessionPlan(heavyDraft, {
+      title: "Séance Lourde Non Bloquée",
+    });
+    assert.equal(nonBlockedPlan.exercises.length, 3);
+    assert.equal(nonBlockedPlan.preserve_order, true);
+  });
+
+  it("assure un aller-retour Markdown exact (exportDirectoryDraftToMarkdown -> parseMarkdownOffline)", () => {
+    let draft = [];
+    draft = addDraftExercise(draft, "PULL_UP_PRONATION_STRICT_BW"); // load=0 (PDC)
+    draft = addDraftExercise(draft, "PLYO_ANKLE_POGO_DOUBLE");
+    draft = addDraftExercise(draft, "KBOX_HIGH_PULL_VELOCITY"); // load=0.010
+    draft = addDraftExercise(draft, "KBOX_HIGH_PULL_VELOCITY"); // load=0.025 après update
+    draft = updateDraftExercise(draft, 3, { load: 0.025 });
+    draft = addDraftExercise(draft, "PULL_UP_PRONATION_SCAP_ISOMETRIC"); // is_timed: true, 3x20s
+
+    // Vérification état initial PULL_UP_PRONATION_STRICT_BW à 0 (PDC)
+    const mdInitial = exportDirectoryDraftToMarkdown(draft, "Séance Mixte PDC");
+    const parsedInitial = parseMarkdownOffline(mdInitial);
+    assert.equal(parsedInitial.exercises[0].id, "PULL_UP_PRONATION_STRICT_BW");
+    assert.equal(parsedInitial.exercises[0].load, 0);
+
+    const payloadInitial = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T09:00:00"),
+      theme: parsedInitial.theme,
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      lumbar_flag: false,
+      elapsed_time_sec: 1500,
+      exercises: parsedInitial.exercises.map((ex) => ({ ...ex, completion: 1 })),
+    });
+    assert.equal(payloadInitial.description.includes("| PDC | 3×4 |"), true);
+
+    // Mise à jour vers PDC +2 kg et aller-retour complet
+    const updatedDraft = updateDraftExercise(draft, 0, { load: 2 });
+    const md = exportDirectoryDraftToMarkdown(
+      updatedDraft,
+      "<b>Séance Mixte</b> | v1.11"
+    );
+
+    assert.equal(md.includes("# Séance Mixte v1.11"), true);
+    assert.equal(md.includes("2 kg"), true);
+    assert.equal(md.includes("0.010 kg·m²"), true);
+    assert.equal(md.includes("0.025 kg·m²"), true);
+    assert.equal(md.includes("3x20s"), true);
+
+    const parsed = parseMarkdownOffline(md);
+    assert.equal(parsed.theme, "Séance Mixte v1.11");
+    assert.equal(parsed.exercises.length, updatedDraft.length);
+
+    for (let i = 0; i < updatedDraft.length; i++) {
+      const expected = updatedDraft[i];
+      const actual = parsed.exercises[i];
+      const resolvedTimed =
+        typeof actual.is_timed === "boolean"
+          ? actual.is_timed
+          : Boolean(getCatalogExercise(actual.id).is_timed);
+
+      assert.equal(actual.id, expected.id);
+      assert.equal(actual.sets, expected.sets);
+      assert.equal(actual.reps, expected.reps);
+      assert.equal(actual.load, expected.load);
+      assert.equal(resolvedTimed, expected.is_timed);
+    }
+
+    const payloadUpdated = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T09:30:00"),
+      theme: parsed.theme,
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      lumbar_flag: false,
+      elapsed_time_sec: 1800,
+      exercises: parsed.exercises.map((ex) => ({ ...ex, completion: 1 })),
+    });
+    assert.equal(payloadUpdated.description.includes("| PDC +2 kg | 3×4 |"), true);
+    assert.equal(payloadUpdated.description.includes("| 0.010 kg·m² | 4×6 |"), true);
+    assert.equal(payloadUpdated.description.includes("| 0.025 kg·m² | 4×6 |"), true);
+    assert.equal(payloadUpdated.description.includes("| PDC | 3×20s |"), true);
+  });
+
+  it("construit un plan via buildDirectorySessionPlan (preserve_order, métriques et payload Intervals.icu)", () => {
+    let draft = [];
+    draft = addDraftExercise(draft, "BAND_PALLOF_PRESS"); // BAND_CORE (bloc 1)
+    draft = addDraftExercise(draft, "KBOX_HIGH_PULL_VELOCITY"); // KBOX (bloc 2)
+    draft = addDraftExercise(draft, "DB_SL_RDL"); // DUMBBELL (bloc 3)
+    draft = addDraftExercise(draft, "BAND_FACE_PULL"); // BAND_CORE (bloc 1)
+
+    const plan = buildDirectorySessionPlan(draft, {
+      title: "Ordre Mixte Catalogue",
+      gate: "ORANGE",
+      readiness: "MODERATE",
+    });
+
+    assert.equal(plan.is_free_mode, true);
+    assert.equal(plan.preserve_order, true);
+    assert.equal(plan.theme, "Ordre Mixte Catalogue");
+    assert.deepEqual(plan.applied_rules, ["MODE_LIBRE"]);
+    assert.equal(plan.rationale.includes("Catalogue Complet"), true);
+    assert.equal(plan.rationale.includes("Gate: ORANGE"), true);
+    assert.equal(plan.rationale.includes("Readiness: MODERATE"), true);
+
+    assert.deepEqual(
+      plan.exercises.map((ex) => ex.id),
+      [
+        "BAND_PALLOF_PRESS",
+        "KBOX_HIGH_PULL_VELOCITY",
+        "DB_SL_RDL",
+        "BAND_FACE_PULL",
+      ]
+    );
+    assert.deepEqual(
+      plan.exercises.map((ex) => ex.block),
+      [1, 2, 3, 1]
+    );
+
+    const executedExercises = plan.exercises.map((ex) => ({
+      ...ex,
+      completion: 1,
+    }));
+
+    const metrics = calculateSessionMetrics({
+      exercises: executedExercises,
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      elapsed_time_sec: 1800,
+    });
+    assert.equal(Number.isFinite(metrics.PpgEffectiveTut) && metrics.PpgEffectiveTut > 0, true);
+    assert.equal(Number.isFinite(metrics.EccentricStrainIndex) && metrics.EccentricStrainIndex > 0, true);
+    assert.equal(metrics.StrengthCompliancePct, 100);
+    assert.equal(metrics.icu_training_load > 0, true);
+    assert.equal(metrics.max_kbox_inertia, 0.01);
+    assert.equal(metrics.pole_breakdown.BAND_CORE.tut > 0, true);
+    assert.equal(metrics.pole_breakdown.KBOX.tut > 0, true);
+    assert.equal(metrics.pole_breakdown.DUMBBELL.tut > 0, true);
+
+    const payload = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T10:00:00"),
+      theme: plan.theme,
+      rationale: plan.rationale,
+      gate: "ORANGE",
+      readiness: "MODERATE",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      lumbar_flag: false,
+      elapsed_time_sec: 1800,
+      exercises: executedExercises,
+    });
+
+    assert.equal(payload.type, "WeightTraining");
+    assert.equal(payload.name, "PPG kBox [0.010] - Ordre Mixte Catalogue");
+    assert.equal(payload.moving_time, metrics.PpgEffectiveTut);
+    const telemetry = parseTelemetryJsonFromDescription(payload.description);
+    assert.ok(telemetry);
+    assert.deepEqual(
+      telemetry.ex.map((ex) => ex.id),
+      [
+        "BAND_PALLOF_PRESS",
+        "KBOX_HIGH_PULL_VELOCITY",
+        "DB_SL_RDL",
+        "BAND_FACE_PULL",
+      ]
+    );
+
+    assert.throws(
+      () => buildDirectorySessionPlan([]),
+      /Aucun exercice valide/
+    );
+  });
+
+  it("vérifie les contrôles statiques HTML du constructeur (#directory-builder-panel) et 0 innerHTML", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const indexHtml = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+    const appJs = fs.readFileSync(path.join(rootDir, "app.js"), "utf8");
+    const directoryBuilderJs = fs.readFileSync(
+      path.join(rootDir, "directoryBuilder.js"),
+      "utf8"
+    );
+
+    const requiredIds = [
+      "directory-search-clear-btn",
+      "directory-builder-toggle-btn",
+      "directory-builder-count",
+      "directory-builder-ribbon",
+      "directory-builder-panel",
+      "directory-builder-title-input",
+      "directory-builder-list",
+      "directory-builder-summary",
+      "directory-builder-launch-btn",
+      "directory-builder-copy-md-btn",
+    ];
+    for (const domId of requiredIds) {
+      assert.equal(
+        new RegExp(`id\\s*=\\s*["']${domId}["']`).test(indexHtml),
+        true,
+        `ID DOM manquant dans index.html : #${domId}`
+      );
+    }
+
+    assert.equal(
+      /\binnerHTML\b/i.test(appJs),
+      false,
+      "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
+    );
+    assert.equal(
+      /\binnerHTML\b/i.test(directoryBuilderJs),
+      false,
+      "directoryBuilder.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
     );
   });
 });
