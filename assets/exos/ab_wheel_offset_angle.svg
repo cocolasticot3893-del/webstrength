@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Roue abdominale en diagonale à 30 degrés pour les obliques">
+  <style>
+    .awoa_wheel {
+      --base-dur: 3.2s;
+      animation: awoa_diag calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .awoa_body {
+      --base-dur: 3.2s;
+      transform-origin: 68px 146px;
+      animation: awoa_lean calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .awoa_oblique {
+      --base-dur: 3.2s;
+      animation: awoa_glow calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes awoa_diag {
+      0%, 100% { transform: translate(0px, 0px); }
+      48%, 56% { transform: translate(54px, -31px); }
+    }
+    @keyframes awoa_lean {
+      0%, 100% { transform: scale(1) translate(0px, 0px); }
+      48%, 56% { transform: scale(1.06, 0.94) translate(16px, -9px); }
+    }
+    @keyframes awoa_glow {
+      0%, 100% { opacity: 0.25; }
+      48%, 56% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Vue plongeante oblique : tapis et axes de référence -->
+  <polygon points="36,164 196,164 214,104 60,104" fill="#1f2937" fill-opacity="0.35" stroke="#30363d" stroke-width="1.2"/>
+
+  <!-- Axe sagittal 0° vs Axe diagonal 30° -->
+  <line x1="112" y1="142" x2="196" y2="142" stroke="#30363d" stroke-width="1.3" stroke-dasharray="4 3"/>
+  <line x1="112" y1="142" x2="188" y2="98" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="4 3"/>
+  <path d="M148 142 A36 36 0 0 0 143 124" fill="none" stroke="#f59e0b" stroke-width="1.8"/>
+  <text x="155" y="135" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8.5" font-weight="700">30°</text>
+
+  <!-- Bassin/Genoux au point d'ancrage (vue 3/4 dessus) -->
+  <rect x="46" y="136" width="28" height="22" rx="4" fill="#1f2937" stroke="#30363d" stroke-width="1.2"/>
+  <circle cx="58" cy="142" r="4" fill="#8b949e"/>
+  <circle cx="62" cy="154" r="4" fill="#8b949e"/>
+
+  <!-- Corps en extension diagonale -->
+  <g class="awoa_body">
+    <!-- Hanche fixe -->
+    <line x1="62" y1="138" x2="68" y2="152" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <!-- Torse en anti-rotation -->
+    <path d="M65,145 L100,124" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+    <!-- Halo obliques anti-rotation -->
+    <g class="awoa_oblique">
+      <ellipse cx="83" cy="130" rx="14" ry="6" transform="rotate(-30 83 130)" fill="#10b981" fill-opacity="0.22" stroke="#10b981" stroke-width="1.4"/>
+    </g>
+    <!-- Épaules carrées et bras tendus vers la roue -->
+    <line x1="94" y1="114" x2="106" y2="132" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round"/>
+    <circle cx="106" cy="116" r="7.5" fill="#e6edf3"/>
+    <line x1="94" y1="114" x2="122" y2="128" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+    <line x1="106" y1="132" x2="126" y2="135" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Roue décalée sur trajectoire 30° -->
+  <g class="awoa_wheel">
+    <line x1="118" y1="124" x2="130" y2="140" stroke="#e6edf3" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="124" cy="132" rx="6" ry="11" transform="rotate(-30 124 132)" fill="#1f2937" stroke="#38bdf8" stroke-width="2.4"/>
+    <circle cx="124" cy="132" r="2.8" fill="#f59e0b"/>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · AB WHEEL</text>
+  <text x="224" y="21" text-anchor="end" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">OBLIQUES 30°</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">ROUE ABDO DIAGONALE 30° · OBLIQUES</text>
+</svg>

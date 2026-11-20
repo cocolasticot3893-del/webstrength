@@ -18,6 +18,11 @@ import {
   ALL_EXERCISE_IDS,
   INTEGRATED_USER_EXERCISES,
   INTEGRATED_USER_EXERCISES_BY_ID,
+  EXTENDED_CATEGORIES,
+  EXTENDED_CATALOG_EXERCISES,
+  EXTENDED_CATALOG_BY_ID,
+  EXTENDED_EXERCISE_IDS,
+  ALL_OFFICIAL_EXERCISES,
   USER_EXERCISES_STORAGE_KEY,
   generateUserExerciseId,
   loadUserExercises,
@@ -2222,18 +2227,18 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
     assert.equal(resolved.name, "Rowing Inversé Anneaux");
 
     const all = getAllCatalogExercises();
-    assert.equal(all.length, CATALOG.length + INTEGRATED_USER_EXERCISES.length + 1);
-    assert.equal(all.length, 21);
+    assert.equal(all.length, ALL_OFFICIAL_EXERCISES.length + 1);
+    assert.equal(all.length, 56);
     assert.ok(all.some((ex) => ex.id === id1));
 
     // Invariant strict du catalogue officiel
     assert.equal(EXERCISE_IDS.length, 17);
     assert.equal(CATALOG.length, 17);
 
-    // Suppression unitaire propre -> retour à 20 exercices (17 officiels + 3 intégrés)
+    // Suppression unitaire propre -> retour à 55 exercices officiels (17 base + 3 intégrés + 35 étendus)
     assert.equal(removeUserExercise(id1), true);
     assert.equal(getUserExercisesList().length, 0);
-    assert.equal(getAllCatalogExercises().length, 20);
+    assert.equal(getAllCatalogExercises().length, 55);
   });
 
   it("Parité mathématique exacte entre CUSTOM_BAND_CORE et sa version promue USER_*", () => {
@@ -2652,7 +2657,7 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
       (ex) => ex.id === "USER_TIRAGE_HORIZONTAL_ELASTIQUE"
     );
     assert.equal(matchingRowEntries.length, 1);
-    assert.equal(allWithStale.length, 20);
+    assert.equal(allWithStale.length, 55);
 
     // 3. Vérification des 2 fichiers SVG sur disque
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -2963,5 +2968,392 @@ describe("9. Sync Google Drive Webhook (driveSync.js & vault.js)", () => {
         }),
       /Timeout/
     );
+  });
+});
+
+// ============================================================================
+// 10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie, SVG & SW
+// ============================================================================
+
+describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie, SVG & Service Worker", () => {
+  let restoreLocalStorage;
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+    clearUserExercises();
+  });
+
+  afterEach(() => {
+    clearUserExercises();
+    restoreLocalStorage?.();
+    restoreLocalStorage = undefined;
+  });
+
+  it("respecte les invariants du catalogue 55 exercices, le gel profond et les 5 catégories (35 étendus)", () => {
+    assert.equal(EXERCISE_IDS.length, 17);
+    assert.equal(CATALOG.length, 17);
+    assert.equal(INTEGRATED_USER_EXERCISES.length, 3);
+    assert.equal(EXTENDED_EXERCISE_IDS.length, 35);
+    assert.equal(EXTENDED_CATALOG_EXERCISES.length, 35);
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 55);
+    assert.equal(getAllCatalogExercises().length, 55);
+
+    const uniqueOfficialIds = new Set(ALL_OFFICIAL_EXERCISES.map((ex) => ex.id));
+    assert.equal(uniqueOfficialIds.size, 55);
+
+    assert.equal(Object.isFrozen(EXTENDED_CATEGORIES), true);
+    assert.equal(Object.isFrozen(EXTENDED_CATALOG_EXERCISES), true);
+    assert.equal(Object.isFrozen(EXTENDED_CATALOG_BY_ID), true);
+    assert.equal(Object.isFrozen(EXTENDED_EXERCISE_IDS), true);
+    assert.equal(Object.isFrozen(ALL_OFFICIAL_EXERCISES), true);
+
+    assert.throws(() => {
+      // @ts-ignore test d'immuabilité
+      EXTENDED_CATALOG_EXERCISES.push({});
+    }, TypeError);
+
+    const expectedCategoryCounts = {
+      UPPER_BODY: 7,
+      CORE_TRUNK: 8,
+      POSTERIOR_HIP_ANKLE: 8,
+      VELOCITY: 6,
+      PLYOMETRICS: 6,
+    };
+    assert.deepEqual(
+      Object.keys(EXTENDED_CATEGORIES).sort(),
+      Object.keys(expectedCategoryCounts).sort()
+    );
+
+    const validPoles = new Set(["KBOX", "DUMBBELL", "BAND_CORE"]);
+    const observedCounts = {
+      UPPER_BODY: 0,
+      CORE_TRUNK: 0,
+      POSTERIOR_HIP_ANKLE: 0,
+      VELOCITY: 0,
+      PLYOMETRICS: 0,
+    };
+
+    for (const ex of EXTENDED_CATALOG_EXERCISES) {
+      assert.equal(Object.isFrozen(ex), true, `${ex.id} doit être figé`);
+      assert.equal(Object.isFrozen(ex.allowed_loads), true, `${ex.id}.allowed_loads doit être figé`);
+      assert.equal(Object.isFrozen(ex.guide), true, `${ex.id}.guide doit être figé`);
+      assert.equal(Object.isFrozen(ex.guide.execution), true, `${ex.id}.guide.execution doit être figé`);
+      assert.equal(Object.isFrozen(ex.guide.errors), true, `${ex.id}.guide.errors doit être figé`);
+
+      assert.throws(() => {
+        // @ts-ignore test d'immuabilité
+        ex.short_desc = "muté";
+      }, TypeError);
+
+      assert.equal(validPoles.has(ex.pole), true, `Pôle invalide pour ${ex.id}: ${ex.pole}`);
+      assert.equal(
+        Object.hasOwn(expectedCategoryCounts, ex.category),
+        true,
+        `Catégorie invalide pour ${ex.id}: ${ex.category}`
+      );
+      observedCounts[ex.category] += 1;
+
+      assert.equal(
+        typeof ex.short_desc === "string" && ex.short_desc.trim().length > 0,
+        true,
+        `${ex.id}.short_desc doit être non vide`
+      );
+      assert.equal(ex.guide.execution.length, 3, `${ex.id}.guide.execution doit avoir 3 items`);
+      assert.equal(ex.guide.errors.length, 3, `${ex.id}.guide.errors doit avoir 3 items`);
+      for (const step of [...ex.guide.execution, ...ex.guide.errors]) {
+        assert.equal(typeof step === "string" && step.trim().length > 0, true);
+      }
+
+      assert.equal(getCatalogExercise(ex.id), ex);
+    }
+
+    assert.deepEqual(observedCounts, expectedCategoryCounts);
+  });
+
+  it("gère les tractions pronation sans hypertrophie, le PDC (load=0 / load>0) et préserve DB_COPENHAGEN à load=0", () => {
+    const pullStrict = getCatalogExercise("PULL_UP_PRONATION_STRICT_BW");
+    const pullTempo = getCatalogExercise("PULL_UP_PRONATION_TEMPO_ECC");
+    const pullScap = getCatalogExercise("PULL_UP_PRONATION_SCAP_ISOMETRIC");
+
+    for (const pullEx of [pullStrict, pullTempo, pullScap]) {
+      assert.equal(pullEx.is_bodyweight, true);
+      assert.equal(pullEx.category, "UPPER_BODY");
+      assert.equal(pullEx.default_sets, 3);
+      assert.equal(pullEx.bodyweight_base_kg >= 65, true);
+    }
+
+    // Force / excentrique sans hypertrophie (<= 5 reps) et maintien isométrique (20s)
+    assert.equal(pullStrict.is_timed, false);
+    assert.equal(pullStrict.default_reps, 4);
+    assert.equal(pullTempo.is_timed, false);
+    assert.equal(pullTempo.default_reps, 3);
+    assert.equal(pullTempo.beta_ecc, 1.25);
+    assert.equal(pullScap.is_timed, true);
+    assert.equal(pullScap.default_reps, 20);
+
+    // Vérification PDC à load=0 et PDC +2 kg à load=2 sur 3 exercices PDC distincts
+    const pdcSpecs = [
+      { id: "PULL_UP_PRONATION_STRICT_BW", sets: 3, reps: 4, extraLoad: 2 },
+      { id: "AB_WHEEL_ROLLOUT_KNEES", sets: 3, reps: 8, extraLoad: 2 },
+      { id: "PLYO_ANKLE_POGO_DOUBLE", sets: 4, reps: 15, extraLoad: 2 },
+    ];
+
+    for (const spec of pdcSpecs) {
+      const exCat = getCatalogExercise(spec.id);
+      assert.equal(exCat.is_bodyweight, true);
+      assert.equal(
+        Number(exCat.bodyweight_base_kg) > 0 || Number(exCat.bodyweight_base_load) > 0,
+        true,
+        `${spec.id} doit définir bodyweight_base_kg ou bodyweight_base_load`
+      );
+
+      const mZero = calculateSessionMetrics({
+        exercises: [{ id: spec.id, sets: spec.sets, reps: spec.reps, load: 0, completion: 1 }],
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        elapsed_time_sec: 900,
+      });
+      assert.ok(mZero.EccentricStrainIndex > 0, `${spec.id} doit avoir strain > 0 à load=0`);
+
+      const payloadZero = buildManualActivityPayload({
+        dateObj: new Date("2026-11-20T08:00:00"),
+        theme: "Test PDC 0",
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 900,
+        exercises: [{ id: spec.id, block: 1, sets: spec.sets, reps: spec.reps, load: 0, completion: 1 }],
+      });
+      assert.ok(
+        payloadZero.description.includes(`| ${exCat.name} | PDC |`),
+        `${spec.id} à load=0 doit formater la charge en PDC`
+      );
+
+      const mPlus = calculateSessionMetrics({
+        exercises: [{ id: spec.id, sets: spec.sets, reps: spec.reps, load: spec.extraLoad, completion: 1 }],
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        elapsed_time_sec: 900,
+      });
+      assert.ok(
+        mPlus.EccentricStrainIndex > mZero.EccentricStrainIndex,
+        `${spec.id} doit avoir strain(load=${spec.extraLoad}) > strain(load=0)`
+      );
+
+      const payloadPlus = buildManualActivityPayload({
+        dateObj: new Date("2026-11-20T08:00:00"),
+        theme: "Test PDC +2",
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 900,
+        exercises: [{ id: spec.id, block: 1, sets: spec.sets, reps: spec.reps, load: spec.extraLoad, completion: 1 }],
+      });
+      assert.ok(
+        payloadPlus.description.includes(`| ${exCat.name} | PDC +${spec.extraLoad} kg |`),
+        `${spec.id} à load=${spec.extraLoad} doit formater la charge en PDC +${spec.extraLoad} kg`
+      );
+    }
+
+    // Non-régression Suite 2 : DB_COPENHAGEN à load=0 reste à strain=0 et "0 kg"
+    const copMetrics = calculateSessionMetrics({
+      exercises: [{ id: "DB_COPENHAGEN", sets: 2, reps: 30, load: 0, completion: 1 }],
+      k_ecc: 1.0,
+      rir: 3,
+      rpe: 5,
+      elapsed_time_sec: 600,
+    });
+    assert.equal(copMetrics.PpgEffectiveTut, 60);
+    assert.equal(copMetrics.EccentricStrainIndex, 0);
+
+    const copPayload = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T08:00:00"),
+      theme: "Non-régression Copenhagen",
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      k_ecc: 1.0,
+      rir: 3,
+      rpe: 5,
+      lumbar_flag: false,
+      elapsed_time_sec: 600,
+      exercises: [{ id: "DB_COPENHAGEN", block: 1, sets: 2, reps: 30, load: 0, completion: 1 }],
+    });
+    assert.ok(copPayload.description.includes("| 0 kg |"));
+    assert.equal(copPayload.description.includes("| PDC |"), false);
+  });
+
+  it("calcule proprement tous les exercices des catégories VELOCITY (6) et PLYOMETRICS (6)", () => {
+    const velocityExos = EXTENDED_CATALOG_EXERCISES.filter((ex) => ex.category === "VELOCITY");
+    const plyoExos = EXTENDED_CATALOG_EXERCISES.filter((ex) => ex.category === "PLYOMETRICS");
+
+    assert.equal(velocityExos.length, 6);
+    assert.equal(plyoExos.length, 6);
+
+    for (const [catName, list] of [
+      ["VELOCITY", velocityExos],
+      ["PLYOMETRICS", plyoExos],
+    ]) {
+      const sessionItems = list.map((ex, idx) => ({
+        id: ex.id,
+        block: (idx % 3) + 1,
+        sets: ex.default_sets,
+        reps: ex.default_reps,
+        load: ex.allowed_loads[0],
+        completion: 1,
+      }));
+
+      const groupMetrics = calculateSessionMetrics({
+        exercises: sessionItems,
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        elapsed_time_sec: 1800,
+      });
+
+      assert.equal(Number.isFinite(groupMetrics.PpgEffectiveTut) && groupMetrics.PpgEffectiveTut > 0, true);
+      assert.equal(Number.isFinite(groupMetrics.EccentricStrainIndex) && groupMetrics.EccentricStrainIndex > 0, true);
+      assert.equal(groupMetrics.StrengthCompliancePct, 100);
+      assert.equal(Number.isFinite(groupMetrics.icu_training_load) && groupMetrics.icu_training_load > 0, true);
+      assert.equal(["GREEN", "ORANGE", "RED"].includes(groupMetrics.strain_zone), true);
+
+      const payload = buildManualActivityPayload({
+        dateObj: new Date("2026-11-20T09:00:00"),
+        theme: `Séance ${catName}`,
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 1800,
+        exercises: sessionItems,
+      });
+      const parsedTelemetry = parseTelemetryJsonFromDescription(payload.description);
+      assert.ok(parsedTelemetry);
+      assert.equal(parsedTelemetry.ex.length, 6);
+
+      for (const item of sessionItems) {
+        const singleMetrics = calculateSessionMetrics({
+          exercises: [item],
+          k_ecc: 1.3,
+          rir: 2,
+          rpe: 7,
+          elapsed_time_sec: 600,
+        });
+        assert.equal(Number.isFinite(singleMetrics.PpgEffectiveTut) && singleMetrics.PpgEffectiveTut > 0, true, item.id);
+        assert.equal(Number.isFinite(singleMetrics.EccentricStrainIndex) && singleMetrics.EccentricStrainIndex > 0, true, item.id);
+      }
+    }
+  });
+
+  it("valide les 55 fichiers SVG sur disque : unicité des chemins, taille < 8192 o et assainissement XSS strict", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const seenPaths = new Set();
+
+    for (const ex of ALL_OFFICIAL_EXERCISES) {
+      const svgPath = ex.guide?.svg_path;
+      assert.equal(
+        typeof svgPath === "string" && svgPath.startsWith("./assets/exos/") && svgPath.endsWith(".svg"),
+        true,
+        `Chemin SVG invalide pour ${ex.id}: ${svgPath}`
+      );
+      assert.equal(seenPaths.has(svgPath), false, `Chemin SVG dupliqué : ${svgPath}`);
+      seenPaths.add(svgPath);
+
+      const fullPath = path.join(rootDir, svgPath.replace(/^\.\//, ""));
+      assert.equal(fs.existsSync(fullPath), true, `Fichier SVG manquant sur disque : ${svgPath}`);
+
+      const stat = fs.statSync(fullPath);
+      assert.ok(stat.size > 0 && stat.size < 8192, `${svgPath} pèse ${stat.size} o (attendu < 8192)`);
+
+      const rawSvg = fs.readFileSync(fullPath, "utf8");
+      const cleanSvg = sanitizeSvgMarkup(rawSvg);
+      assert.equal(typeof cleanSvg === "string" && cleanSvg.trim().length > 0, true);
+      assert.equal(cleanSvg.includes("<svg") && cleanSvg.includes("</svg>"), true, svgPath);
+      assert.equal(/<script\b/i.test(cleanSvg), false, `${svgPath} contient <script>`);
+      assert.equal(/<foreignObject\b/i.test(cleanSvg), false, `${svgPath} contient <foreignObject>`);
+      assert.equal(/<iframe\b/i.test(cleanSvg), false, `${svgPath} contient <iframe>`);
+      assert.equal(/\bon[a-z0-9_-]+\s*=/i.test(cleanSvg), false, `${svgPath} contient un attribut on*`);
+      assert.equal(/javascript\s*:/i.test(cleanSvg), false, `${svgPath} contient javascript:`);
+    }
+
+    assert.equal(seenPaths.size, 55);
+  });
+
+  it("vérifie le Service Worker sw.js v1.9.0 : CACHE_NAME, extendedCatalog.js et pré-cache des 55 SVG", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
+
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.9\.0["']\s*;/);
+
+    const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
+    assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
+
+    const precachedPaths = new Set(
+      Array.from(precacheMatch[1].matchAll(/["']([^"']+)["']/g), (m) => m[1])
+    );
+
+    assert.equal(
+      precachedPaths.has("./extendedCatalog.js"),
+      true,
+      "./extendedCatalog.js doit être dans PRECACHE_ASSETS"
+    );
+
+    for (const ex of ALL_OFFICIAL_EXERCISES) {
+      assert.equal(
+        precachedPaths.has(ex.guide.svg_path),
+        true,
+        `${ex.guide.svg_path} manquant dans PRECACHE_ASSETS de sw.js`
+      );
+    }
+  });
+
+  it("résout les nouveaux exercices dans mdParser.js et préserve la non-régression Suite 7 sur 'Tractions Pronation'", () => {
+    const planExtended = parseMarkdownOffline(
+      [
+        "# Séance Étendue v1.9.0",
+        "Traction Pronation Stricte 3x4",
+        "Ab Wheel Rollout 3x10",
+        "Pogo Cheville Deux Pieds 4x15",
+        "PLYO_ANKLE_POGO_DOUBLE 4x15",
+      ].join("\n")
+    );
+
+    assert.equal(planExtended.exercises.length, 4);
+    assert.equal(planExtended.exercises[0].id, "PULL_UP_PRONATION_STRICT_BW");
+    assert.equal(planExtended.exercises[0].sets, 3);
+    assert.equal(planExtended.exercises[0].reps, 4);
+
+    assert.equal(planExtended.exercises[1].id, "AB_WHEEL_ROLLOUT_KNEES");
+    assert.equal(planExtended.exercises[1].sets, 3);
+    assert.equal(planExtended.exercises[1].reps, 10);
+
+    assert.equal(planExtended.exercises[2].id, "PLYO_ANKLE_POGO_DOUBLE");
+    assert.equal(planExtended.exercises[2].sets, 4);
+    assert.equal(planExtended.exercises[2].reps, 15);
+
+    assert.equal(planExtended.exercises[3].id, "PLYO_ANKLE_POGO_DOUBLE");
+    assert.equal(planExtended.exercises[3].sets, 4);
+    assert.equal(planExtended.exercises[3].reps, 15);
+
+    // Non-régression Suite 7 : "- Tractions Pronation 4x10" reste CUSTOM_BAND_CORE
+    const planRegression = parseMarkdownOffline("- Tractions Pronation 4x10");
+    assert.equal(planRegression.exercises.length, 1);
+    assert.equal(planRegression.exercises[0].id, "CUSTOM_BAND_CORE");
+    assert.equal(planRegression.exercises[0].custom_label, "Tractions Pronation");
+    assert.equal(planRegression.exercises[0].sets, 4);
+    assert.equal(planRegression.exercises[0].reps, 10);
+    assert.equal(planRegression.exercises[0].is_timed, false);
   });
 });

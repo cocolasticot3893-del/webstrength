@@ -1,0 +1,68 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kettlebell swing rapide : claquage horizontal de hanche sans squat">
+  <style>
+    .kb_ssv_torso {
+      --base-dur: 1.2s;
+      transform-origin: 106px 118px;
+      animation: kb_ssv_hinge calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kb_ssv_pendulum {
+      --base-dur: 1.2s;
+      transform-origin: 112px 74px;
+      animation: kb_ssv_swing calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kb_ssv_snap {
+      --base-dur: 1.2s;
+      animation: kb_ssv_vec calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes kb_ssv_hinge {
+      0%, 100% { transform: rotate(48deg); }
+      50%, 65% { transform: rotate(0deg); }
+    }
+    @keyframes kb_ssv_swing {
+      0%, 100% { transform: rotate(28deg); }
+      50%, 65% { transform: rotate(-82deg); }
+    }
+    @keyframes kb_ssv_vec {
+      0%, 20%, 88%, 100% { opacity: 0.15; transform: translateX(-6px); }
+      45%, 65% { opacity: 1; transform: translateX(6px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="186" x2="220" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Trajectoire balistique de la KB -->
+  <path d="M98 158 A68 68 0 0 0 182 94" fill="none" stroke="#30363d" stroke-width="1.6" stroke-dasharray="4 4"/>
+
+  <!-- Tibias quasi verticaux (charnière hanche sans squat) -->
+  <polyline points="116,184 106,184 114,148 106,118" fill="none" stroke="#8b949e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="114" cy="148" r="3" fill="#e6edf3"/>
+
+  <!-- Vecteur horizontal hip snap -->
+  <g class="kb_ssv_snap">
+    <line x1="60" y1="118" x2="96" y2="118" stroke="#10b981" stroke-width="2.8" stroke-linecap="round"/>
+    <polyline points="86,111 98,118 86,125" fill="none" stroke="#10b981" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="58" y="108" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="700">SNAP</text>
+  </g>
+
+  <!-- Tronc + bras + kettlebell -->
+  <g class="kb_ssv_torso">
+    <line x1="106" y1="118" x2="112" y2="74" stroke="#10b981" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="114" cy="58" r="8.2" fill="#e6edf3"/>
+    <g class="kb_ssv_pendulum">
+      <line x1="112" y1="74" x2="112" y2="128" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+      <!-- Kettlebell -->
+      <path d="M107 128 A5 5 0 0 1 117 128" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+      <circle cx="112" cy="137" r="9.5" fill="#1f2937" stroke="#f59e0b" stroke-width="2.2"/>
+      <circle cx="112" cy="137" r="2.5" fill="#38bdf8"/>
+    </g>
+    <circle cx="112" cy="74" r="3" fill="#38bdf8"/>
+  </g>
+  <circle cx="106" cy="118" r="3.4" fill="#38bdf8"/>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">KB · SWING SNAP</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">HIP SNAP HORIZ.</text>
+</svg>

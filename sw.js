@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.8.1";
+const CACHE_NAME = "webstrength-v1.9.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -14,6 +14,7 @@ const PRECACHE_ASSETS = [
   "./errorGuard.js",
   "./app.js",
   "./catalog.js",
+  "./extendedCatalog.js",
   "./svgHelper.js",
   "./engine.js",
   "./fallbackGenerator.js",
@@ -45,6 +46,41 @@ const PRECACHE_ASSETS = [
   "./assets/exos/USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND.svg",
   "./assets/exos/USER_BIRD_DOG_ANTI_ROTATION_AU_SOL.svg",
   "./assets/exos/USER_TIRAGE_HORIZONTAL_ELASTIQUE.svg",
+  "./assets/exos/pull_up_pronation_strict_bw.svg",
+  "./assets/exos/pull_up_pronation_tempo_ecc.svg",
+  "./assets/exos/pull_up_pronation_scap_isometric.svg",
+  "./assets/exos/barbell_bent_row_overhand.svg",
+  "./assets/exos/barbell_overhead_press_strict.svg",
+  "./assets/exos/db_one_arm_row_brace.svg",
+  "./assets/exos/kb_strict_press_bottom_up.svg",
+  "./assets/exos/ab_wheel_rollout_knees.svg",
+  "./assets/exos/ab_wheel_offset_angle.svg",
+  "./assets/exos/kb_suitcase_carry.svg",
+  "./assets/exos/kb_rack_march.svg",
+  "./assets/exos/band_pallof_press_split.svg",
+  "./assets/exos/band_chop_diagonal.svg",
+  "./assets/exos/db_deadbug_hold_load.svg",
+  "./assets/exos/kb_windmill_light.svg",
+  "./assets/exos/kbox_single_leg_rdl.svg",
+  "./assets/exos/kbox_calf_press_bent_knee.svg",
+  "./assets/exos/kb_hip_thrust_single.svg",
+  "./assets/exos/barbell_romanian_deadlift_tempo.svg",
+  "./assets/exos/band_clamshell_resisted.svg",
+  "./assets/exos/band_tibialis_dorsiflexion.svg",
+  "./assets/exos/db_step_up_high_box.svg",
+  "./assets/exos/kb_goblet_cossack_squat.svg",
+  "./assets/exos/kbox_high_pull_velocity.svg",
+  "./assets/exos/kbox_squat_velocity_light.svg",
+  "./assets/exos/band_high_knee_drive_fast.svg",
+  "./assets/exos/band_acceleration_step_out.svg",
+  "./assets/exos/barbell_hang_high_pull_light.svg",
+  "./assets/exos/kb_swing_snap_velocity.svg",
+  "./assets/exos/plyo_ankle_pogo_double.svg",
+  "./assets/exos/plyo_ankle_pogo_single.svg",
+  "./assets/exos/plyo_box_jump_step_down.svg",
+  "./assets/exos/plyo_lateral_skater_bound.svg",
+  "./assets/exos/plyo_split_scissor_switch.svg",
+  "./assets/exos/plyo_push_up_explosive_incline.svg",
 ];
 
 /**

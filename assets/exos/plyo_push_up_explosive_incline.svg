@@ -1,0 +1,67 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pompe pliométrique inclinée : poussée explosive décollant les mains du banc">
+  <style>
+    .plyo_puei_plank {
+      --base-dur: 1.2s;
+      transform-origin: 48px 182px;
+      animation: plyo_puei_push calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_puei_arm {
+      --base-dur: 1.2s;
+      transform-origin: 132px 104px;
+      animation: plyo_puei_ext calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_puei_vec {
+      --base-dur: 1.2s;
+      animation: plyo_puei_air calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes plyo_puei_push {
+      0%, 100% { transform: rotate(9deg); }
+      48%, 62% { transform: rotate(-9deg); }
+    }
+    @keyframes plyo_puei_ext {
+      0%, 100% { transform: rotate(22deg); }
+      48%, 62% { transform: rotate(-8deg); }
+    }
+    @keyframes plyo_puei_air {
+      0%, 22%, 85%, 100% { opacity: 0.18; transform: translate(0px, 4px); }
+      48%, 62% { opacity: 1; transform: translate(-4px, -6px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Banc / Box surélévation à droite -->
+  <rect x="142" y="130" width="60" height="56" rx="5" fill="#1f2937" stroke="#30363d" stroke-width="1.6"/>
+  <line x1="142" y1="130" x2="178" y2="130" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Vecteurs poussée inclinée (décollage mains) -->
+  <g class="plyo_puei_vec">
+    <line x1="176" y1="108" x2="158" y2="82" stroke="#10b981" stroke-width="2.4" stroke-linecap="round"/>
+    <polyline points="156,92 157,80 167,85" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="184" y="88" fill="#10b981" font-family="system-ui,sans-serif" font-size="8" font-weight="700">AIR</text>
+  </g>
+
+  <!-- Corps en planche inclinée (pivot pieds en bas à gauche) -->
+  <g class="plyo_puei_plank">
+    <!-- Jambes + bassin + rachis alignés -->
+    <line x1="48" y1="182" x2="94" y2="140" stroke="#8b949e" stroke-width="6" stroke-linecap="round"/>
+    <line x1="94" y1="140" x2="132" y2="104" stroke="#10b981" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="144" cy="92" r="8" fill="#e6edf3"/>
+    <!-- Bras propulseur -->
+    <g class="plyo_puei_arm">
+      <polyline points="132,104 140,118 152,126" fill="none" stroke="#e6edf3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="152" cy="126" r="3" fill="#f59e0b"/>
+    </g>
+    <circle cx="94" cy="140" r="3.2" fill="#38bdf8"/>
+    <circle cx="132" cy="104" r="3.2" fill="#38bdf8"/>
+  </g>
+
+  <circle cx="48" cy="182" r="3" fill="#e6edf3"/>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">PLYO · PUSH-UP INCL.</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">DÉCOLLAGE MAINS</text>
+</svg>

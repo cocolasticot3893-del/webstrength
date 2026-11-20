@@ -97,11 +97,13 @@ function computeExerciseContribution(ex, k_ecc, rir) {
       typeof ex.is_timed === "boolean" ? ex.is_timed : cat.is_timed;
     const rNorm = isTimed ? reps / 4 : reps;
     const betaEcc = cat.beta_ecc ?? 1.0;
+    const effectiveLoad = load + (Number(cat.bodyweight_base_kg) || 0);
     strain =
-      sEff * rNorm * (load / 10) * ((10 - rir) / 10) * betaEcc * 0.8;
+      sEff * rNorm * (effectiveLoad / 10) * ((10 - rir) / 10) * betaEcc * 0.8;
   } else if (cat.pole === "BAND_CORE") {
     const tutBand = sEff * reps * cat.unit_tut_sec;
-    strain = tutBand * 0.02 * load;
+    const effectiveLoad = load + (Number(cat.bodyweight_base_load) || 0);
+    strain = tutBand * 0.02 * effectiveLoad;
   }
 
   return {
@@ -244,6 +246,15 @@ export function buildSessionName({ exercises, theme }) {
  * @returns {string}
  */
 function formatLoadLabel(load, cat) {
+  if (cat.is_bodyweight) {
+    const numLoad = Number(load) || 0;
+    if (numLoad === 0) {
+      return "PDC";
+    }
+    if (numLoad > 0) {
+      return `PDC +${load} ${cat.unit_label || "kg"}`;
+    }
+  }
   if (cat.pole === "KBOX") {
     return `${Number(load).toFixed(3)} ${cat.unit_label}`;
   }

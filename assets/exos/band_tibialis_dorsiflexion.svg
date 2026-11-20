@@ -1,0 +1,77 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BAND_TIBIALIS_DORSIFLEXION : dorsiflexion de cheville résistée par élastique">
+  <style>
+    .btd-foot {
+      transform-origin: 162px 172px;
+      animation: BAND_TIBIALIS_DORSIFLEXION_foot calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .btd-band {
+      transform-origin: 214px 172px;
+      animation: BAND_TIBIALIS_DORSIFLEXION_band calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .btd-cue {
+      animation: BAND_TIBIALIS_DORSIFLEXION_cue calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes BAND_TIBIALIS_DORSIFLEXION_foot {
+      0%, 100% { transform: rotate(22deg); }
+      45%, 60% { transform: rotate(-22deg); }
+    }
+    @keyframes BAND_TIBIALIS_DORSIFLEXION_band {
+      0%, 100% { transform: rotate(10deg) scaleX(0.9); }
+      45%, 60% { transform: rotate(-10deg) scaleX(1.06); }
+    }
+    @keyframes BAND_TIBIALIS_DORSIFLEXION_cue {
+      0%, 25%, 80%, 100% { opacity: 0.25; }
+      45%, 60% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Point d'ancrage élastique à droite -->
+  <rect x="210" y="160" width="8" height="24" rx="2" fill="#30363d"/>
+  <circle cx="214" cy="172" r="3" fill="#f59e0b"/>
+
+  <!-- Cale sous le mollet/talon -->
+  <rect x="148" y="176" width="22" height="8" rx="2" fill="#1f2937" stroke="#30363d" stroke-width="1.2"/>
+
+  <!-- Athlète assis jambe tendue -->
+  <!-- Bras d'appui arrière -->
+  <polyline points="62,130 46,154 44,178" fill="none" stroke="#8b949e" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Buste -->
+  <line x1="62" y1="130" x2="78" y2="174" stroke="#8b949e" stroke-width="6.4" stroke-linecap="round"/>
+  <!-- Tête -->
+  <circle cx="56" cy="116" r="8" fill="#e6edf3"/>
+  <!-- Cuisse -->
+  <line x1="78" y1="174" x2="120" y2="172" stroke="#e6edf3" stroke-width="6.2" stroke-linecap="round"/>
+  <!-- Tibia avec mise en évidence du tibial antérieur (#10b981) -->
+  <line x1="120" y1="172" x2="162" y2="172" stroke="#e6edf3" stroke-width="5.8" stroke-linecap="round"/>
+  <line x1="126" y1="167" x2="156" y2="167" stroke="#10b981" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- Élastique tendu vers l'avant-pied -->
+  <line class="btd-band" x1="214" y1="172" x2="166" y2="154" stroke="#f59e0b" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- Pied pivotant sur le talon en dorsiflexion active -->
+  <g class="btd-foot">
+    <line x1="162" y1="172" x2="162" y2="148" stroke="#10b981" stroke-width="5.6" stroke-linecap="round"/>
+    <circle cx="164" cy="154" r="2.6" fill="#f59e0b"/>
+  </g>
+
+  <circle cx="78" cy="174" r="3" fill="#e6edf3"/>
+  <circle cx="120" cy="172" r="3" fill="#e6edf3"/>
+  <circle cx="162" cy="172" r="3.2" fill="#38bdf8"/>
+
+  <!-- Arc directionnel dorsiflexion -->
+  <g class="btd-cue">
+    <path d="M174 146 Q162 134 146 142" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+    <path d="M152 137 L145 142 L151 146" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="150" y="130" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">DORSIFLEXION</text>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">BAND · TIBIALIS</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">TIBIAL ANTÉRIEUR</text>
+  <text x="120" y="206" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8.5">TALON FIXE · TRACTION AVANT-PIED</text>
+</svg>

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Rowing barre buste penché 45 degrés prise pronation">
+  <style>
+    .bbro_bar {
+      --base-dur: 2.6s;
+      animation: bbro_pull calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bbro_arm {
+      --base-dur: 2.6s;
+      transform-origin: 144px 90px;
+      animation: bbro_arm_pull calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bbro_vec {
+      --base-dur: 2.6s;
+      animation: bbro_vec_op calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes bbro_pull {
+      0%, 100% { transform: translate(0px, 0px); }
+      45%, 55% { transform: translate(-18px, -32px); }
+    }
+    @keyframes bbro_arm_pull {
+      0%, 100% { transform: rotate(0deg) scaleY(1); }
+      45%, 55% { transform: rotate(38deg) scaleY(0.76); }
+    }
+    @keyframes bbro_vec_op {
+      0%, 100% { opacity: 0.25; }
+      45%, 55% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Repère angle buste 45° -->
+  <line x1="88" y1="122" x2="156" y2="122" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <path d="M114 122 A26 26 0 0 0 107 104" fill="none" stroke="#8b949e" stroke-width="1.2"/>
+  <text x="122" y="116" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8">45°</text>
+
+  <!-- Jambes et appuis au sol -->
+  <path d="M74 182 L94 182" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="82" y1="182" x2="96" y2="150" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="96" y1="150" x2="88" y2="122" stroke="#e6edf3" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="96" cy="150" r="3" fill="#e6edf3"/>
+
+  <!-- Buste neutre verrouillé à 45° -->
+  <line x1="88" y1="122" x2="144" y2="90" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+  <circle cx="160" cy="80" r="8.2" fill="#e6edf3"/>
+  <circle cx="88" cy="122" r="3.2" fill="#10b981"/>
+  <circle cx="144" cy="90" r="3.2" fill="#10b981"/>
+
+  <!-- Trajectoire cible vers sternum bas / bas-ventre -->
+  <line x1="146" y1="146" x2="128" y2="114" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+  <!-- Bras tirant en pronation -->
+  <g class="bbro_arm">
+    <line x1="144" y1="90" x2="146" y2="146" stroke="#e6edf3" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Barre libre et disque -->
+  <g class="bbro_bar">
+    <circle cx="146" cy="146" r="14" fill="#1f2937" stroke="#38bdf8" stroke-width="2.5"/>
+    <circle cx="146" cy="146" r="4.5" fill="#e6edf3"/>
+    <rect x="142" y="142" width="8" height="7" rx="2" fill="#f59e0b"/>
+  </g>
+
+  <!-- Vecteur de tirage -->
+  <g class="bbro_vec">
+    <path d="M172 142 L156 114 M154 123 L155 113 L164 118" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">UPPER · BARBELL ROW</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">DOS NEUTRE 45°</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">ROWING BARRE PRONATION · BUSTE 45°</text>
+</svg>

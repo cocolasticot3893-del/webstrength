@@ -1,0 +1,86 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sprint sur place incliné avec élastique : montée explosive du genou">
+  <style>
+    .band_hkd_drive {
+      --base-dur: 1.0s;
+      transform-origin: 120px 118px;
+      animation: band_hkd_knee calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_hkd_support {
+      --base-dur: 1.0s;
+      transform-origin: 120px 118px;
+      animation: band_hkd_supp calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_hkd_arm {
+      --base-dur: 1.0s;
+      transform-origin: 138px 80px;
+      animation: band_hkd_armswing calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_hkd_lines {
+      --base-dur: 1.0s;
+      animation: band_hkd_kin calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes band_hkd_knee {
+      0%, 100% { transform: rotate(12deg); }
+      50% { transform: rotate(-64deg); }
+    }
+    @keyframes band_hkd_supp {
+      0%, 100% { transform: rotate(-42deg); }
+      50% { transform: rotate(14deg); }
+    }
+    @keyframes band_hkd_armswing {
+      0%, 100% { transform: rotate(-28deg); }
+      50% { transform: rotate(28deg); }
+    }
+    @keyframes band_hkd_kin {
+      0%, 15%, 90%, 100% { opacity: 0.2; transform: translateY(6px); }
+      50% { opacity: 1; transform: translateY(-4px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="186" x2="220" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Point d'ancrage et élastique sous tension -->
+  <rect x="20" y="96" width="8" height="44" rx="3" fill="#30363d"/>
+  <circle cx="28" cy="118" r="3.5" fill="#f59e0b"/>
+  <line x1="28" y1="118" x2="118" y2="118" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6 3" stroke-linecap="round"/>
+
+  <!-- Lignes cinétiques montée genou -->
+  <g class="band_hkd_lines">
+    <path d="M168 124 Q182 104 170 84" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
+    <polyline points="164,90 170,82 178,89" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="186" y1="108" x2="202" y2="108" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="182" y1="96" x2="196" y2="96" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Jambe d'appui arrière -->
+  <g class="band_hkd_support">
+    <polyline points="120,118 112,152 104,182 114,182" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Jambe motrice genou haut -->
+  <g class="band_hkd_drive">
+    <polyline points="120,118 134,150 126,180" fill="none" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="134" cy="150" r="3.2" fill="#e6edf3"/>
+  </g>
+
+  <!-- Tronc incliné vers l'avant -->
+  <line x1="120" y1="118" x2="138" y2="78" stroke="#e6edf3" stroke-width="6.8" stroke-linecap="round"/>
+  <rect x="113" y="114" width="14" height="7" rx="3" fill="#f59e0b"/>
+  <circle cx="145" cy="64" r="8.2" fill="#e6edf3"/>
+
+  <!-- Bras dynamique -->
+  <g class="band_hkd_arm">
+    <polyline points="138,80 156,92 164,74" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <circle cx="120" cy="118" r="3.4" fill="#38bdf8"/>
+  <circle cx="138" cy="80" r="3" fill="#38bdf8"/>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">BAND · HIGH KNEE</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">DRIVE RAPIDE</text>
+</svg>

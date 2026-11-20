@@ -5,6 +5,38 @@
  */
 
 import { sanitizeSvgMarkup } from "./svgHelper.js";
+import {
+  EXTENDED_CATEGORIES,
+  EXTENDED_CATALOG_EXERCISES,
+  EXTENDED_CATALOG_BY_ID,
+  EXTENDED_EXERCISE_IDS,
+} from "./extendedCatalog.js";
+
+/**
+ * Catégorie fonctionnelle par défaut pour les 17 exercices de base et les 3 intégrés.
+ */
+const BASE_CATEGORY_BY_ID = Object.freeze({
+  KBOX_SQUAT_HARNESS: "POSTERIOR_HIP_ANKLE",
+  KBOX_SQUAT_BELT: "POSTERIOR_HIP_ANKLE",
+  KBOX_SPLIT_SQUAT: "POSTERIOR_HIP_ANKLE",
+  KBOX_RDL: "POSTERIOR_HIP_ANKLE",
+  KBOX_HIP_THRUST: "POSTERIOR_HIP_ANKLE",
+  KBOX_CALF_ECC: "POSTERIOR_HIP_ANKLE",
+  KBOX_HIGH_PULL: "UPPER_BODY",
+  DB_SL_RDL: "POSTERIOR_HIP_ANKLE",
+  DB_STEP_DOWN: "POSTERIOR_HIP_ANKLE",
+  DB_COPENHAGEN: "POSTERIOR_HIP_ANKLE",
+  DB_RENEGADE_ROW: "CORE_TRUNK",
+  DB_FARMER_UNI: "CORE_TRUNK",
+  BAND_MONSTER_WALK: "POSTERIOR_HIP_ANKLE",
+  BAND_PALLOF_PRESS: "CORE_TRUNK",
+  BAND_PSOAS_MARCH: "POSTERIOR_HIP_ANKLE",
+  BAND_FACE_PULL: "UPPER_BODY",
+  CORE_MCGILL_BIG3: "CORE_TRUNK",
+  USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND: "CORE_TRUNK",
+  USER_TIRAGE_HORIZONTAL_ELASTIQUE: "UPPER_BODY",
+  USER_BIRD_DOG_ANTI_ROTATION_AU_SOL: "CORE_TRUNK",
+});
 
 /**
  * Gèle récursivement un objet ou un tableau pour garantir une immuabilité totale.
@@ -516,7 +548,12 @@ const RAW_CATALOG = [
 ];
 
 /** Liste ordonnée et immuable des 17 exercices. */
-export const CATALOG = deepFreeze(RAW_CATALOG);
+export const CATALOG = deepFreeze(
+  RAW_CATALOG.map((ex) => ({
+    ...ex,
+    category: ex.category ?? BASE_CATEGORY_BY_ID[ex.id] ?? "CORE_TRUNK",
+  }))
+);
 
 /** Dictionnaire immuable indexé par ID d'exercice. */
 export const CATALOG_BY_ID = deepFreeze(
@@ -706,12 +743,32 @@ const RAW_INTEGRATED_USER_EXERCISES = [
 ];
 
 /** Liste immuable des exercices utilisateur intégrés nativement au catalogue. */
-export const INTEGRATED_USER_EXERCISES = deepFreeze(RAW_INTEGRATED_USER_EXERCISES);
+export const INTEGRATED_USER_EXERCISES = deepFreeze(
+  RAW_INTEGRATED_USER_EXERCISES.map((ex) => ({
+    ...ex,
+    category: ex.category ?? BASE_CATEGORY_BY_ID[ex.id] ?? "CORE_TRUNK",
+  }))
+);
 
 /** Dictionnaire immuable indexé par ID des exercices utilisateur intégrés. */
 export const INTEGRATED_USER_EXERCISES_BY_ID = deepFreeze(
   Object.fromEntries(INTEGRATED_USER_EXERCISES.map((ex) => [ex.id, ex]))
 );
+
+/** Ré-exports du catalogue étendu v1.9.0 (35 exercices, 5 catégories). */
+export {
+  EXTENDED_CATEGORIES,
+  EXTENDED_CATALOG_EXERCISES,
+  EXTENDED_CATALOG_BY_ID,
+  EXTENDED_EXERCISE_IDS,
+};
+
+/** Liste combinée et immuable des 55 exercices officiels (17 base + 3 intégrés + 35 étendus). */
+export const ALL_OFFICIAL_EXERCISES = deepFreeze([
+  ...CATALOG,
+  ...INTEGRATED_USER_EXERCISES,
+  ...EXTENDED_CATALOG_EXERCISES,
+]);
 
 /** Clé de persistance localStorage pour les exercices promus dans le catalogue utilisateur. */
 export const USER_EXERCISES_STORAGE_KEY = "WEBSTRENGTH_USER_EXERCISES_V1";
@@ -1075,15 +1132,23 @@ export function getUserExercisesList() {
 }
 
 /**
- * Retourne la liste combinée du catalogue officiel (17), des exercices utilisateur intégrés
- * et des exercices utilisateur dynamiques sans doublon.
+ * Retourne la liste combinée du catalogue officiel (17), des exercices utilisateur intégrés (3),
+ * du catalogue étendu v1.9.0 (35) et des exercices utilisateur dynamiques sans doublon.
  * @returns {Array<Readonly<Record<string, any>>>}
  */
 export function getAllCatalogExercises() {
   const dynamicOnly = getUserExercisesList().filter(
-    (ex) => !Object.hasOwn(INTEGRATED_USER_EXERCISES_BY_ID, ex.id)
+    (ex) =>
+      !Object.hasOwn(CATALOG_BY_ID, ex.id) &&
+      !Object.hasOwn(INTEGRATED_USER_EXERCISES_BY_ID, ex.id) &&
+      !Object.hasOwn(EXTENDED_CATALOG_BY_ID, ex.id)
   );
-  return [...CATALOG, ...INTEGRATED_USER_EXERCISES, ...dynamicOnly];
+  return [
+    ...CATALOG,
+    ...INTEGRATED_USER_EXERCISES,
+    ...EXTENDED_CATALOG_EXERCISES,
+    ...dynamicOnly,
+  ];
 }
 
 /**
@@ -1136,6 +1201,9 @@ export function getCatalogExercise(id) {
     }
     if (Object.hasOwn(INTEGRATED_USER_EXERCISES_BY_ID, id)) {
       return INTEGRATED_USER_EXERCISES_BY_ID[id];
+    }
+    if (Object.hasOwn(EXTENDED_CATALOG_BY_ID, id)) {
+      return EXTENDED_CATALOG_BY_ID[id];
     }
     const userExercises = loadUserExercises();
     if (Object.hasOwn(userExercises, id)) {

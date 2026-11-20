@@ -1,0 +1,90 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BARBELL_ROMANIAN_DEADLIFT_TEMPO : RDL barre tempo excentrique 3 secondes">
+  <style>
+    .brd-shin {
+      transform-origin: 120px 182px;
+      animation: BARBELL_ROMANIAN_DEADLIFT_TEMPO_shin calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .brd-thigh {
+      transform-origin: 120px 146px;
+      animation: BARBELL_ROMANIAN_DEADLIFT_TEMPO_thigh calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .brd-torso {
+      transform-origin: 120px 108px;
+      animation: BARBELL_ROMANIAN_DEADLIFT_TEMPO_torso calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .brd-arm {
+      transform-origin: 120px 64px;
+      animation: BARBELL_ROMANIAN_DEADLIFT_TEMPO_arm calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .brd-tempo {
+      animation: BARBELL_ROMANIAN_DEADLIFT_TEMPO_cue calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes BARBELL_ROMANIAN_DEADLIFT_TEMPO_shin {
+      0%, 100% { transform: rotate(4deg); }
+      62%, 72% { transform: rotate(-4deg); }
+    }
+    @keyframes BARBELL_ROMANIAN_DEADLIFT_TEMPO_thigh {
+      0%, 100% { transform: rotate(-6deg); }
+      62%, 72% { transform: rotate(-16deg); }
+    }
+    @keyframes BARBELL_ROMANIAN_DEADLIFT_TEMPO_torso {
+      0%, 100% { transform: rotate(6deg); }
+      62%, 72% { transform: rotate(84deg); }
+    }
+    @keyframes BARBELL_ROMANIAN_DEADLIFT_TEMPO_arm {
+      0%, 100% { transform: rotate(-4deg); }
+      62%, 72% { transform: rotate(-64deg); }
+    }
+    @keyframes BARBELL_ROMANIAN_DEADLIFT_TEMPO_cue {
+      0%, 75%, 100% { opacity: 0.25; }
+      20%, 62% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Pied fixe au sol -->
+  <path d="M114 182 L134 182" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Chaîne articulaire : tibia -> cuisse -> buste -> bras + barre -->
+  <g class="brd-shin">
+    <line x1="120" y1="182" x2="120" y2="146" stroke="#8b949e" stroke-width="5.8" stroke-linecap="round"/>
+    <g class="brd-thigh">
+      <line x1="120" y1="146" x2="120" y2="108" stroke="#e6edf3" stroke-width="6.2" stroke-linecap="round"/>
+      <g class="brd-torso">
+        <!-- Buste neutre -->
+        <line x1="120" y1="108" x2="120" y2="62" stroke="#10b981" stroke-width="6.4" stroke-linecap="round"/>
+        <!-- Tête -->
+        <circle cx="121" cy="48" r="8" fill="#e6edf3"/>
+        <!-- Bras + barre olympique longeant cuisse/tibia -->
+        <g class="brd-arm">
+          <line x1="120" y1="64" x2="122" y2="104" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+          <!-- Disque et barre vus de profil -->
+          <circle cx="122" cy="106" r="11" fill="#1f2937" stroke="#8b949e" stroke-width="2"/>
+          <circle cx="122" cy="106" r="3.5" fill="#f59e0b"/>
+        </g>
+        <circle cx="120" cy="64" r="2.8" fill="#38bdf8"/>
+      </g>
+      <circle cx="120" cy="108" r="3.4" fill="#10b981"/>
+    </g>
+    <circle cx="120" cy="146" r="3" fill="#e6edf3"/>
+  </g>
+  <circle cx="120" cy="182" r="2.8" fill="#38bdf8"/>
+
+  <!-- Indicateur tempo excentrique 3s + recul hanches -->
+  <g class="brd-tempo">
+    <path d="M84 106 L62 106 M68 101 L61 106 L68 111" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M168 100 L168 148 M163 142 L168 149 L173 142" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="176" y="128" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="9" font-weight="600">3s ECC</text>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">BARBELL · RDL TEMPO</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">EXCENTRIQUE 3s</text>
+  <text x="120" y="206" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8.5">HANCHES EN ARRIÈRE · BARRE PROCHE TIBIAS</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Kettlebell press strict bottom-up en demi-à-genoux">
+  <style>
+    .kbup_kb {
+      --base-dur: 2.9s;
+      animation: kbup_press calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbup_arm {
+      --base-dur: 2.9s;
+      transform-origin: 132px 104px;
+      animation: kbup_arm_ext calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbup_bal {
+      --base-dur: 2.9s;
+      animation: kbup_stab calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes kbup_press {
+      0%, 100% { transform: translateY(36px); }
+      45%, 55% { transform: translateY(0px); }
+    }
+    @keyframes kbup_arm_ext {
+      0%, 100% { transform: scaleY(0.42); }
+      45%, 55% { transform: scaleY(1); }
+    }
+    @keyframes kbup_stab {
+      0%, 100% { opacity: 0.3; }
+      45%, 55% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et tapis genou -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <rect x="74" y="179" width="28" height="5" rx="2" fill="#1f2937" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Posture demi-à-genoux -->
+  <polyline points="88,180 116,138 144,142 146,182" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="142" y1="182" x2="156" y2="182" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+  <line x1="116" y1="138" x2="88" y2="180" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Torse vertical gainé -->
+  <line x1="118" y1="138" x2="122" y2="102" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+  <circle cx="121" cy="86" r="8" fill="#e6edf3"/>
+  <!-- Bras opposé équilibrateur -->
+  <polyline points="116,106 102,124 98,136" fill="none" stroke="#8b949e" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Guide vertical équilibre bottom-up -->
+  <line x1="138" y1="32" x2="138" y2="106" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Bras actif en poussée -->
+  <g class="kbup_arm">
+    <line x1="132" y1="104" x2="138" y2="62" stroke="#e6edf3" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <circle cx="132" cy="104" r="3" fill="#10b981"/>
+
+  <!-- Kettlebell cloche vers le haut (BOTTOM-UP) -->
+  <g class="kbup_kb">
+    <!-- Poignée tenue en main en bas -->
+    <path d="M132,62 L132,54 Q138,50 144,54 L144,62" fill="none" stroke="#e6edf3" stroke-width="2.6" stroke-linecap="round"/>
+    <!-- Cloche ronde au-dessus -->
+    <circle cx="138" cy="43" r="9.5" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.5"/>
+    <circle cx="138" cy="43" r="3" fill="#0d1117"/>
+  </g>
+
+  <!-- Flèche stabilité verticale -->
+  <g class="kbup_bal">
+    <path d="M174 88 L174 44 M169 51 L174 42 L179 51" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="174" y="102" text-anchor="middle" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="7.5" font-weight="600">BELL UP</text>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">UPPER · KB STRICT</text>
+  <text x="224" y="21" text-anchor="end" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">BOTTOM-UP</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">KB PRESS BOTTOM-UP · DEMI-À-GENOUX</text>
+</svg>

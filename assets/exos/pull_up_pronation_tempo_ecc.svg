@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Traction pronation tempo excentrique 4 secondes">
+  <style>
+    .pupt_body {
+      --base-dur: 4.5s;
+      animation: pupt_ecc_cycle calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .pupt_arms {
+      --base-dur: 4.5s;
+      transform-origin: 120px 38px;
+      animation: pupt_arms_cycle calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .pupt_ecc_ind {
+      --base-dur: 4.5s;
+      animation: pupt_ecc_glow calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes pupt_ecc_cycle {
+      0% { transform: translateY(36px); }
+      18%, 26% { transform: translateY(0px); }
+      88%, 100% { transform: translateY(36px); }
+    }
+    @keyframes pupt_arms_cycle {
+      0% { transform: scaleY(1.65); }
+      18%, 26% { transform: scaleY(0.8); }
+      88%, 100% { transform: scaleY(1.65); }
+    }
+    @keyframes pupt_ecc_glow {
+      0%, 22% { opacity: 0.2; transform: translateY(-4px); }
+      45%, 82% { opacity: 1; transform: translateY(6px); }
+      95%, 100% { opacity: 0.2; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Barre haute et repères -->
+  <line x1="38" y1="36" x2="202" y2="36" stroke="#8b949e" stroke-width="4.5" stroke-linecap="round"/>
+  <line x1="48" y1="36" x2="48" y2="188" stroke="#1f2937" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="192" y1="36" x2="192" y2="188" stroke="#1f2937" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Mains pronation -->
+  <rect x="88" y="32" width="10" height="8" rx="2.5" fill="#e6edf3"/>
+  <rect x="142" y="32" width="10" height="8" rx="2.5" fill="#e6edf3"/>
+
+  <!-- Bras élastiques synchronisés -->
+  <g class="pupt_arms">
+    <polyline points="93,38 89,58 104,68" fill="none" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="147,38 151,58 136,68" fill="none" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Silhouette athlète -->
+  <g class="pupt_body">
+    <circle cx="120" cy="48" r="8.2" fill="#e6edf3"/>
+    <line x1="103" y1="64" x2="137" y2="64" stroke="#8b949e" stroke-width="4.8" stroke-linecap="round"/>
+    <path d="M108,64 L132,64 L127,108 L113,108 Z" fill="#1f2937" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="115" y1="109" x2="115" y2="145" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <line x1="125" y1="109" x2="125" y2="145" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="104" cy="64" r="2.8" fill="#10b981"/>
+    <circle cx="136" cy="64" r="2.8" fill="#10b981"/>
+  </g>
+
+  <!-- Indicateur de descente excentrique 4 s -->
+  <g class="pupt_ecc_ind">
+    <rect x="157" y="54" width="32" height="72" rx="6" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <path d="M173 66 L173 114 M167 106 L173 116 L179 106" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="173" y="138" text-anchor="middle" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="9" font-weight="700">4s ECC</text>
+  </g>
+
+  <!-- Règle graduée tempo à gauche -->
+  <line x1="66" y1="54" x2="66" y2="132" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="62" y1="54" x2="70" y2="54" stroke="#10b981" stroke-width="1.5"/>
+  <line x1="63" y1="80" x2="69" y2="80" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="63" y1="106" x2="69" y2="106" stroke="#8b949e" stroke-width="1.2"/>
+  <line x1="62" y1="132" x2="70" y2="132" stroke="#f59e0b" stroke-width="1.5"/>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">UPPER · PRONATION</text>
+  <text x="224" y="21" text-anchor="end" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">TEMPO 4-0-1-0</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">TRACTION PRONATION · TEMPO 4s ECC</text>
+</svg>

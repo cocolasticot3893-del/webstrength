@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Marche valise avec kettlebell unilatérale et buste vertical">
+  <style>
+    .ksc_leg_l {
+      --base-dur: 2.2s;
+      transform-origin: 112px 124px;
+      animation: ksc_stride_a calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ksc_leg_r {
+      --base-dur: 2.2s;
+      transform-origin: 128px 124px;
+      animation: ksc_stride_b calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ksc_arm_l {
+      --base-dur: 2.2s;
+      transform-origin: 102px 80px;
+      animation: ksc_swing calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ksc_brace {
+      --base-dur: 2.2s;
+      animation: ksc_anti calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes ksc_stride_a {
+      0%, 100% { transform: translateY(0px) scaleY(1); }
+      50% { transform: translateY(-6px) scaleY(0.92); }
+    }
+    @keyframes ksc_stride_b {
+      0%, 100% { transform: translateY(-6px) scaleY(0.92); }
+      50% { transform: translateY(0px) scaleY(1); }
+    }
+    @keyframes ksc_swing {
+      0%, 100% { transform: rotate(-6deg); }
+      50% { transform: rotate(6deg); }
+    }
+    @keyframes ksc_anti {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et fil à plomb vertical strict -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <line x1="120" y1="36" x2="120" y2="184" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3 4"/>
+
+  <!-- Jambes en marche contrôlée -->
+  <g class="ksc_leg_l">
+    <line x1="112" y1="124" x2="112" y2="180" stroke="#8b949e" stroke-width="5.8" stroke-linecap="round"/>
+    <line x1="106" y1="180" x2="116" y2="180" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+  <g class="ksc_leg_r">
+    <line x1="128" y1="124" x2="128" y2="180" stroke="#8b949e" stroke-width="5.8" stroke-linecap="round"/>
+    <line x1="124" y1="180" x2="134" y2="180" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Bassin et épaules strictement horizontaux -->
+  <line x1="108" y1="124" x2="132" y2="124" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+  <path d="M102,80 L138,80 L131,124 L109,124 Z" fill="#1f2937" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round"/>
+  <line x1="120" y1="82" x2="120" y2="122" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="120" cy="62" r="8.2" fill="#e6edf3"/>
+
+  <!-- Bras gauche libre -->
+  <g class="ksc_arm_l">
+    <line x1="102" y1="80" x2="94" y2="126" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- Bras droit portant la kettlebell en valise -->
+  <line x1="138" y1="80" x2="147" y2="126" stroke="#e6edf3" stroke-width="5" stroke-linecap="round"/>
+  <path d="M142,126 L142,133 M152,126 L152,133 M142,128 Q147,124 152,128" fill="none" stroke="#e6edf3" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="147" cy="143" r="10.5" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.4"/>
+  <circle cx="147" cy="143" r="3" fill="#0d1117"/>
+
+  <!-- Indicateur anti-inclinaison latérale côté opposé -->
+  <g class="ksc_brace">
+    <rect x="66" y="88" width="22" height="32" rx="4" fill="#10b981" fill-opacity="0.14" stroke="#10b981" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <path d="M77 114 L77 94 M73 99 L77 93 L81 99" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Vecteur gravité charge droite -->
+  <path d="M168 134 L168 160 M164 154 L168 161 L172 154" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · SUITCASE CARRY</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">0° INCLINAISON</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">SUITCASE CARRY · ANTI-INCLINAISON</text>
+</svg>

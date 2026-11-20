@@ -6,6 +6,7 @@
 import {
   CATALOG,
   CUSTOM_TEMPLATES,
+  EXTENDED_CATEGORIES,
   exportUserExercisesJson,
   generateUserExerciseId,
   getAllCatalogExercises,
@@ -1261,11 +1262,62 @@ function startRestTimer(seconds) {
    Étape 2 : Rendu des 3 Blocs, Télémétrie Live & Contrôles Globaux
    ========================================================================== */
 
+const CATEGORY_BADGE_META = Object.freeze({
+  UPPER_BODY: { label: "Haut / Tractions", className: "cat-upper_body" },
+  CORE_TRUNK: { label: "Tronc / Roue", className: "cat-core_trunk" },
+  POSTERIOR_HIP_ANKLE: { label: "Chaîne Post.", className: "cat-posterior_hip_ankle" },
+  VELOCITY: { label: "Vitesse", className: "cat-velocity" },
+  PLYOMETRICS: { label: "Pliométrie", className: "cat-plyometrics" },
+});
+
+/**
+ * Normalise une chaîne pour une recherche insensible à la casse et aux accents.
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeSearchText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Ajoute les badges de catégorie biomécanique et de poids de corps (PDC) dans un conteneur.
+ * @param {HTMLElement} container
+ * @param {Readonly<Record<string, any>>} cat
+ */
+function appendCategoryAndBodyweightBadges(container, cat) {
+  if (cat?.category && Object.hasOwn(CATEGORY_BADGE_META, cat.category)) {
+    const meta = CATEGORY_BADGE_META[cat.category];
+    const catBadge = document.createElement("span");
+    catBadge.className = `exo-badge ${meta.className}`;
+    catBadge.textContent = meta.label;
+    container.appendChild(catBadge);
+  }
+  if (cat?.is_bodyweight) {
+    const bwBadge = document.createElement("span");
+    bwBadge.className = "exo-badge is-bodyweight";
+    bwBadge.textContent = "PDC";
+    container.appendChild(bwBadge);
+  }
+}
+
 function formatLoadOption(load, cat) {
-  if (cat.pole === "KBOX") {
+  if (cat?.is_bodyweight) {
+    const numLoad = Number(load) || 0;
+    if (numLoad === 0) {
+      return "PDC";
+    }
+    if (numLoad > 0) {
+      return `PDC +${load} ${cat.unit_label || "kg"}`;
+    }
+  }
+  if (cat?.pole === "KBOX") {
     return `${Number(load).toFixed(3)} ${cat.unit_label}`;
   }
-  return `${load} ${cat.unit_label}`;
+  return `${load} ${cat?.unit_label ?? "kg"}`;
 }
 
 function updateLiveTelemetryBar() {
@@ -1392,6 +1444,7 @@ function createExerciseCard(ex, index) {
   patternBadge.textContent = cat.pattern;
 
   badges.append(poleBadge, patternBadge);
+  appendCategoryAndBodyweightBadges(badges, cat);
   if (cat.is_user_catalog) {
     const persoBadge = document.createElement("span");
     persoBadge.className = "exo-badge is-user-catalog";
@@ -2354,7 +2407,9 @@ function initFreeBuilderModal() {
   setupNativeDialogDismiss(dialog, $("free-builder-close-btn"));
 
   const titleInput = /** @type {HTMLInputElement | null} */ ($("free-session-title"));
+  const searchInput = /** @type {HTMLInputElement | null} */ ($("free-catalog-search"));
   const poleFilterBtns = Array.from(dialog.querySelectorAll("[data-free-pole]"));
+  const categoryFilterBtns = Array.from(dialog.querySelectorAll("[data-free-category]"));
   const catalogPicker = $("free-catalog-picker");
   const customNameInput = /** @type {HTMLInputElement | null} */ ($("custom-exo-name"));
   const customPoleSelect = /** @type {HTMLSelectElement | null} */ ($("custom-exo-pole"));
@@ -2368,8 +2423,23 @@ function initFreeBuilderModal() {
   const launchBtn = $("free-launch-btn");
 
   let activePole = "ALL";
+  let activeCategory = "ALL";
+  let searchQuery = "";
   /** @type {Array<{ id: string, sets: number, reps: number, load: number, custom_label?: string, is_timed?: boolean }>} */
   const selectedExercises = [];
+
+  const syncFilterButtonsState = () => {
+    for (const btn of poleFilterBtns) {
+      const isCurrent = (btn.dataset.freePole || "ALL") === activePole;
+      btn.classList.toggle("is-active", isCurrent);
+      btn.setAttribute("aria-pressed", String(isCurrent));
+    }
+    for (const btn of categoryFilterBtns) {
+      const isCurrent = (btn.dataset.freeCategory || "ALL") === activeCategory;
+      btn.classList.toggle("is-active", isCurrent);
+      btn.setAttribute("aria-pressed", String(isCurrent));
+    }
+  };
 
   const syncCustomTemplateDefaults = () => {
     if (!customPoleSelect || !customLoadSelect) return;
@@ -2471,14 +2541,49 @@ function initFreeBuilderModal() {
     catalogPicker.replaceChildren();
 
     const allCatalog = getAllCatalogExercises();
+    const normalizedQuery = normalizeSearchText(searchQuery);
+    const filtered = allCatalog.filter((ex) => {
+      if (activePole !== "ALL" && ex.pole !== activePole) {
+        return false;
+      }
+      if (activeCategory !== "ALL" && ex.category !== activeCategory) {
+        return false;
+      }
+      if (normalizedQuery) {
+        const categoryMeta =
+          ex.category && Object.hasOwn(EXTENDED_CATEGORIES, ex.category)
+            ? EXTENDED_CATEGORIES[ex.category]
+            : null;
+        const badgeMeta =
+          ex.category && Object.hasOwn(CATEGORY_BADGE_META, ex.category)
+            ? CATEGORY_BADGE_META[ex.category]
+            : null;
+        const haystack = normalizeSearchText(
+          `${ex.id} ${ex.name} ${ex.short_desc ?? ""} ${ex.pole ?? ""} ${ex.category ?? ""} ${categoryMeta?.label ?? ""} ${badgeMeta?.label ?? ""}`
+        );
+        if (!haystack.includes(normalizedQuery)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const hasFilter =
+      activePole !== "ALL" || activeCategory !== "ALL" || normalizedQuery.length > 0;
     const catalogHeading = $("free-catalog-heading");
     if (catalogHeading) {
-      catalogHeading.textContent = `Catalogue (${allCatalog.length} exercices)`;
+      catalogHeading.textContent = hasFilter
+        ? `Catalogue (${filtered.length} / ${allCatalog.length} exercices)`
+        : `Catalogue (${allCatalog.length} exercices)`;
     }
-    const filtered =
-      activePole === "ALL"
-        ? allCatalog
-        : allCatalog.filter((ex) => ex.pole === activePole);
+
+    if (filtered.length === 0) {
+      const emptyEl = document.createElement("p");
+      emptyEl.className = "free-picker-empty";
+      emptyEl.textContent = "Aucun exercice ne correspond aux filtres actifs.";
+      catalogPicker.appendChild(emptyEl);
+      return;
+    }
 
     for (const cat of filtered) {
       const row = document.createElement("div");
@@ -2497,6 +2602,9 @@ function initFreeBuilderModal() {
       const poleBadge = document.createElement("span");
       poleBadge.className = `exo-badge pole-${cat.pole}`;
       poleBadge.textContent = cat.pole;
+      meta.appendChild(poleBadge);
+
+      appendCategoryAndBodyweightBadges(meta, cat);
 
       const defaultSets = cat.default_sets ?? 3;
       const defaultReps = cat.default_reps ?? (cat.is_timed ? 45 : cat.pole === "KBOX" ? 6 : 10);
@@ -2508,9 +2616,9 @@ function initFreeBuilderModal() {
         const persoBadge = document.createElement("span");
         persoBadge.className = "exo-badge is-user-catalog";
         persoBadge.textContent = "Perso";
-        meta.append(poleBadge, persoBadge, defaultMeta);
+        meta.append(persoBadge, defaultMeta);
       } else {
-        meta.append(poleBadge, defaultMeta);
+        meta.append(defaultMeta);
       }
       info.append(title, meta);
 
@@ -2537,14 +2645,23 @@ function initFreeBuilderModal() {
   for (const btn of poleFilterBtns) {
     btn.addEventListener("click", () => {
       activePole = btn.dataset.freePole || "ALL";
-      for (const sibling of poleFilterBtns) {
-        const isCurrent = sibling === btn;
-        sibling.classList.toggle("is-active", isCurrent);
-        sibling.setAttribute("aria-pressed", String(isCurrent));
-      }
+      syncFilterButtonsState();
       renderCatalogPicker();
     });
   }
+
+  for (const btn of categoryFilterBtns) {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.freeCategory || "ALL";
+      syncFilterButtonsState();
+      renderCatalogPicker();
+    });
+  }
+
+  searchInput?.addEventListener("input", () => {
+    searchQuery = searchInput.value;
+    renderCatalogPicker();
+  });
 
   customPoleSelect?.addEventListener("change", syncCustomTemplateDefaults);
 
@@ -2597,6 +2714,11 @@ function initFreeBuilderModal() {
   });
 
   openBtn.addEventListener("click", () => {
+    activePole = "ALL";
+    activeCategory = "ALL";
+    searchQuery = "";
+    if (searchInput) searchInput.value = "";
+    syncFilterButtonsState();
     setStatusMessage(statusEl, "");
     renderCatalogPicker();
     renderSelectedList();

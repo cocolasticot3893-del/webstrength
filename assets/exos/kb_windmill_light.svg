@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Kettlebell windmill avec charnière de hanche latérale">
+  <style>
+    .kwml_hinge {
+      --base-dur: 3.4s;
+      transform-origin: 120px 124px;
+      animation: kwml_bend calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kwml_kb_arm {
+      --base-dur: 3.4s;
+      transform-origin: 106px 86px;
+      animation: kwml_counter calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kwml_slide {
+      --base-dur: 3.4s;
+      transform-origin: 134px 86px;
+      animation: kwml_reach calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes kwml_bend {
+      0%, 100% { transform: rotate(0deg) translateX(0px); }
+      45%, 55% { transform: rotate(38deg) translateX(-8px); }
+    }
+    @keyframes kwml_counter {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(-38deg); }
+    }
+    @keyframes kwml_reach {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(12deg); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et axe vertical de la kettlebell -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <line x1="106" y1="28" x2="106" y2="184" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 4"/>
+
+  <!-- Jambes écartées décalées (appuis stables) -->
+  <line x1="112" y1="124" x2="94" y2="182" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="128" y1="124" x2="148" y2="182" stroke="#e6edf3" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="86" y1="182" x2="98" y2="182" stroke="#8b949e" stroke-width="4.2" stroke-linecap="round"/>
+  <line x1="146" y1="182" x2="158" y2="182" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+
+  <!-- Tronc en charnière latérale + bras vertical verrouillé -->
+  <g class="kwml_hinge">
+    <!-- Bassin et colonne droite -->
+    <line x1="108" y1="124" x2="132" y2="124" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+    <line x1="120" y1="124" x2="120" y2="86" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+    <line x1="104" y1="86" x2="136" y2="86" stroke="#8b949e" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="120" cy="70" r="7.8" fill="#e6edf3"/>
+
+    <!-- Bras bas glissant le long du tibia avant -->
+    <g class="kwml_slide">
+      <line x1="134" y1="86" x2="144" y2="132" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- Bras haut verrouillé + Kettlebell maintenue verticale -->
+    <g class="kwml_kb_arm">
+      <line x1="106" y1="86" x2="106" y2="44" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round"/>
+      <path d="M101,44 Q106,38 111,44" fill="none" stroke="#e6edf3" stroke-width="2.2" stroke-linecap="round"/>
+      <circle cx="106" cy="36" r="8.5" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.3"/>
+      <circle cx="106" cy="36" r="2.5" fill="#0d1117"/>
+    </g>
+
+    <circle cx="120" cy="124" r="3.2" fill="#10b981"/>
+    <circle cx="106" cy="86" r="2.8" fill="#38bdf8"/>
+  </g>
+
+  <!-- Flèche déport latéral de hanche -->
+  <path d="M98 124 L76 124 M82 120 L75 124 L82 128" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · WINDMILL</text>
+  <text x="224" y="21" text-anchor="end" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">BRAS VERTICAL</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">KB WINDMILL · CHARNIÈRE LATÉRALE</text>
+</svg>

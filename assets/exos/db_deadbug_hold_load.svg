@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Deadbug avec maintien haltère au-dessus du torse et extension alternée lente">
+  <style>
+    .ddhl_leg_a {
+      --base-dur: 3.4s;
+      transform-origin: 126px 164px;
+      animation: ddhl_ext_a calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ddhl_leg_b {
+      --base-dur: 3.4s;
+      transform-origin: 126px 164px;
+      animation: ddhl_ext_b calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .ddhl_lumb {
+      --base-dur: 3.4s;
+      animation: ddhl_press calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes ddhl_ext_a {
+      0%, 20%, 80%, 100% { transform: rotate(0deg); }
+      35%, 55% { transform: rotate(48deg); }
+    }
+    @keyframes ddhl_ext_b {
+      0%, 45%, 100% { transform: rotate(0deg); }
+      68%, 88% { transform: rotate(48deg); }
+    }
+    @keyframes ddhl_press {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et tapis -->
+  <line x1="20" y1="180" x2="220" y2="180" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <rect x="34" y="174" width="172" height="6" rx="2.5" fill="#1f2937" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Zone lombaire plaquée au sol -->
+  <g class="ddhl_lumb">
+    <rect x="86" y="169" width="38" height="7" rx="3" fill="#10b981" fill-opacity="0.28" stroke="#10b981" stroke-width="1.2"/>
+    <path d="M105 156 L105 168 M101 163 L105 169 L109 163" fill="none" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Dos plaqué + tête au sol -->
+  <circle cx="58" cy="164" r="8" fill="#e6edf3"/>
+  <line x1="72" y1="166" x2="126" y2="166" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+  <circle cx="76" cy="164" r="3" fill="#e6edf3"/>
+  <circle cx="126" cy="166" r="3.4" fill="#10b981"/>
+
+  <!-- Bras verrouillés tenant haltère fixe au-dessus du torse -->
+  <line x1="76" y1="164" x2="76" y2="112" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round"/>
+  <rect x="64" y="102" width="24" height="11" rx="2.5" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.3"/>
+  <line x1="70" y1="107.5" x2="82" y2="107.5" stroke="#0d1117" stroke-width="2"/>
+  <text x="76" y="94" text-anchor="middle" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700">HOLD FIXE</text>
+
+  <!-- Jambe arrière (alternée) -->
+  <g class="ddhl_leg_b">
+    <polyline points="126,164 134,124 164,126" fill="none" stroke="#8b949e" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Jambe avant (alternée) -->
+  <g class="ddhl_leg_a">
+    <polyline points="126,164 132,124 166,124" fill="none" stroke="#e6edf3" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="132" cy="124" r="2.8" fill="#38bdf8"/>
+  </g>
+
+  <!-- Arc d'extension lente -->
+  <path d="M168 126 A42 42 0 0 1 186 164" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · DEADBUG</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">DOS PLAQUÉ 100%</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">DEADBUG CHARGÉ · LOMBAIRES PLAQUÉES</text>
+</svg>

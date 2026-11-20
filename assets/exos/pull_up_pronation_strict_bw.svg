@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Traction pronation stricte poids de corps">
+  <style>
+    .pups_body {
+      --base-dur: 2.8s;
+      animation: pups_lift calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .pups_arm_l {
+      --base-dur: 2.8s;
+      transform-origin: 92px 38px;
+      animation: pups_arm_l_flex calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .pups_arm_r {
+      --base-dur: 2.8s;
+      transform-origin: 148px 38px;
+      animation: pups_arm_r_flex calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .pups_vec {
+      --base-dur: 2.8s;
+      animation: pups_pulse calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes pups_lift {
+      0%, 100% { transform: translateY(34px); }
+      45%, 55% { transform: translateY(0px); }
+    }
+    @keyframes pups_arm_l_flex {
+      0%, 100% { transform: scaleY(1.55) rotate(-8deg); }
+      45%, 55% { transform: scaleY(0.82) rotate(18deg); }
+    }
+    @keyframes pups_arm_r_flex {
+      0%, 100% { transform: scaleY(1.55) rotate(8deg); }
+      45%, 55% { transform: scaleY(0.82) rotate(-18deg); }
+    }
+    @keyframes pups_pulse {
+      0%, 100% { opacity: 0.25; transform: translateY(4px); }
+      45%, 55% { opacity: 1; transform: translateY(-4px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Portique et barre fixe -->
+  <line x1="42" y1="36" x2="42" y2="188" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/>
+  <line x1="198" y1="36" x2="198" y2="188" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/>
+  <line x1="36" y1="36" x2="204" y2="36" stroke="#8b949e" stroke-width="4.5" stroke-linecap="round"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Axe vertical strict sans kipping -->
+  <line x1="120" y1="42" x2="120" y2="180" stroke="#30363d" stroke-width="1.2" stroke-dasharray="3 4"/>
+
+  <!-- Prises pronation largeur épaules -->
+  <rect x="87" y="32" width="10" height="8" rx="2.5" fill="#e6edf3"/>
+  <rect x="143" y="32" width="10" height="8" rx="2.5" fill="#e6edf3"/>
+
+  <!-- Bras articulés depuis la barre -->
+  <g class="pups_arm_l">
+    <polyline points="92,38 88,60 104,72" fill="none" stroke="#e6edf3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g class="pups_arm_r">
+    <polyline points="148,38 152,60 136,72" fill="none" stroke="#e6edf3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Corps en montée stricte -->
+  <g class="pups_body">
+    <!-- Tête sous barre -->
+    <circle cx="120" cy="48" r="8.5" fill="#e6edf3"/>
+    <!-- Épaules -->
+    <line x1="103" y1="64" x2="137" y2="64" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <!-- Torse gainé -->
+    <path d="M107,64 L133,64 L128,108 L112,108 Z" fill="#1f2937" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round"/>
+    <line x1="120" y1="66" x2="120" y2="106" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+    <!-- Jambes alignées (zéro kipping) -->
+    <line x1="115" y1="109" x2="115" y2="148" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <line x1="125" y1="109" x2="125" y2="148" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="104" cy="64" r="3" fill="#10b981"/>
+    <circle cx="136" cy="64" r="3" fill="#10b981"/>
+  </g>
+
+  <!-- Vecteur montée stricte -->
+  <g class="pups_vec">
+    <path d="M174 114 L174 66 M168 74 L174 64 L180 74" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="174" y="128" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8" font-weight="700">STRICT</text>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">UPPER · PRONATION</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">0% KIPPING</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">TRACTION PRONATION · STRICT BW</text>
+</svg>

@@ -1,0 +1,112 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="kBox squat vitesse léger : remontée explosive avec vecteur vertical">
+  <style>
+    .kbox_svl_fly {
+      --base-dur: 1.0s;
+      transform-origin: 118px 180px;
+      animation: kbox_svl_spin calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbox_svl_shin {
+      --base-dur: 1.4s;
+      transform-origin: 118px 169px;
+      animation: kbox_svl_sh calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbox_svl_thigh {
+      --base-dur: 1.4s;
+      transform-origin: 118px 134px;
+      animation: kbox_svl_th calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbox_svl_torso {
+      --base-dur: 1.4s;
+      transform-origin: 118px 98px;
+      animation: kbox_svl_tr calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbox_svl_strap {
+      --base-dur: 1.4s;
+      transform-origin: 118px 172px;
+      animation: kbox_svl_st calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kbox_svl_vec {
+      --base-dur: 1.4s;
+      animation: kbox_svl_up calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes kbox_svl_spin {
+      0% { transform: rotate(0deg); }
+      50% { transform: rotate(360deg); }
+      100% { transform: rotate(720deg); }
+    }
+    @keyframes kbox_svl_sh {
+      0%, 100% { transform: rotate(20deg); }
+      55%, 72% { transform: rotate(3deg); }
+    }
+    @keyframes kbox_svl_th {
+      0%, 100% { transform: rotate(-72deg); }
+      55%, 72% { transform: rotate(-6deg); }
+    }
+    @keyframes kbox_svl_tr {
+      0%, 100% { transform: rotate(56deg); }
+      55%, 72% { transform: rotate(4deg); }
+    }
+    @keyframes kbox_svl_st {
+      0%, 100% { transform: scaleY(0.68); }
+      55%, 72% { transform: scaleY(1.0); }
+    }
+    @keyframes kbox_svl_up {
+      0%, 25%, 90%, 100% { opacity: 0.2; transform: translateY(10px); }
+      52%, 75% { opacity: 1; transform: translateY(-6px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="190" x2="220" y2="190" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Plateforme kBox inertie légère -->
+  <rect x="62" y="172" width="114" height="16" rx="4" fill="#1f2937" stroke="#30363d" stroke-width="1.5"/>
+  <circle cx="118" cy="180" r="6" fill="#0d1117" stroke="#38bdf8" stroke-width="1.4"/>
+  <g class="kbox_svl_fly">
+    <line x1="118" y1="175" x2="118" y2="185" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="113" y1="180" x2="123" y2="180" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sangle harnais légère -->
+  <line class="kbox_svl_strap" x1="118" y1="172" x2="118" y2="98" stroke="#38bdf8" stroke-width="2.4" stroke-dasharray="4 3" stroke-linecap="round"/>
+
+  <!-- Vecteur vitesse vertical proéminent -->
+  <g class="kbox_svl_vec">
+    <line x1="182" y1="154" x2="182" y2="66" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+    <polyline points="174,78 182,64 190,78" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="176,94 182,84 188,94" fill="none" stroke="#10b981" stroke-width="2" stroke-opacity="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="182" y="54" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="10" font-weight="700">V↑</text>
+  </g>
+
+  <!-- Repère demi-squat -->
+  <line x1="56" y1="134" x2="96" y2="134" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="3 3"/>
+  <text x="52" y="137" text-anchor="end" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8">1/2 SQ</text>
+
+  <!-- Segment anatomique demi-squat -> extension -->
+  <path d="M114 169 L134 169" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+  <g class="kbox_svl_shin">
+    <line x1="118" y1="169" x2="118" y2="134" stroke="#8b949e" stroke-width="6" stroke-linecap="round"/>
+    <g class="kbox_svl_thigh">
+      <line x1="118" y1="134" x2="118" y2="98" stroke="#e6edf3" stroke-width="6.5" stroke-linecap="round"/>
+      <g class="kbox_svl_torso">
+        <line x1="118" y1="98" x2="118" y2="56" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+        <rect x="110" y="92" width="16" height="6" rx="2.5" fill="#f59e0b"/>
+        <polyline points="118,62 134,76 128,88" fill="none" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="119" cy="42" r="8.2" fill="#e6edf3"/>
+        <circle cx="118" cy="60" r="3" fill="#38bdf8"/>
+      </g>
+      <circle cx="118" cy="98" r="3.4" fill="#38bdf8"/>
+    </g>
+    <circle cx="118" cy="134" r="3.2" fill="#e6edf3"/>
+  </g>
+  <circle cx="118" cy="169" r="2.8" fill="#38bdf8"/>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">kBox · SQUAT LÉGER</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">INERTIE FAIBLE V↑</text>
+</svg>

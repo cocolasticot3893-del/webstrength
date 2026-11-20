@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Tirage bûcheron diagonal haut vers bas avec élastique sans vriller le bassin">
+  <style>
+    .bcd_handle {
+      --base-dur: 2.6s;
+      animation: bcd_chop calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bcd_band {
+      --base-dur: 2.6s;
+      transform-origin: 204px 40px;
+      animation: bcd_pull calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .bcd_vec {
+      --base-dur: 2.6s;
+      animation: bcd_flash calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes bcd_chop {
+      0%, 100% { transform: translate(0px, 0px); }
+      45%, 55% { transform: translate(-64px, 56px); }
+    }
+    @keyframes bcd_pull {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      45%, 55% { transform: scale(1.62) rotate(-13deg); }
+    }
+    @keyframes bcd_flash {
+      0%, 100% { opacity: 0.25; }
+      45%, 55% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et point d'ancrage haut à droite -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <line x1="204" y1="32" x2="204" y2="184" stroke="#30363d" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="204" cy="40" r="4.5" fill="#38bdf8"/>
+
+  <!-- Position athlétique semi-fléchie stable -->
+  <polyline points="104,132 94,158 92,182" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="134,132 144,158 146,182" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="86" y1="182" x2="96" y2="182" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+  <line x1="142" y1="182" x2="152" y2="182" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+
+  <!-- Bassin verrouillé horizontal (zéro vrille) -->
+  <line x1="96" y1="132" x2="142" y2="132" stroke="#10b981" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="96" cy="132" r="2.8" fill="#10b981"/>
+  <circle cx="142" cy="132" r="2.8" fill="#10b981"/>
+
+  <!-- Torse athlétique -->
+  <path d="M102,84 L136,84 L134,132 L104,132 Z" fill="#1f2937" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="119" cy="66" r="8" fill="#e6edf3"/>
+
+  <!-- Trajectoire diagonale haute-vers-bas -->
+  <line x1="150" y1="74" x2="86" y2="130" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+  <!-- Élastique haute tension -->
+  <g class="bcd_band">
+    <line x1="204" y1="40" x2="150" y2="74" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Poignée & bras en traction diagonale -->
+  <g class="bcd_handle">
+    <line x1="128" y1="86" x2="150" y2="74" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="150" cy="74" r="4.8" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.2"/>
+  </g>
+
+  <!-- Flèche vecteur diagonal -->
+  <g class="bcd_vec">
+    <path d="M158 94 L112 134 M120 133 L111 135 L114 126" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · BAND CHOP</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">BASSIN VERROUILLÉ</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">BAND CHOP DIAGONAL · BASSIN FIXE</text>
+</svg>

@@ -1,0 +1,93 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DB_STEP_UP_HIGH_BOX : step-up vertical sur box haute avec haltères">
+  <style>
+    .dsu-shin {
+      transform-origin: 146px 136px;
+      animation: DB_STEP_UP_HIGH_BOX_shin calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .dsu-thigh {
+      transform-origin: 146px 108px;
+      animation: DB_STEP_UP_HIGH_BOX_thigh calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .dsu-torso {
+      transform-origin: 146px 80px;
+      animation: DB_STEP_UP_HIGH_BOX_torso calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .dsu-backleg {
+      transform-origin: 146px 80px;
+      animation: DB_STEP_UP_HIGH_BOX_backleg calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .dsu-cue {
+      animation: DB_STEP_UP_HIGH_BOX_cue calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes DB_STEP_UP_HIGH_BOX_shin {
+      0%, 100% { transform: rotate(16deg); }
+      45%, 60% { transform: rotate(0deg); }
+    }
+    @keyframes DB_STEP_UP_HIGH_BOX_thigh {
+      0%, 100% { transform: rotate(-122deg); }
+      45%, 60% { transform: rotate(0deg); }
+    }
+    @keyframes DB_STEP_UP_HIGH_BOX_torso {
+      0%, 100% { transform: rotate(120deg); }
+      45%, 60% { transform: rotate(0deg); }
+    }
+    @keyframes DB_STEP_UP_HIGH_BOX_backleg {
+      0%, 100% { transform: rotate(124deg); }
+      45%, 60% { transform: rotate(0deg); }
+    }
+    @keyframes DB_STEP_UP_HIGH_BOX_cue {
+      0%, 20%, 82%, 100% { opacity: 0.25; }
+      40%, 60% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="188" x2="220" y2="188" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Box haute pliométrique -->
+  <rect x="122" y="138" width="66" height="50" rx="4" fill="#1f2937" stroke="#30363d" stroke-width="1.5"/>
+  <rect x="120" y="136" width="70" height="6" rx="2" fill="#30363d"/>
+
+  <!-- Pied avant fixe sur la box -->
+  <path d="M142 136 L160 136" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round"/>
+
+  <!-- Chaîne articulaire propulsée par la jambe avant -->
+  <g class="dsu-shin">
+    <line x1="146" y1="136" x2="146" y2="108" stroke="#e6edf3" stroke-width="5.6" stroke-linecap="round"/>
+    <g class="dsu-thigh">
+      <line x1="146" y1="108" x2="146" y2="80" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+      <!-- Jambe arrière passive (sans élan du pied arrière) -->
+      <g class="dsu-backleg">
+        <line x1="146" y1="80" x2="136" y2="146" stroke="#8b949e" stroke-width="4.6" stroke-linecap="round"/>
+        <line x1="136" y1="146" x2="128" y2="146" stroke="#8b949e" stroke-width="3.8" stroke-linecap="round"/>
+      </g>
+      <!-- Buste + bras + haltères légers -->
+      <g class="dsu-torso">
+        <line x1="146" y1="80" x2="146" y2="48" stroke="#10b981" stroke-width="6.2" stroke-linecap="round"/>
+        <circle cx="147" cy="37" r="7.5" fill="#e6edf3"/>
+        <!-- Bras + haltère -->
+        <line x1="146" y1="52" x2="148" y2="78" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round"/>
+        <rect x="143" y="76" width="11" height="5" rx="1.5" fill="#f59e0b"/>
+        <circle cx="146" cy="52" r="2.6" fill="#38bdf8"/>
+      </g>
+      <circle cx="146" cy="80" r="3.2" fill="#10b981"/>
+    </g>
+    <circle cx="146" cy="108" r="3" fill="#e6edf3"/>
+  </g>
+  <circle cx="146" cy="136" r="2.8" fill="#38bdf8"/>
+
+  <!-- Flèche propulsion verticale -->
+  <g class="dsu-cue">
+    <path d="M198 134 L198 84 M193 90 L198 83 L203 90" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="64" y="176" text-anchor="middle" fill="#f59e0b" font-family="system-ui,sans-serif" font-size="8" font-weight="600">0 ÉLAN ARRIÈRE</text>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">DB · HIGH BOX STEP-UP</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">FESSIERS · QUADS</text>
+  <text x="120" y="206" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8.5">PROPULSION JAMBE AVANT SUR BOX</text>
+</svg>

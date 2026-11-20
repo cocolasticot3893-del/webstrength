@@ -1,0 +1,83 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Départ explosif en projection avant sur 1er appui sous résistance élastique">
+  <style>
+    .band_aso_lunge {
+      --base-dur: 1.5s;
+      transform-origin: 64px 182px;
+      animation: band_aso_proj calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_aso_front {
+      --base-dur: 1.5s;
+      transform-origin: 120px 124px;
+      animation: band_aso_step calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_aso_elastic {
+      --base-dur: 1.5s;
+      transform-origin: 24px 124px;
+      animation: band_aso_stretch calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .band_aso_vec {
+      --base-dur: 1.5s;
+      animation: band_aso_arrow calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes band_aso_proj {
+      0%, 100% { transform: translateX(0px) rotate(-6deg); }
+      50%, 68% { transform: translateX(24px) rotate(6deg); }
+    }
+    @keyframes band_aso_step {
+      0%, 100% { transform: rotate(22deg); }
+      50%, 68% { transform: rotate(-16deg); }
+    }
+    @keyframes band_aso_stretch {
+      0%, 100% { transform: scaleX(1); }
+      50%, 68% { transform: scaleX(1.24); }
+    }
+    @keyframes band_aso_arrow {
+      0%, 20%, 88%, 100% { opacity: 0.2; transform: translateX(-6px); }
+      50%, 70% { opacity: 1; transform: translateX(8px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="16" y1="186" x2="224" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Ancrage arrière -->
+  <rect x="16" y="102" width="8" height="44" rx="3" fill="#30363d"/>
+  <circle cx="24" cy="124" r="3.5" fill="#f59e0b"/>
+
+  <!-- Élastique horizontal -->
+  <line class="band_aso_elastic" x1="24" y1="124" x2="112" y2="124" stroke="#f59e0b" stroke-width="3.2" stroke-dasharray="7 3" stroke-linecap="round"/>
+
+  <!-- Vecteur accélération avant -->
+  <g class="band_aso_vec">
+    <line x1="158" y1="76" x2="208" y2="76" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+    <polyline points="196,68 210,76 196,84" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="164" y1="64" x2="192" y2="64" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sprinter en projection 45° -->
+  <g class="band_aso_lunge">
+    <!-- Jambe arrière de poussée -->
+    <polyline points="64,182 92,154 114,124" fill="none" stroke="#8b949e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 1er appui avant -->
+    <g class="band_aso_front">
+      <polyline points="114,124 136,154 138,182 148,182" fill="none" stroke="#10b981" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="136" cy="154" r="3.2" fill="#e6edf3"/>
+    </g>
+    <!-- Tronc projeté à 45° -->
+    <line x1="114" y1="124" x2="148" y2="90" stroke="#e6edf3" stroke-width="7" stroke-linecap="round"/>
+    <rect x="108" y="118" width="13" height="8" rx="3" fill="#f59e0b"/>
+    <circle cx="158" cy="79" r="8.2" fill="#e6edf3"/>
+    <!-- Bras en fente dynamique -->
+    <polyline points="146,92 168,94 176,80" fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="142,94 124,108 110,104" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="114" cy="124" r="3.4" fill="#38bdf8"/>
+    <circle cx="146" cy="92" r="3" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">BAND · ACCEL STEP</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">1ER APPUI 45°</text>
+</svg>

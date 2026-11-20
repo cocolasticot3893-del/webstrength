@@ -1,0 +1,67 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Box jump avec descente contrôlée step-down">
+  <style>
+    .plyo_bjsd_ath {
+      --base-dur: 2.2s;
+      transform-origin: 72px 176px;
+      animation: plyo_bjsd_jump calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_bjsd_up {
+      --base-dur: 2.2s;
+      animation: plyo_bjsd_arcup calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_bjsd_down {
+      --base-dur: 2.2s;
+      animation: plyo_bjsd_step calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes plyo_bjsd_jump {
+      0%, 12% { transform: translate(0px, 6px); }
+      38% { transform: translate(44px, -68px); }
+      52%, 68% { transform: translate(86px, -60px); }
+      88%, 100% { transform: translate(0px, 6px); }
+    }
+    @keyframes plyo_bjsd_arcup {
+      0%, 60%, 100% { opacity: 0.2; }
+      18%, 45% { opacity: 1; }
+    }
+    @keyframes plyo_bjsd_step {
+      0%, 52%, 100% { opacity: 0.2; }
+      65%, 90% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Box pliométrique à droite -->
+  <rect x="132" y="126" width="68" height="60" rx="5" fill="#1f2937" stroke="#30363d" stroke-width="1.6"/>
+  <text x="166" y="160" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="700">BOX</text>
+
+  <!-- Arc impulsion explosive vers sommet -->
+  <g class="plyo_bjsd_up">
+    <path d="M72 132 Q104 60 154 96" fill="none" stroke="#10b981" stroke-width="2.4" stroke-dasharray="5 3" stroke-linecap="round"/>
+    <polyline points="145,98 156,97 151,87" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Flèche douce descente step-down contrôlée -->
+  <g class="plyo_bjsd_down">
+    <path d="M132 134 C112 134 114 176 92 178" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round"/>
+    <polyline points="99,172 90,178 99,183" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="108" y="162" text-anchor="middle" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="7.5" font-weight="600">STEP-DOWN</text>
+  </g>
+
+  <!-- Athlète -->
+  <g class="plyo_bjsd_ath">
+    <polyline points="82,180 70,180 78,150 68,124" fill="none" stroke="#8b949e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="78" cy="150" r="3" fill="#e6edf3"/>
+    <line x1="68" y1="124" x2="76" y2="88" stroke="#10b981" stroke-width="6.8" stroke-linecap="round"/>
+    <polyline points="76,92 94,100 100,86" fill="none" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="78" cy="74" r="7.8" fill="#e6edf3"/>
+    <circle cx="68" cy="124" r="3.2" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">PLYO · BOX JUMP</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">SAUT + STEP-DOWN</text>
+</svg>

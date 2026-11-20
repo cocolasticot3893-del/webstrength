@@ -1,0 +1,69 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pogo jumps bilatéraux : rebonds verticaux rapides jambes quasi tendues">
+  <style>
+    .plyo_apd_body {
+      --base-dur: 0.9s;
+      transform-origin: 120px 184px;
+      animation: plyo_apd_hop calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_apd_contact {
+      --base-dur: 0.9s;
+      transform-origin: 120px 186px;
+      animation: plyo_apd_pulse calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_apd_arc {
+      --base-dur: 0.9s;
+      animation: plyo_apd_show calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes plyo_apd_hop {
+      0%, 100% { transform: translateY(2px) scaleY(0.97); }
+      45%, 55% { transform: translateY(-22px) scaleY(1.01); }
+    }
+    @keyframes plyo_apd_pulse {
+      0%, 100% { opacity: 1; transform: scaleX(1.1); }
+      45%, 55% { opacity: 0.18; transform: scaleX(0.6); }
+    }
+    @keyframes plyo_apd_show {
+      0%, 100% { opacity: 0.25; }
+      45%, 55% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="186" x2="220" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Zone de contact bref au sol -->
+  <ellipse class="plyo_apd_contact" cx="120" cy="186" rx="22" ry="3.5" fill="#f59e0b" fill-opacity="0.55"/>
+
+  <!-- Arcs courts de rebond vertical -->
+  <g class="plyo_apd_arc">
+    <path d="M74 176 Q64 148 74 126" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+    <polyline points="68,133 74,124 80,133" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M166 176 Q176 148 166 126" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+    <polyline points="160,133 166,124 172,133" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Athlète jambes quasi tendues (vue frontale) -->
+  <g class="plyo_apd_body">
+    <!-- Avant-pieds en extension + jambes droites -->
+    <polyline points="104,184 110,180 111,142 114,106" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="136,184 130,180 129,142 126,106" fill="none" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Ressorts cheville -->
+    <circle cx="110" cy="180" r="3" fill="#f59e0b"/>
+    <circle cx="130" cy="180" r="3" fill="#f59e0b"/>
+    <!-- Tronc gainé -->
+    <line x1="120" y1="106" x2="120" y2="66" stroke="#10b981" stroke-width="7" stroke-linecap="round"/>
+    <!-- Bras prêts pour cadence -->
+    <polyline points="116,70 100,88 104,102" fill="none" stroke="#e6edf3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="124,70 140,88 136,102" fill="none" stroke="#e6edf3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="120" cy="51" r="8.2" fill="#e6edf3"/>
+    <circle cx="111" cy="142" r="2.6" fill="#e6edf3"/>
+    <circle cx="129" cy="142" r="2.6" fill="#e6edf3"/>
+    <circle cx="120" cy="106" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">PLYO · POGO BILAT.</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">RAIDEUR CHEVILLE</text>
+</svg>

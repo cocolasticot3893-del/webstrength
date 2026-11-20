@@ -1,0 +1,74 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KB_HIP_THRUST_SINGLE : hip thrust unilatéral sur banc avec kettlebell">
+  <style>
+    .kht-torso {
+      transform-origin: 68px 128px;
+      animation: KB_HIP_THRUST_SINGLE_torso calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kht-thigh {
+      transform-origin: 162px 128px;
+      animation: KB_HIP_THRUST_SINGLE_thigh calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .kht-cue {
+      animation: KB_HIP_THRUST_SINGLE_cue calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes KB_HIP_THRUST_SINGLE_torso {
+      0%, 100% { transform: rotate(28deg); }
+      45%, 60% { transform: rotate(-2deg); }
+    }
+    @keyframes KB_HIP_THRUST_SINGLE_thigh {
+      0%, 100% { transform: rotate(-28deg); }
+      45%, 60% { transform: rotate(2deg); }
+    }
+    @keyframes KB_HIP_THRUST_SINGLE_cue {
+      0%, 25%, 80%, 100% { opacity: 0.2; }
+      45%, 60% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Banc bas appui scapulaire -->
+  <rect x="26" y="130" width="46" height="54" rx="4" fill="#1f2937" stroke="#30363d" stroke-width="1.5"/>
+  <rect x="24" y="126" width="50" height="8" rx="3" fill="#30363d"/>
+
+  <!-- Jambe d'appui (pied au sol, tibia vertical) -->
+  <path d="M158 182 L176 182" stroke="#8b949e" stroke-width="5" stroke-linecap="round"/>
+  <line x1="162" y1="182" x2="162" y2="128" stroke="#8b949e" stroke-width="5.8" stroke-linecap="round"/>
+
+  <!-- Cuisse d'appui reliant le genou à la hanche -->
+  <line class="kht-thigh" x1="162" y1="128" x2="115" y2="128" stroke="#e6edf3" stroke-width="6.2" stroke-linecap="round"/>
+
+  <!-- Tronc + jambe libre levée + kettlebell sur hanche -->
+  <g class="kht-torso">
+    <!-- Buste en appui omoplates -->
+    <line x1="68" y1="128" x2="115" y2="128" stroke="#10b981" stroke-width="6.4" stroke-linecap="round"/>
+    <!-- Tête alignée -->
+    <circle cx="52" cy="120" r="7.5" fill="#e6edf3"/>
+    <!-- Bras stabilisant la kettlebell -->
+    <polyline points="72,126 94,114 113,115" fill="none" stroke="#e6edf3" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Jambe libre fléchie à 90° -->
+    <polyline points="115,128 115,92 146,92" fill="none" stroke="#8b949e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Kettlebell posée sur la hanche -->
+    <path d="M109 114 C109 109, 121 109, 121 114" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+    <circle cx="115" cy="120" r="6.5" fill="#f59e0b"/>
+    <circle cx="115" cy="128" r="3.4" fill="#38bdf8"/>
+    <circle cx="68" cy="128" r="3" fill="#e6edf3"/>
+  </g>
+
+  <circle cx="162" cy="128" r="3" fill="#e6edf3"/>
+  <circle cx="162" cy="182" r="2.8" fill="#38bdf8"/>
+
+  <!-- Repère alignement extension hanche -->
+  <g class="kht-cue">
+    <line x1="64" y1="126" x2="166" y2="126" stroke="#10b981" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <path d="M115 162 L115 138 M110 144 L115 137 L120 144" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">KB · 1-LEG HIP THRUST</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">GRAND FESSIER</text>
+  <text x="120" y="206" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8.5">EXTENSION COMPLÈTE · BASSIN NEUTRE</text>
+</svg>

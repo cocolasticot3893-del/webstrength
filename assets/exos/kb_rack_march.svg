@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Marche sur place genoux hauts avec kettlebell en front rack">
+  <style>
+    .krm_leg_l {
+      --base-dur: 2.0s;
+      transform-origin: 112px 124px;
+      animation: krm_knee_l calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .krm_leg_r {
+      --base-dur: 2.0s;
+      transform-origin: 128px 124px;
+      animation: krm_knee_r calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .krm_rack {
+      --base-dur: 2.0s;
+      animation: krm_hold calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes krm_knee_l {
+      0%, 100% { transform: rotate(0deg); }
+      45%, 55% { transform: rotate(-68deg); }
+    }
+    @keyframes krm_knee_r {
+      0%, 100% { transform: rotate(-68deg); }
+      45%, 55% { transform: rotate(0deg); }
+    }
+    @keyframes krm_hold {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-1.5px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et ligne hauteur genou 90° -->
+  <line x1="20" y1="184" x2="220" y2="184" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <line x1="68" y1="124" x2="172" y2="124" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- Jambe gauche (monte genou haut) -->
+  <g class="krm_leg_l">
+    <polyline points="112,124 112,154 112,181" fill="none" stroke="#8b949e" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="112" cy="154" r="2.8" fill="#e6edf3"/>
+  </g>
+
+  <!-- Jambe droite (alterne genou haut) -->
+  <g class="krm_leg_r">
+    <polyline points="128,124 128,154 128,181" fill="none" stroke="#e6edf3" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="128" cy="154" r="2.8" fill="#10b981"/>
+  </g>
+
+  <!-- Buste vertical gainé + Kettlebell en Front Rack -->
+  <g class="krm_rack">
+    <path d="M104,80 L136,80 L130,124 L110,124 Z" fill="#1f2937" stroke="#10b981" stroke-width="2.2" stroke-linejoin="round"/>
+    <line x1="120" y1="82" x2="120" y2="122" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="120" cy="62" r="8" fill="#e6edf3"/>
+
+    <!-- Bras gauche stabilisateur -->
+    <line x1="104" y1="80" x2="96" y2="116" stroke="#8b949e" stroke-width="4.5" stroke-linecap="round"/>
+
+    <!-- Bras droit en front rack coude serré -->
+    <polyline points="136,80 142,104 128,88" fill="none" stroke="#e6edf3" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Kettlebell posée dans le creux du rack -->
+    <path d="M126,86 Q131,79 136,86" fill="none" stroke="#e6edf3" stroke-width="2.3" stroke-linecap="round"/>
+    <circle cx="136" cy="91" r="8.5" fill="#f59e0b" stroke="#e6edf3" stroke-width="1.3"/>
+  </g>
+
+  <!-- Flèche montée de genou -->
+  <path d="M174 162 L174 130 M169 137 L174 128 L179 137" fill="none" stroke="#10b981" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="174" y="174" text-anchor="middle" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="7.5" font-weight="600">90° HANCHE</text>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · RACK MARCH</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">FRONT RACK</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">FRONT RACK MARCH · GENOUX HAUTS</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Roue abdominale à genoux avec rétroversion pelvienne">
+  <style>
+    .awrk_torso {
+      --base-dur: 3.2s;
+      transform-origin: 64px 168px;
+      animation: awrk_hinge calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .awrk_wheel {
+      --base-dur: 3.2s;
+      transform-origin: 128px 168px;
+      animation: awrk_roll calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .awrk_arms {
+      --base-dur: 3.2s;
+      transform-origin: 96px 112px;
+      animation: awrk_reach calc(var(--base-dur, 2.8s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes awrk_hinge {
+      0%, 100% { transform: rotate(0deg); }
+      48%, 56% { transform: rotate(46deg); }
+    }
+    @keyframes awrk_roll {
+      0%, 100% { transform: translateX(0px) rotate(0deg); }
+      48%, 56% { transform: translateX(58px) rotate(240deg); }
+    }
+    @keyframes awrk_reach {
+      0%, 100% { transform: rotate(0deg) scaleY(1); }
+      48%, 56% { transform: rotate(-28deg) scaleY(1.06); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Sol et tapis genoux -->
+  <line x1="20" y1="180" x2="220" y2="180" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <rect x="30" y="174" width="50" height="6" rx="2.5" fill="#1f2937" stroke="#30363d" stroke-width="1.2"/>
+
+  <!-- Tibias fixes au sol -->
+  <line x1="36" y1="173" x2="64" y2="173" stroke="#8b949e" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="64" cy="173" r="3" fill="#e6edf3"/>
+
+  <!-- Trajectoire au sol -->
+  <line x1="128" y1="178" x2="192" y2="178" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4 3"/>
+
+  <!-- Corps déroulé en rétroversion pelvienne -->
+  <g class="awrk_torso">
+    <!-- Cuisses -->
+    <line x1="64" y1="172" x2="68" y2="132" stroke="#8b949e" stroke-width="6" stroke-linecap="round"/>
+    <!-- Tronc arrondi en rétroversion (protection lombaire) -->
+    <path d="M68,132 Q80,115 98,112" fill="none" stroke="#10b981" stroke-width="6.5" stroke-linecap="round"/>
+    <!-- Tête neutre -->
+    <circle cx="110" cy="100" r="8" fill="#e6edf3"/>
+    <circle cx="68" cy="132" r="3.4" fill="#10b981"/>
+    <!-- Repère rétroversion pelvienne -->
+    <path d="M56 126 A14 14 0 0 0 68 142" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Bras vers la roue -->
+    <g class="awrk_arms">
+      <line x1="96" y1="112" x2="128" y2="168" stroke="#e6edf3" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <circle cx="96" cy="112" r="3" fill="#e6edf3"/>
+  </g>
+
+  <!-- Roue abdominale -->
+  <g class="awrk_wheel">
+    <circle cx="128" cy="168" r="11" fill="#1f2937" stroke="#38bdf8" stroke-width="2.6"/>
+    <line x1="119" y1="168" x2="137" y2="168" stroke="#8b949e" stroke-width="1.5"/>
+    <line x1="128" y1="159" x2="128" y2="177" stroke="#8b949e" stroke-width="1.5"/>
+    <circle cx="128" cy="168" r="3.2" fill="#f59e0b"/>
+  </g>
+
+  <text x="16" y="21" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9" font-weight="600">CORE · AB WHEEL</text>
+  <text x="224" y="21" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">RÉTROVERSION</text>
+  <text x="120" y="206" text-anchor="middle" fill="#e6edf3" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">ROUE ABDO GENOUX · RÉTROVERSION</text>
+</svg>

@@ -191,6 +191,18 @@ export function buildFreeSessionPlan({
  * Ordonnée du plus spécifique au plus générique.
  */
 const CATALOG_SYNONYMS = [
+  // Spécifiques v1.9.0 placés avant les synonymes génériques correspondants
+  { id: "KBOX_SINGLE_LEG_RDL", phrases: ["kbox single leg rdl", "rdl unilat kbox", "souleve de terre unipodal kbox"] },
+  { id: "KBOX_CALF_PRESS_BENT_KNEE", phrases: ["calf press", "presse mollet genou flechi", "soleaire genou flechi"] },
+  { id: "KBOX_HIGH_PULL_VELOCITY", phrases: ["high pull velocite", "kbox high pull velocite", "tirage haut velocite"] },
+  { id: "KBOX_SQUAT_VELOCITY_LIGHT", phrases: ["squat velocite", "kbox squat velocite"] },
+  { id: "KB_HIP_THRUST_SINGLE", phrases: ["hip thrust unilat", "hip thrust unilateral", "hip thrust une jambe", "kb hip thrust"] },
+  { id: "BARBELL_ROMANIAN_DEADLIFT_TEMPO", phrases: ["souleve de terre roumain barre tempo", "rdl barre tempo", "romanian deadlift tempo"] },
+  { id: "BAND_PALLOF_PRESS_SPLIT", phrases: ["pallof split", "pallof fente", "pallof press split"] },
+  { id: "KB_SUITCASE_CARRY", phrases: ["suitcase carry", "kb suitcase carry", "porte valise kb"] },
+  { id: "KB_RACK_MARCH", phrases: ["rack march", "kb rack march", "marche kettlebell rack"] },
+
+  // Catalogue de base (17)
   { id: "KBOX_SQUAT_BELT", phrases: ["belt squat", "ceinture pelvienne", "squat ceinture"] },
   { id: "KBOX_SQUAT_HARNESS", phrases: ["squat harnais", "harnais epaules", "squat bilateral harnais"] },
   { id: "KBOX_SPLIT_SQUAT", phrases: ["bulgare", "split squat", "fente unilaterale"] },
@@ -208,6 +220,34 @@ const CATALOG_SYNONYMS = [
   { id: "BAND_PSOAS_MARCH", phrases: ["psoas", "flexion de hanche resistee"] },
   { id: "BAND_FACE_PULL", phrases: ["face pull", "rotation externe scapulaire"] },
   { id: "CORE_MCGILL_BIG3", phrases: ["mcgill", "big 3", "big3", "curl up", "bird dog"] },
+
+  // Reste du catalogue étendu v1.9.0
+  { id: "PULL_UP_PRONATION_TEMPO_ECC", phrases: ["traction tempo", "traction excentrique"] },
+  { id: "PULL_UP_PRONATION_SCAP_ISOMETRIC", phrases: ["traction scapulaire", "scapulaire isometrique"] },
+  { id: "PULL_UP_PRONATION_STRICT_BW", phrases: ["traction stricte"] },
+  { id: "BARBELL_BENT_ROW_OVERHAND", phrases: ["bent row", "rowing barre buste penche"] },
+  { id: "BARBELL_OVERHEAD_PRESS_STRICT", phrases: ["overhead press", "developpe militaire strict"] },
+  { id: "DB_ONE_ARM_ROW_BRACE", phrases: ["one arm row", "rowing un bras", "rowing unilateral haltere"] },
+  { id: "KB_STRICT_PRESS_BOTTOM_UP", phrases: ["bottom up press", "press bottom up", "kettlebell bottom up"] },
+  { id: "AB_WHEEL_OFFSET_ANGLE", phrases: ["ab wheel offset", "roue abdo oblique", "roue abdominale oblique"] },
+  { id: "AB_WHEEL_ROLLOUT_KNEES", phrases: ["ab wheel", "roue abdo", "roue abdominale"] },
+  { id: "BAND_CHOP_DIAGONAL", phrases: ["diagonal chop", "band chop", "bucheron diagonal"] },
+  { id: "DB_DEADBUG_HOLD_LOAD", phrases: ["deadbug charge", "deadbug isometrique", "dead bug hold"] },
+  { id: "KB_WINDMILL_LIGHT", phrases: ["windmill", "moulin kettlebell"] },
+  { id: "BAND_CLAMSHELL_RESISTED", phrases: ["clamshell", "coquillage resiste"] },
+  { id: "BAND_TIBIALIS_DORSIFLEXION", phrases: ["tibialis", "tibial anterieur", "dorsiflexion elastique"] },
+  { id: "DB_STEP_UP_HIGH_BOX", phrases: ["step up", "montee sur banc"] },
+  { id: "KB_GOBLET_COSSACK_SQUAT", phrases: ["cossack", "squat cosaque"] },
+  { id: "BAND_HIGH_KNEE_DRIVE_FAST", phrases: ["high knee", "montee de genou explosive"] },
+  { id: "BAND_ACCELERATION_STEP_OUT", phrases: ["acceleration step", "pas d acceleration"] },
+  { id: "BARBELL_HANG_HIGH_PULL_LIGHT", phrases: ["hang high pull", "tirage suspension leger"] },
+  { id: "KB_SWING_SNAP_VELOCITY", phrases: ["kb swing", "kettlebell swing", "swing snap"] },
+  { id: "PLYO_ANKLE_POGO_SINGLE", phrases: ["pogo unipodal", "pogo single", "pogo une jambe"] },
+  { id: "PLYO_ANKLE_POGO_DOUBLE", phrases: ["pogo", "rebonds pogo"] },
+  { id: "PLYO_BOX_JUMP_STEP_DOWN", phrases: ["box jump"] },
+  { id: "PLYO_LATERAL_SKATER_BOUND", phrases: ["skater", "bonds lateraux patineur"] },
+  { id: "PLYO_SPLIT_SCISSOR_SWITCH", phrases: ["split scissor", "fentes sautees", "scissor switch"] },
+  { id: "PLYO_PUSH_UP_EXPLOSIVE_INCLINE", phrases: ["pompes explosives", "push up explosive"] },
 ];
 
 /**
@@ -239,7 +279,7 @@ function matchCatalogExerciseId(rawText) {
   }
 
   // Recherche d'un ID explicite dans les tokens (ex: `KBOX_SQUAT_BELT` ou `USER_PLAN_GAINAGE`)
-  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM|USER)_[A-Z0-9_]+\b/g);
+  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM|USER|PULL_UP|BARBELL|KB|AB_WHEEL|PLYO)_[A-Z0-9_]+\b/g);
   if (idTokens) {
     for (const token of idTokens) {
       if (idsByUpper.has(token)) {
@@ -251,9 +291,9 @@ function matchCatalogExerciseId(rawText) {
   const norm = normalizeLexical(rawText);
   if (!norm) return null;
 
-  // Priorité à une correspondance exacte normalisée sur les exercices utilisateur promus
+  // Priorité à une correspondance exacte normalisée sur les exercices utilisateur promus ou catégorisés
   for (const ex of allExercises) {
-    if (ex.is_user_catalog && normalizeLexical(ex.name) === norm) {
+    if ((ex.is_user_catalog || ex.category) && normalizeLexical(ex.name) === norm) {
       return ex.id;
     }
   }

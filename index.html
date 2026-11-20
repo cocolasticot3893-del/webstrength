@@ -965,7 +965,22 @@
         </div>
 
         <section class="guide-section" aria-label="Catalogue officiel">
-          <h3 id="free-catalog-heading">Catalogue (20 exercices)</h3>
+          <h3 id="free-catalog-heading" aria-live="polite">Catalogue (55 exercices)</h3>
+          <search class="free-search-box">
+            <label for="free-catalog-search" class="free-search-label">Rechercher un exercice</label>
+            <input
+              type="search"
+              id="free-catalog-search"
+              name="free_catalog_search"
+              class="free-search-input"
+              placeholder="Ex : traction pronation, pogo, kBox, roue…"
+              autocorrect="off"
+              autocapitalize="none"
+              spellcheck="false"
+              enterkeyhint="search"
+              autocomplete="off"
+            />
+          </search>
           <div class="segmented" role="group" aria-label="Filtrer par pôle matériel">
             <button
               type="button"
@@ -998,6 +1013,56 @@
               aria-pressed="false"
             >
               Élast./Core
+            </button>
+          </div>
+          <div class="free-cat-filters" role="group" aria-label="Filtrer par catégorie biomécanique">
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn is-active"
+              data-free-category="ALL"
+              aria-pressed="true"
+            >
+              Toutes
+            </button>
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn"
+              data-free-category="UPPER_BODY"
+              aria-pressed="false"
+            >
+              Haut / Tractions
+            </button>
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn"
+              data-free-category="CORE_TRUNK"
+              aria-pressed="false"
+            >
+              Tronc / Roue
+            </button>
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn"
+              data-free-category="POSTERIOR_HIP_ANKLE"
+              aria-pressed="false"
+            >
+              Chaîne Post.
+            </button>
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn"
+              data-free-category="VELOCITY"
+              aria-pressed="false"
+            >
+              Vitesse
+            </button>
+            <button
+              type="button"
+              class="seg-btn seg-cat-btn"
+              data-free-category="PLYOMETRICS"
+              aria-pressed="false"
+            >
+              Pliométrie
             </button>
           </div>
           <div id="free-catalog-picker" class="free-picker-list"></div>

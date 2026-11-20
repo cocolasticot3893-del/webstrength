@@ -1,0 +1,71 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Skater bound latéral : bond droite-gauche avec stabilisation de hanche">
+  <style>
+    .plyo_lsb_skater {
+      --base-dur: 1.5s;
+      transform-origin: 120px 140px;
+      animation: plyo_lsb_bound calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_lsb_trail {
+      --base-dur: 1.5s;
+      transform-origin: 120px 124px;
+      animation: plyo_lsb_sweep calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_lsb_arc {
+      --base-dur: 1.5s;
+      animation: plyo_lsb_glow calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes plyo_lsb_bound {
+      0%, 100% { transform: translate(-48px, 4px) rotate(-6deg); }
+      25%, 75% { transform: translate(0px, -18px) rotate(0deg); }
+      50% { transform: translate(48px, 4px) rotate(6deg); }
+    }
+    @keyframes plyo_lsb_sweep {
+      0%, 100% { transform: rotate(22deg); }
+      50% { transform: rotate(-22deg); }
+    }
+    @keyframes plyo_lsb_glow {
+      0%, 100% { opacity: 0.4; }
+      25%, 75% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Repères cibles d'appui gauche et droite -->
+  <rect x="50" y="182" width="32" height="5" rx="2.5" fill="#30363d" stroke="#f59e0b" stroke-width="1"/>
+  <rect x="158" y="182" width="32" height="5" rx="2.5" fill="#30363d" stroke="#f59e0b" stroke-width="1"/>
+
+  <!-- Arc parabolique de bond latéral -->
+  <g class="plyo_lsb_arc">
+    <path d="M68 156 Q120 98 172 156" fill="none" stroke="#10b981" stroke-width="2.2" stroke-dasharray="5 3" stroke-linecap="round"/>
+    <polyline points="164,154 173,157 170,147" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="76,154 67,157 70,147" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Patineur en bond latéral -->
+  <g class="plyo_lsb_skater">
+    <!-- Jambe libre croisée derrière -->
+    <g class="plyo_lsb_trail">
+      <polyline points="120,124 102,150 92,172" fill="none" stroke="#30363d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- Jambe d'appui amortissant -->
+    <polyline points="120,124 124,152 120,178" fill="none" stroke="#e6edf3" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="124" cy="152" r="3" fill="#e6edf3"/>
+    <!-- Barre de stabilisation horizontale de hanche -->
+    <line x1="108" y1="124" x2="132" y2="124" stroke="#38bdf8" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- Tronc -->
+    <line x1="120" y1="124" x2="120" y2="84" stroke="#10b981" stroke-width="6.8" stroke-linecap="round"/>
+    <!-- Bras balanciers -->
+    <polyline points="116,88 96,102 88,92" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="124,88 144,102 152,92" fill="none" stroke="#e6edf3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="120" cy="70" r="8" fill="#e6edf3"/>
+    <circle cx="120" cy="124" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">PLYO · SKATER BOUND</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">STABILISATION HANCHE</text>
+</svg>

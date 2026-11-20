@@ -1,0 +1,81 @@
+<svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fente sautée ciseau : changement rapide de jambes en vol et réception amortie">
+  <style>
+    .plyo_sss_body {
+      --base-dur: 1.3s;
+      transform-origin: 120px 140px;
+      animation: plyo_sss_air calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_sss_legA {
+      --base-dur: 1.3s;
+      transform-origin: 120px 124px;
+      animation: plyo_sss_swapA calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_sss_legB {
+      --base-dur: 1.3s;
+      transform-origin: 120px 124px;
+      animation: plyo_sss_swapB calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .plyo_sss_cue {
+      --base-dur: 1.3s;
+      animation: plyo_sss_flash calc(var(--base-dur, 1.6s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes plyo_sss_air {
+      0%, 100% { transform: translateY(10px); }
+      25%, 75% { transform: translateY(-22px); }
+      50% { transform: translateY(10px); }
+    }
+    @keyframes plyo_sss_swapA {
+      0%, 100% { transform: rotate(-34deg); }
+      50% { transform: rotate(34deg); }
+    }
+    @keyframes plyo_sss_swapB {
+      0%, 100% { transform: rotate(34deg); }
+      50% { transform: rotate(-34deg); }
+    }
+    @keyframes plyo_sss_flash {
+      0%, 50%, 100% { opacity: 0.25; }
+      25%, 75% { opacity: 1; }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Zone de réception amortie -->
+  <line x1="78" y1="188" x2="162" y2="188" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+
+  <!-- Flèche ciseau en vol -->
+  <g class="plyo_sss_cue">
+    <path d="M88 156 Q120 138 152 156" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+    <polyline points="145,157 153,156 149,149" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="95,157 87,156 91,149" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="180" y1="128" x2="180" y2="86" stroke="#10b981" stroke-width="2.2" stroke-linecap="round"/>
+    <polyline points="174,95 180,84 186,95" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Athlète fente ciseau -->
+  <g class="plyo_sss_body">
+    <!-- Jambe A -->
+    <g class="plyo_sss_legA">
+      <polyline points="120,124 128,150 116,174" fill="none" stroke="#8b949e" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="128" cy="150" r="2.8" fill="#e6edf3"/>
+    </g>
+    <!-- Jambe B -->
+    <g class="plyo_sss_legB">
+      <polyline points="120,124 128,150 116,174" fill="none" stroke="#e6edf3" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="128" cy="150" r="2.8" fill="#10b981"/>
+    </g>
+    <!-- Tronc vertical -->
+    <line x1="120" y1="124" x2="120" y2="82" stroke="#10b981" stroke-width="6.8" stroke-linecap="round"/>
+    <polyline points="120,86 136,100 144,86" fill="none" stroke="#38bdf8" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="120" cy="68" r="8" fill="#e6edf3"/>
+    <circle cx="120" cy="124" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">PLYO · SCISSOR SWITCH</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">CISEAU EN VOL</text>
+</svg>
