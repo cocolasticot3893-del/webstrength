@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Sprint en côte 8 à 10 pour cent : poussée puissante sur plan incliné et vecteur de propulsion ascendant">
+  <style>
+    .sprint_hill_drive {
+      --base-dur: 1.25s;
+      transform-origin: 64px 185px;
+      animation: sprint_hill_climb calc(var(--base-dur, 1.25s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_hill_knee {
+      --base-dur: 1.25s;
+      transform-origin: 118px 130px;
+      animation: sprint_hill_lift calc(var(--base-dur, 1.25s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_hill_arms {
+      --base-dur: 1.25s;
+      transform-origin: 146px 96px;
+      animation: sprint_hill_pump calc(var(--base-dur, 1.25s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_hill_arrow {
+      --base-dur: 1.25s;
+      animation: sprint_hill_surge calc(var(--base-dur, 1.25s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_hill_pulse {
+      --base-dur: 1.25s;
+      transform-origin: 64px 185px;
+      animation: sprint_hill_grf calc(var(--base-dur, 1.25s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes sprint_hill_climb {
+      0%, 100% { transform: translate(-7px, 2px); }
+      55%, 72% { transform: translate(11px, -3px); }
+    }
+    @keyframes sprint_hill_lift {
+      0%, 100% { transform: rotate(9deg); }
+      55%, 72% { transform: rotate(-11deg); }
+    }
+    @keyframes sprint_hill_pump {
+      0%, 100% { transform: rotate(-7deg); }
+      55%, 72% { transform: rotate(9deg); }
+    }
+    @keyframes sprint_hill_surge {
+      0%, 100% { opacity: 0.3; transform: translate(-5px, 1.5px); }
+      55%, 75% { opacity: 1; transform: translate(6px, -1.5px); }
+    }
+    @keyframes sprint_hill_grf {
+      0%, 100% { opacity: 0.9; transform: scale(1.1); }
+      55%, 75% { opacity: 0.15; transform: scale(0.55); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Plan incliné / Côte 8-10% -->
+  <polygon points="18,198 222,144 222,198" fill="#1f2937" fill-opacity="0.55"/>
+  <line x1="18" y1="198" x2="222" y2="198" stroke="#30363d" stroke-width="1.4" stroke-dasharray="4 4"/>
+  <line x1="18" y1="198" x2="222" y2="144" stroke="#8b949e" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- Indication pente -->
+  <path d="M168 198 A46 46 0 0 1 172 158" fill="none" stroke="#38bdf8" stroke-width="1.3" stroke-opacity="0.7"/>
+  <text x="196" y="186" text-anchor="middle" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">8-10%</text>
+
+  <!-- Point de poussée sur la pente -->
+  <circle class="sprint_hill_pulse" cx="64" cy="185" r="8" fill="#f59e0b" fill-opacity="0.32" stroke="#f59e0b" stroke-width="1.4"/>
+
+  <!-- Athlète en poussée montante -->
+  <g class="sprint_hill_drive">
+    <!-- Jambe arrière en poussée puissante -->
+    <polyline points="56,187 64,184 91,157 118,130" fill="none" stroke="#8b949e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Jambe avant montant haut dans la pente -->
+    <g class="sprint_hill_knee">
+      <polyline points="118,130 149,124 139,154 148,153" fill="none" stroke="#e6edf3" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="149" cy="124" r="2.8" fill="#10b981"/>
+    </g>
+    <!-- Tronc penché vers la pente -->
+    <line x1="118" y1="130" x2="146" y2="96" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+    <!-- Bras en poussée puissante -->
+    <g class="sprint_hill_arms">
+      <polyline points="146,96 120,96 108,113" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="146,96 167,103 177,81" fill="none" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- Tête et articulations -->
+    <circle cx="158" cy="83" r="8.2" fill="#e6edf3"/>
+    <circle cx="64" cy="184" r="3" fill="#f59e0b"/>
+    <circle cx="91" cy="157" r="2.8" fill="#e6edf3"/>
+    <circle cx="118" cy="130" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <!-- Flèche de propulsion ascendante parallèle à la côte -->
+  <g class="sprint_hill_arrow">
+    <line x1="158" y1="136" x2="214" y2="121" stroke="#10b981" stroke-width="3.2" stroke-linecap="round"/>
+    <polyline points="204,117 216,120.5 207,129" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="166" y1="122" x2="200" y2="113" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="6 4" stroke-linecap="round"/>
+    <line x1="34" y1="138" x2="66" y2="129" stroke="#10b981" stroke-width="1.6" stroke-dasharray="6 4" stroke-linecap="round" stroke-opacity="0.6"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">SPRINT · UPHILL</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">POWER DRIVE 8-10%</text>
+</svg>

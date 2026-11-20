@@ -1,5 +1,5 @@
 /**
- * Catalogue étendu WebStrength v1.9.0 — 35 exercices complémentaires répartis en 5 catégories.
+ * Catalogue étendu WebStrength v1.12.0 — 40 exercices complémentaires répartis en 5 catégories.
  * Tous les exercices respectent l'invariant des 3 pôles moteur (`KBOX`, `DUMBBELL`, `BAND_CORE`)
  * et sont orientés endurance (cyclisme, trail, ski de fond) sans hypertrophie parasite.
  */
@@ -57,7 +57,7 @@ export const EXTENDED_CATEGORIES = deepFreeze({
 });
 
 /**
- * Définition brute des 35 exercices étendus.
+ * Définition brute des 40 exercices étendus.
  */
 const RAW_EXTENDED_CATALOG = [
   // =========================================================================
@@ -839,7 +839,7 @@ const RAW_EXTENDED_CATALOG = [
   },
 
   // =========================================================================
-  // 4. VELOCITY (6)
+  // 4. VELOCITY (10)
   // =========================================================================
   {
     id: "KBOX_HIGH_PULL_VELOCITY",
@@ -1037,9 +1037,144 @@ const RAW_EXTENDED_CATALOG = [
       ],
     },
   },
+  {
+    id: "SPRINT_ACCEL_DRIVE_15M",
+    category: "VELOCITY",
+    pole: "DUMBBELL",
+    name: "Accélération Courte Poussée 15 m",
+    short_desc: "Projection horizontale explosive sur 15 m — transfert direct aux relances danseuse vélo, démarrages trail et poussée ski de fond.",
+    pattern: "VELOCITY",
+    is_bodyweight: true,
+    bodyweight_base_kg: 70,
+    allowed_loads: [0, 2, 4],
+    unit_label: "kg",
+    default_sets: 4,
+    default_reps: 5,
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 1.1,
+    beta_ecc: 0.9,
+    is_timed: true,
+    guide: {
+      svg_path: "./assets/exos/SPRINT_ACCEL_DRIVE_15M.svg",
+      tempo_badge: "Poussée 15 m • 5 s/sprint",
+      setup: "Départ debout pieds décalés, buste incliné à 45° dans l'axe de la jambe arrière, regard posé 3 m devant soi.",
+      execution: [
+        "Déclenche la chute avant en repoussant violemment le sol vers l'arrière par une triple extension complète.",
+        "Enchaîne des appuis courts et puissants sous le centre de gravité avec un balancier de bras ample et vif.",
+        "Redresse progressivement le buste sur les derniers mètres avant de décélérer en souplesse après la marque 15 m.",
+      ],
+      errors: [
+        "Se redresser à la verticale dès le premier appui en cassant l'angle de poussée horizontale.",
+        "Poser le pied trop loin devant les hanches, ce qui crée une force de freinage à chaque foulée.",
+        "Enchaîner la répétition suivante sans récupération complète (viser 90 à 120 s de repos).",
+      ],
+    },
+  },
+  {
+    id: "SPRINT_FLYING_CADENCE_BURST",
+    category: "VELOCITY",
+    pole: "DUMBBELL",
+    name: "Sprint Lancé Vélocité & Cadence",
+    short_desc: "Pointe de vitesse lancée à haute fréquence d'appuis — recrutement neuromusculaire maximal pour vélocité cyclisme, foulée trail et rythme ski.",
+    pattern: "VELOCITY",
+    is_bodyweight: true,
+    bodyweight_base_kg: 68,
+    allowed_loads: [0, 2, 4],
+    unit_label: "kg",
+    default_sets: 4,
+    default_reps: 4,
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 1.15,
+    beta_ecc: 0.95,
+    is_timed: true,
+    guide: {
+      svg_path: "./assets/exos/SPRINT_FLYING_CADENCE_BURST.svg",
+      tempo_badge: "Sprint lancé • 4 s max",
+      setup: "Couloir plat de 40 m composé d'une zone d'élan progressive de 15-20 m suivie d'une zone chronométrée de 20 m.",
+      execution: [
+        "Monte progressivement en vitesse sur la zone d'élan en conservant épaules, mâchoire et mains relâchées.",
+        "Maintiens une posture haute et une cadence d'appuis maximale sur la zone lancée avec griffé actif sous le bassin.",
+        "Coupe l'effort progressivement sans freinage brusque sur 15 m après la ligne de sortie.",
+      ],
+      errors: [
+        "Crisper les trapèzes et les bras en perdant la fluidité gestuelle à vitesse maximale.",
+        "Basculer le bassin en antéversion excessive, augmentant la tension sur les ischio-jambiers.",
+        "Attaquer le sol par le talon devant le centre de masse au lieu d'un contact médio-avant-pied actif.",
+      ],
+    },
+  },
+  {
+    id: "SPRINT_UPHILL_POWER_DRIVE",
+    category: "VELOCITY",
+    pole: "DUMBBELL",
+    name: "Sprint en Côte Courte (Puissance)",
+    short_desc: "Sprint court en pente de 6 à 10 % à faible choc excentrique — puissance concentrique fessiers/mollets pour bosses vélo, montées trail et ski de fond.",
+    pattern: "VELOCITY",
+    is_bodyweight: true,
+    bodyweight_base_kg: 72,
+    allowed_loads: [0, 2, 4],
+    unit_label: "kg",
+    default_sets: 5,
+    default_reps: 10,
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 1.15,
+    beta_ecc: 0.85,
+    is_timed: true,
+    guide: {
+      svg_path: "./assets/exos/SPRINT_UPHILL_POWER_DRIVE.svg",
+      tempo_badge: "Puissance côte • 10 s/sprint",
+      setup: "Côte régulière de 6 à 10 % sur revêtement stable, départ athlétique penché dans la pente, coudes fléchis à 90°.",
+      execution: [
+        "Repousse puissamment la pente à chaque foulée en alignant cheville, genou, hanche et épaules.",
+        "Garde une montée de genoux dynamique et un bras énergique pour soutenir la fréquence pendant 10 secondes.",
+        "Redescends en marchant lentement pour garantir une récupération neuromusculaire complète (2 à 3 min).",
+      ],
+      errors: [
+        "Casser le buste au niveau des hanches en s'effondrant vers l'avant dans la pente.",
+        "Allonger exagérément la foulée au détriment de la fréquence et de l'alignement du pied sous la hanche.",
+        "Redescendre en trottinant vite et cumuler de la fatigue avant la répétition suivante.",
+      ],
+    },
+  },
+  {
+    id: "SPRINT_RESISTED_BAND_START",
+    category: "VELOCITY",
+    pole: "BAND_CORE",
+    name: "Départ Sprint Résisté à l'Élastique",
+    short_desc: "Mise en action horizontale sous résistance progressive à la taille — couple de démarrage explosif pour relances cyclisme, trail et ski de fond.",
+    pattern: "VELOCITY",
+    is_bodyweight: false,
+    allowed_loads: [10, 15, 25],
+    unit_label: "niv",
+    default_sets: 4,
+    default_reps: 4,
+    parasitic_reps: 0,
+    unit_tut_sec: 1.0,
+    cns_spinal_tax: 1.05,
+    beta_ecc: 0.9,
+    is_timed: true,
+    guide: {
+      svg_path: "./assets/exos/SPRINT_RESISTED_BAND_START.svg",
+      tempo_badge: "Départ résisté • 4 s/sprint",
+      setup: "Élastique fort passé autour du bassin et ancré solidement derrière soi (ou tenu par un partenaire), posture inclinée à 45° sous pré-tension.",
+      execution: [
+        "Ancre l'avant-pied au sol et engage une poussée horizontale maximale contre la tension progressive de l'élastique.",
+        "Enchaîne 4 à 6 appuis explosifs en gardant la tête, le tronc et la jambe d'impulsion parfaitement alignés.",
+        "Freine en fin d'extension puis recule en marchant sous contrôle sans te laisser tracter brutalement en arrière.",
+      ],
+      errors: [
+        "Creuser les lombaires sous la traction arrière au lieu de verrouiller la sangle abdominale.",
+        "Se redresser trop tôt et piétiner sur place au lieu de projeter les hanches vers l'avant.",
+        "Choisir une tension excessive qui dégrade la mécanique de course et bloque la triple extension.",
+      ],
+    },
+  },
 
   // =========================================================================
-  // 5. PLYOMETRICS (6)
+  // 5. PLYOMETRICS (7)
   // =========================================================================
   {
     id: "PLYO_ANKLE_POGO_DOUBLE",
@@ -1245,9 +1380,43 @@ const RAW_EXTENDED_CATALOG = [
       ],
     },
   },
+  {
+    id: "SPRINT_DECEL_STICK_LANDING",
+    category: "PLYOMETRICS",
+    pole: "DUMBBELL",
+    name: "Freinage Sprint & Arrêt Contrôlé (Stick)",
+    short_desc: "Décélération rapide suivie d'un blocage athlétique stable — contrôle excentrique quadriceps/genoux pour descentes trail, relances VTT et ski de fond.",
+    pattern: "PLYO",
+    is_bodyweight: true,
+    bodyweight_base_kg: 70,
+    allowed_loads: [0, 2, 4],
+    unit_label: "kg",
+    default_sets: 4,
+    default_reps: 4,
+    parasitic_reps: 0,
+    unit_tut_sec: 2.5,
+    cns_spinal_tax: 1.1,
+    beta_ecc: 1.2,
+    is_timed: false,
+    guide: {
+      svg_path: "./assets/exos/SPRINT_DECEL_STICK_LANDING.svg",
+      tempo_badge: "Freinage stick • 2.5s/rep",
+      setup: "Couloir d'élan de 8 à 10 m suivi d'une ligne d'arrêt matérialisée au sol, buste gainé prêt à abaisser le centre de gravité.",
+      execution: [
+        "Accélère franchement sur 8 à 10 m puis déclenche un freinage court par petits pas rapides en abaissant les hanches.",
+        "Bloque l'arrêt sur un appui athlétique ferme (stick) genoux alignés sur les orteils et buste contrôlé.",
+        "Tiens la position figée 2 secondes complètes avant de revenir au départ en marchant.",
+      ],
+      errors: [
+        "Laisser les genoux rentrer vers l'intérieur (valgus) lors de l'absorption excentrique du freinage.",
+        "Freiner jambes quasi tendues en transférant le choc directement sur les articulations et les lombaires.",
+        "Basculer les épaules en avant après la ligne au lieu d'abaisser le bassin pour stabiliser l'arrêt.",
+      ],
+    },
+  },
 ];
 
-/** Liste ordonnée et immuable des 35 exercices du catalogue étendu. */
+/** Liste ordonnée et immuable des 40 exercices du catalogue étendu. */
 export const EXTENDED_CATALOG_EXERCISES = deepFreeze(RAW_EXTENDED_CATALOG);
 
 /** Dictionnaire immuable indexé par ID du catalogue étendu. */
@@ -1255,7 +1424,7 @@ export const EXTENDED_CATALOG_BY_ID = deepFreeze(
   Object.fromEntries(EXTENDED_CATALOG_EXERCISES.map((ex) => [ex.id, ex]))
 );
 
-/** Liste immuable des 35 identifiants du catalogue étendu. */
+/** Liste immuable des 40 identifiants du catalogue étendu. */
 export const EXTENDED_EXERCISE_IDS = deepFreeze(
   EXTENDED_CATALOG_EXERCISES.map((ex) => ex.id)
 );

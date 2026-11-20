@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Sprint lancé pointe de vélocité : buste droit, cycle avant haute fréquence, genou haut et attaque médio-pied sous la hanche">
+  <style>
+    .sprint_fly_body {
+      --base-dur: 0.65s;
+      transform-origin: 120px 114px;
+      animation: sprint_fly_bob calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_lead {
+      --base-dur: 0.65s;
+      transform-origin: 120px 114px;
+      animation: sprint_fly_knee calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_stance {
+      --base-dur: 0.65s;
+      transform-origin: 120px 114px;
+      animation: sprint_fly_strike calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_arm_f {
+      --base-dur: 0.65s;
+      transform-origin: 124px 70px;
+      animation: sprint_fly_swing_f calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_arm_b {
+      --base-dur: 0.65s;
+      transform-origin: 124px 70px;
+      animation: sprint_fly_swing_b calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_contact {
+      --base-dur: 0.65s;
+      transform-origin: 120px 186px;
+      animation: sprint_fly_tap calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_fly_streaks {
+      --base-dur: 0.65s;
+      animation: sprint_fly_rush calc(var(--base-dur, 0.65s) / var(--anim-speed, 1)) linear infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes sprint_fly_bob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    @keyframes sprint_fly_knee {
+      0%, 100% { transform: rotate(-6deg); }
+      50% { transform: rotate(12deg); }
+    }
+    @keyframes sprint_fly_strike {
+      0%, 100% { transform: rotate(6deg); }
+      50% { transform: rotate(-14deg); }
+    }
+    @keyframes sprint_fly_swing_f {
+      0%, 100% { transform: rotate(-10deg); }
+      50% { transform: rotate(16deg); }
+    }
+    @keyframes sprint_fly_swing_b {
+      0%, 100% { transform: rotate(10deg); }
+      50% { transform: rotate(-16deg); }
+    }
+    @keyframes sprint_fly_tap {
+      0%, 100% { opacity: 0.95; transform: scaleX(1.1); }
+      50% { opacity: 0.15; transform: scaleX(0.45); }
+    }
+    @keyframes sprint_fly_rush {
+      0% { opacity: 0.25; transform: translateX(12px); }
+      50% { opacity: 1; transform: translateX(0px); }
+      100% { opacity: 0.25; transform: translateX(-14px); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Piste rapide -->
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Axe vertical hanche -> attaque médio-pied -->
+  <line x1="120" y1="62" x2="120" y2="186" stroke="#38bdf8" stroke-width="1.3" stroke-dasharray="4 4" stroke-opacity="0.5"/>
+  <text x="120" y="202" text-anchor="middle" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="8">MÉDIO-PIED SOUS HANCHE</text>
+
+  <!-- Lignes cinétiques haute fréquence -->
+  <g class="sprint_fly_streaks">
+    <line x1="22" y1="74" x2="78" y2="74" stroke="#10b981" stroke-width="2" stroke-dasharray="14 5" stroke-linecap="round"/>
+    <line x1="16" y1="96" x2="86" y2="96" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="10 4" stroke-linecap="round" stroke-opacity="0.8"/>
+    <line x1="26" y1="122" x2="74" y2="122" stroke="#10b981" stroke-width="1.8" stroke-dasharray="12 5" stroke-linecap="round" stroke-opacity="0.7"/>
+    <line x1="172" y1="84" x2="218" y2="84" stroke="#10b981" stroke-width="1.8" stroke-dasharray="10 5" stroke-linecap="round" stroke-opacity="0.75"/>
+    <line x1="182" y1="108" x2="222" y2="108" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="8 4" stroke-linecap="round" stroke-opacity="0.6"/>
+  </g>
+
+  <!-- Contact sol bref sous la hanche -->
+  <ellipse class="sprint_fly_contact" cx="120" cy="186" rx="15" ry="3.2" fill="#f59e0b" fill-opacity="0.65"/>
+
+  <!-- Arc cycle avant -->
+  <path d="M168 112 A42 42 0 0 1 132 162" fill="none" stroke="#10b981" stroke-width="1.8" stroke-dasharray="5 3" stroke-linecap="round" stroke-opacity="0.8"/>
+  <polyline points="139,165 130,162 134,154" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Coureur buste droit en pleine vélocité -->
+  <g class="sprint_fly_body">
+    <!-- Jambe d'appui : attaque médio-pied active sous la hanche -->
+    <g class="sprint_fly_stance">
+      <polyline points="120,114 123,149 118,183 130,184" fill="none" stroke="#8b949e" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="123" cy="149" r="2.6" fill="#e6edf3"/>
+      <circle cx="122" cy="183" r="3" fill="#f59e0b"/>
+    </g>
+
+    <!-- Jambe libre : genou haut + pied en dorsiflexion (cycle avant) -->
+    <g class="sprint_fly_lead">
+      <polyline points="120,114 156,110 151,142 161,140" fill="none" stroke="#e6edf3" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="156" cy="110" r="3" fill="#10b981"/>
+    </g>
+
+    <!-- Bras arrière et bras avant à 90 degrés -->
+    <g class="sprint_fly_arm_b">
+      <polyline points="124,70 100,88 86,84" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g class="sprint_fly_arm_f">
+      <polyline points="124,70 144,86 156,70" fill="none" stroke="#e6edf3" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Buste droit haute posture -->
+    <line x1="120" y1="114" x2="124" y2="66" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+    <!-- Tête et hanche -->
+    <circle cx="126" cy="51" r="8.2" fill="#e6edf3"/>
+    <circle cx="120" cy="114" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">SPRINT · FLYING</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">CADENCE · MAX V</text>
+</svg>

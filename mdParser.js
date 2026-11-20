@@ -251,6 +251,50 @@ const CATALOG_SYNONYMS = [
   { id: "PLYO_LATERAL_SKATER_BOUND", phrases: ["skater", "bonds lateraux patineur"] },
   { id: "PLYO_SPLIT_SCISSOR_SWITCH", phrases: ["split scissor", "fentes sautees", "scissor switch"] },
   { id: "PLYO_PUSH_UP_EXPLOSIVE_INCLINE", phrases: ["pompes explosives", "push up explosive"] },
+
+  // Sprints v1.12.0
+  {
+    id: "SPRINT_RESISTED_BAND_START",
+    phrases: [
+      "depart sprint resiste",
+      "sprint resiste",
+      "resisted sprint",
+      "sprint elastique",
+      "depart resiste elastique",
+    ],
+  },
+  {
+    id: "SPRINT_UPHILL_POWER_DRIVE",
+    phrases: ["sprint en cote", "sprint cote", "hill sprint", "uphill sprint"],
+  },
+  {
+    id: "SPRINT_FLYING_CADENCE_BURST",
+    phrases: ["sprint lance", "flying sprint", "sprint velocite", "sprint cadence"],
+  },
+  {
+    id: "SPRINT_DECEL_STICK_LANDING",
+    phrases: [
+      "freinage sprint",
+      "sprint freinage",
+      "deceleration sprint",
+      "sprint deceleration",
+      "stick landing",
+      "arret controle stick",
+    ],
+  },
+  {
+    id: "SPRINT_ACCEL_DRIVE_15M",
+    phrases: [
+      "acceleration courte",
+      "acceleration 15",
+      "accel drive",
+      "poussee 15 m",
+      "poussee 15m",
+      "sprint 15 m",
+      "sprint 15m",
+      "sprint acceleration",
+    ],
+  },
 ];
 
 /**
@@ -282,7 +326,7 @@ function matchCatalogExerciseId(rawText) {
   }
 
   // Recherche d'un ID explicite dans les tokens (ex: `KBOX_SQUAT_BELT` ou `USER_PLAN_GAINAGE`)
-  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM|USER|PULL_UP|BARBELL|KB|AB_WHEEL|PLYO)_[A-Z0-9_]+\b/g);
+  const idTokens = upperTrimmed.match(/\b(?:KBOX|DB|BAND|CORE|CUSTOM|USER|PULL_UP|BARBELL|KB|AB_WHEEL|PLYO|SPRINT)_[A-Z0-9_]+\b/g);
   if (idTokens) {
     for (const token of idTokens) {
       if (idsByUpper.has(token)) {

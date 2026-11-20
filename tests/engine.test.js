@@ -2243,17 +2243,17 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
 
     const all = getAllCatalogExercises();
     assert.equal(all.length, ALL_OFFICIAL_EXERCISES.length + 1);
-    assert.equal(all.length, 56);
+    assert.equal(all.length, 61);
     assert.ok(all.some((ex) => ex.id === id1));
 
     // Invariant strict du catalogue officiel
     assert.equal(EXERCISE_IDS.length, 17);
     assert.equal(CATALOG.length, 17);
 
-    // Suppression unitaire propre -> retour à 55 exercices officiels (17 base + 3 intégrés + 35 étendus)
+    // Suppression unitaire propre -> retour à 60 exercices officiels (17 base + 3 intégrés + 40 étendus)
     assert.equal(removeUserExercise(id1), true);
     assert.equal(getUserExercisesList().length, 0);
-    assert.equal(getAllCatalogExercises().length, 55);
+    assert.equal(getAllCatalogExercises().length, 60);
   });
 
   it("Parité mathématique exacte entre CUSTOM_BAND_CORE et sa version promue USER_*", () => {
@@ -2672,7 +2672,7 @@ describe("8. Promotion Catalogue Dynamique (USER_*), Assainissement SVG & Export
       (ex) => ex.id === "USER_TIRAGE_HORIZONTAL_ELASTIQUE"
     );
     assert.equal(matchingRowEntries.length, 1);
-    assert.equal(allWithStale.length, 55);
+    assert.equal(allWithStale.length, 60);
 
     // 3. Vérification des 2 fichiers SVG sur disque
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -2987,10 +2987,10 @@ describe("9. Sync Google Drive Webhook (driveSync.js & vault.js)", () => {
 });
 
 // ============================================================================
-// 10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie, SVG & SW
+// 10. Catalogue Étendu (60 exercices), PDC, Vitesse/Pliométrie, SVG & SW
 // ============================================================================
 
-describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie, SVG & Service Worker", () => {
+describe("10. Catalogue Étendu (60 exercices), PDC, Vitesse/Pliométrie, SVG & Service Worker", () => {
   let restoreLocalStorage;
 
   beforeEach(() => {
@@ -3007,17 +3007,17 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     restoreLocalStorage = undefined;
   });
 
-  it("respecte les invariants du catalogue 55 exercices, le gel profond et les 5 catégories (35 étendus)", () => {
+  it("respecte les invariants du catalogue 60 exercices, le gel profond et les 5 catégories (40 étendus)", () => {
     assert.equal(EXERCISE_IDS.length, 17);
     assert.equal(CATALOG.length, 17);
     assert.equal(INTEGRATED_USER_EXERCISES.length, 3);
-    assert.equal(EXTENDED_EXERCISE_IDS.length, 35);
-    assert.equal(EXTENDED_CATALOG_EXERCISES.length, 35);
-    assert.equal(ALL_OFFICIAL_EXERCISES.length, 55);
-    assert.equal(getAllCatalogExercises().length, 55);
+    assert.equal(EXTENDED_EXERCISE_IDS.length, 40);
+    assert.equal(EXTENDED_CATALOG_EXERCISES.length, 40);
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 60);
+    assert.equal(getAllCatalogExercises().length, 60);
 
     const uniqueOfficialIds = new Set(ALL_OFFICIAL_EXERCISES.map((ex) => ex.id));
-    assert.equal(uniqueOfficialIds.size, 55);
+    assert.equal(uniqueOfficialIds.size, 60);
 
     assert.equal(Object.isFrozen(EXTENDED_CATEGORIES), true);
     assert.equal(Object.isFrozen(EXTENDED_CATALOG_EXERCISES), true);
@@ -3034,8 +3034,8 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
       UPPER_BODY: 7,
       CORE_TRUNK: 8,
       POSTERIOR_HIP_ANKLE: 8,
-      VELOCITY: 6,
-      PLYOMETRICS: 6,
+      VELOCITY: 10,
+      PLYOMETRICS: 7,
     };
     assert.deepEqual(
       Object.keys(EXTENDED_CATEGORIES).sort(),
@@ -3208,12 +3208,12 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     assert.equal(copPayload.description.includes("| PDC |"), false);
   });
 
-  it("calcule proprement tous les exercices des catégories VELOCITY (6) et PLYOMETRICS (6)", () => {
+  it("calcule proprement tous les exercices des catégories VELOCITY (10) et PLYOMETRICS (7)", () => {
     const velocityExos = EXTENDED_CATALOG_EXERCISES.filter((ex) => ex.category === "VELOCITY");
     const plyoExos = EXTENDED_CATALOG_EXERCISES.filter((ex) => ex.category === "PLYOMETRICS");
 
-    assert.equal(velocityExos.length, 6);
-    assert.equal(plyoExos.length, 6);
+    assert.equal(velocityExos.length, 10);
+    assert.equal(plyoExos.length, 7);
 
     for (const [catName, list] of [
       ["VELOCITY", velocityExos],
@@ -3256,7 +3256,7 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
       });
       const parsedTelemetry = parseTelemetryJsonFromDescription(payload.description);
       assert.ok(parsedTelemetry);
-      assert.equal(parsedTelemetry.ex.length, 6);
+      assert.equal(parsedTelemetry.ex.length, list.length);
 
       for (const item of sessionItems) {
         const singleMetrics = calculateSessionMetrics({
@@ -3272,7 +3272,7 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     }
   });
 
-  it("valide les 55 fichiers SVG sur disque : unicité des chemins, taille < 8192 o et assainissement XSS strict", () => {
+  it("valide les 60 fichiers SVG sur disque : unicité des chemins, taille < 8192 o et assainissement XSS strict", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const seenPaths = new Set();
 
@@ -3303,14 +3303,14 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
       assert.equal(/javascript\s*:/i.test(cleanSvg), false, `${svgPath} contient javascript:`);
     }
 
-    assert.equal(seenPaths.size, 55);
+    assert.equal(seenPaths.size, 60);
   });
 
-  it("vérifie le Service Worker sw.js v1.11.1 : CACHE_NAME, extendedCatalog.js, directoryBuilder.js et pré-cache des 55 SVG", () => {
+  it("vérifie le Service Worker sw.js v1.12.0 : CACHE_NAME, extendedCatalog.js, directoryBuilder.js et pré-cache des 60 SVG", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
 
-    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.11\.1["']\s*;/);
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.12\.0["']\s*;/);
 
     const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
     assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
@@ -3329,6 +3329,11 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
       true,
       "./directoryBuilder.js doit être dans PRECACHE_ASSETS"
     );
+
+    const precachedSvgPaths = Array.from(precachedPaths).filter(
+      (p) => p.startsWith("./assets/exos/") && p.endsWith(".svg")
+    );
+    assert.equal(precachedSvgPaths.length, 60);
 
     for (const ex of ALL_OFFICIAL_EXERCISES) {
       assert.equal(
@@ -3432,19 +3437,19 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     restoreLocalStorage = undefined;
   });
 
-  it("recense les 55 officiels + 1 USER_* dynamique (56 au total) et préserve EXERCISE_IDS.length === 17", () => {
+  it("recense les 60 officiels + 1 USER_* dynamique (61 au total) et préserve EXERCISE_IDS.length === 17", () => {
     assert.equal(EXERCISE_IDS.length, 17);
-    assert.equal(ALL_OFFICIAL_EXERCISES.length, 55);
-    assert.equal(getAllCatalogExercises().length, 55);
-    assert.equal(filterCatalogExercises(getAllCatalogExercises()).length, 55);
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 60);
+    assert.equal(getAllCatalogExercises().length, 60);
+    assert.equal(filterCatalogExercises(getAllCatalogExercises()).length, 60);
 
     const saved = createDynamicUserExercise();
     assert.equal(saved.id.startsWith("USER_"), true);
     assert.equal(EXERCISE_IDS.length, 17);
 
     const allWithUser = getAllCatalogExercises();
-    assert.equal(allWithUser.length, 56);
-    assert.equal(filterCatalogExercises(allWithUser).length, 56);
+    assert.equal(allWithUser.length, 61);
+    assert.equal(filterCatalogExercises(allWithUser).length, 61);
 
     // Cas limites défensifs de filterCatalogExercises
     assert.deepEqual(filterCatalogExercises(null), []);
@@ -3456,11 +3461,11 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
         category: "",
         equipment: "",
       }).length,
-      56
+      61
     );
   });
 
-  it("filtre exhaustivement les 7 catégories DIRECTORY_CATEGORIES (55 officiels et 56 avec USER_* dynamique)", () => {
+  it("filtre exhaustivement les 7 catégories DIRECTORY_CATEGORIES (60 officiels et 61 avec USER_* dynamique)", () => {
     assert.equal(Object.isFrozen(DIRECTORY_CATEGORIES), true);
     assert.deepEqual(
       DIRECTORY_CATEGORIES.map((entry) => entry.id),
@@ -3476,12 +3481,12 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     );
 
     const expectedOfficialCounts = {
-      ALL: 55,
+      ALL: 60,
       UPPER_BODY: 10,
       CORE_TRUNK: 14,
       POSTERIOR_HIP_ANKLE: 19,
-      VELOCITY: 6,
-      PLYOMETRICS: 6,
+      VELOCITY: 10,
+      PLYOMETRICS: 7,
       PERSO: 3,
     };
 
@@ -3513,7 +3518,7 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     const allWithDynamic = getAllCatalogExercises();
     const expectedDynamicCounts = {
       ...expectedOfficialCounts,
-      ALL: 56,
+      ALL: 61,
       PERSO: 4,
     };
 
@@ -3546,17 +3551,17 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     const concreteEquipments = equipmentIds.filter((id) => id !== "ALL");
     const expectedOfficialEqCounts = {
       KBOX: 11,
-      BAND: 13,
+      BAND: 14,
       DUMBBELL: 8,
       BARBELL: 4,
       KETTLEBELL: 7,
       AB_WHEEL: 2,
-      PDC: 20,
+      PDC: 24,
     };
 
     assert.equal(
       filterCatalogExercises(ALL_OFFICIAL_EXERCISES, { equipment: "ALL" }).length,
-      55
+      60
     );
 
     for (const eqCode of concreteEquipments) {
@@ -3602,7 +3607,7 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
       true
     );
 
-    // Cas limite défensif et couverture complète sur les 55 officiels
+    // Cas limite défensif et couverture complète sur les 60 officiels
     assert.deepEqual(getExerciseEquipments(null), ["BAND"]);
     for (const ex of ALL_OFFICIAL_EXERCISES) {
       const eqs = getExerciseEquipments(ex);
@@ -3642,7 +3647,7 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     const qPaddedMixed = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
       query: "  ÉLaStIqUeS  ",
     });
-    assert.equal(qAccented.length, 13);
+    assert.equal(qAccented.length, 14);
     assert.deepEqual(
       qAccented.map((ex) => ex.id),
       qUpperAscii.map((ex) => ex.id)
@@ -3690,7 +3695,7 @@ describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
     );
   });
 
-  it("contrôle les SVG des 55 exercices officiels sur disque et l'assainissement svg_inline du USER_* dynamique", () => {
+  it("contrôle les SVG des 60 exercices officiels sur disque et l'assainissement svg_inline du USER_* dynamique", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
     for (const ex of ALL_OFFICIAL_EXERCISES) {
@@ -4336,5 +4341,514 @@ describe("12. Correctifs Recherche URL & Constructeur de Séance Catalogue v1.11
       false,
       "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
     );
+  });
+});
+
+// ============================================================================
+// 13. Extension Sprint v1.12.0 (60 exercices) & SVG Animés
+// ============================================================================
+
+describe("13. Extension Sprint v1.12.0 (60 exercices) & SVG Animés", () => {
+  let restoreLocalStorage;
+
+  const SPRINT_SPECS = [
+    {
+      id: "SPRINT_ACCEL_DRIVE_15M",
+      category: "VELOCITY",
+      pole: "DUMBBELL",
+      equipments: ["PDC"],
+      is_bodyweight: true,
+      is_timed: true,
+      allowed_loads: [0, 2, 4],
+    },
+    {
+      id: "SPRINT_FLYING_CADENCE_BURST",
+      category: "VELOCITY",
+      pole: "DUMBBELL",
+      equipments: ["PDC"],
+      is_bodyweight: true,
+      is_timed: true,
+      allowed_loads: [0, 2, 4],
+    },
+    {
+      id: "SPRINT_UPHILL_POWER_DRIVE",
+      category: "VELOCITY",
+      pole: "DUMBBELL",
+      equipments: ["PDC"],
+      is_bodyweight: true,
+      is_timed: true,
+      allowed_loads: [0, 2, 4],
+    },
+    {
+      id: "SPRINT_RESISTED_BAND_START",
+      category: "VELOCITY",
+      pole: "BAND_CORE",
+      equipments: ["BAND"],
+      is_bodyweight: false,
+      is_timed: true,
+      allowed_loads: [10, 15, 25],
+    },
+    {
+      id: "SPRINT_DECEL_STICK_LANDING",
+      category: "PLYOMETRICS",
+      pole: "DUMBBELL",
+      equipments: ["PDC"],
+      is_bodyweight: true,
+      is_timed: false,
+      allowed_loads: [0, 2, 4],
+    },
+  ];
+
+  const SPRINT_IDS = SPRINT_SPECS.map((s) => s.id);
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+    clearUserExercises();
+  });
+
+  afterEach(() => {
+    clearUserExercises();
+    restoreLocalStorage?.();
+    restoreLocalStorage = undefined;
+  });
+
+  it("respecte les invariants Sprint & Catalogue 60 exercices (gel profond, pôles, catégories, équipements et guides)", () => {
+    assert.equal(EXERCISE_IDS.length, 17);
+    assert.equal(CATALOG.length, 17);
+    assert.equal(ALL_EXERCISE_IDS.length, 20);
+    assert.equal(INTEGRATED_USER_EXERCISES.length, 3);
+    assert.equal(EXTENDED_EXERCISE_IDS.length, 40);
+    assert.equal(EXTENDED_CATALOG_EXERCISES.length, 40);
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 60);
+    assert.equal(getAllCatalogExercises().length, 60);
+
+    const catCounts = { VELOCITY: 0, PLYOMETRICS: 0 };
+    const poleCounts = { DUMBBELL: 0, BAND_CORE: 0 };
+    const eqCounts = { PDC: 0, BAND: 0 };
+
+    for (const spec of SPRINT_SPECS) {
+      assert.equal(EXTENDED_EXERCISE_IDS.includes(spec.id), true, spec.id);
+      const ex = getCatalogExercise(spec.id);
+      assert.equal(ex, EXTENDED_CATALOG_BY_ID[spec.id], spec.id);
+      assert.equal(Object.isFrozen(ex), true, `${spec.id} doit être figé`);
+      assert.equal(Object.isFrozen(ex.allowed_loads), true);
+      assert.equal(Object.isFrozen(ex.guide), true);
+      assert.equal(Object.isFrozen(ex.guide.execution), true);
+      assert.equal(Object.isFrozen(ex.guide.errors), true);
+
+      assert.throws(() => {
+        // @ts-ignore test d'immuabilité stricte
+        ex.name = "muté";
+      }, TypeError);
+
+      assert.equal(ex.category, spec.category, spec.id);
+      assert.equal(ex.pole, spec.pole, spec.id);
+      assert.equal(ex.is_bodyweight, spec.is_bodyweight, spec.id);
+      assert.equal(ex.is_timed, spec.is_timed, spec.id);
+      assert.deepEqual(ex.allowed_loads, spec.allowed_loads, spec.id);
+      assert.deepEqual(getExerciseEquipments(ex), spec.equipments, spec.id);
+
+      assert.equal(typeof ex.short_desc === "string" && ex.short_desc.trim().length > 0, true);
+      assert.equal(typeof ex.guide.tempo_badge === "string" && ex.guide.tempo_badge.trim().length > 0, true);
+      assert.equal(typeof ex.guide.setup === "string" && ex.guide.setup.trim().length > 0, true);
+      assert.equal(ex.guide.execution.length, 3, `${spec.id}.guide.execution`);
+      assert.equal(ex.guide.errors.length, 3, `${spec.id}.guide.errors`);
+      for (const line of [...ex.guide.execution, ...ex.guide.errors]) {
+        assert.equal(typeof line === "string" && line.trim().length > 0, true);
+      }
+
+      catCounts[ex.category] += 1;
+      poleCounts[ex.pole] += 1;
+      for (const eq of spec.equipments) {
+        eqCounts[eq] += 1;
+      }
+    }
+
+    assert.deepEqual(catCounts, { VELOCITY: 4, PLYOMETRICS: 1 });
+    assert.deepEqual(poleCounts, { DUMBBELL: 4, BAND_CORE: 1 });
+    assert.deepEqual(eqCounts, { PDC: 4, BAND: 1 });
+  });
+
+  it("calcule les métriques biomécaniques (engine.js) des 5 exercices Sprint : PDC load=0 vs load=2 et BAND_CORE load=15", () => {
+    for (const id of ["SPRINT_ACCEL_DRIVE_15M", "SPRINT_DECEL_STICK_LANDING"]) {
+      const cat = getCatalogExercise(id);
+
+      const mZero = calculateSessionMetrics({
+        exercises: [{ id, sets: cat.default_sets, reps: cat.default_reps, load: 0, completion: 1 }],
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        elapsed_time_sec: 900,
+      });
+      assert.equal(Number.isFinite(mZero.EccentricStrainIndex) && mZero.EccentricStrainIndex > 0, true, id);
+      assert.equal(mZero.pole_breakdown.DUMBBELL.tut > 0, true, id);
+
+      const payloadZero = buildManualActivityPayload({
+        dateObj: new Date("2026-11-20T08:00:00"),
+        theme: `Test ${id} PDC 0`,
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 900,
+        exercises: [{ id, block: 2, sets: cat.default_sets, reps: cat.default_reps, load: 0, completion: 1 }],
+      });
+      assert.equal(payloadZero.description.includes(`| ${cat.name} | PDC |`), true, id);
+
+      const mTwo = calculateSessionMetrics({
+        exercises: [{ id, sets: cat.default_sets, reps: cat.default_reps, load: 2, completion: 1 }],
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        elapsed_time_sec: 900,
+      });
+      assert.equal(mTwo.EccentricStrainIndex > mZero.EccentricStrainIndex, true, id);
+
+      const payloadTwo = buildManualActivityPayload({
+        dateObj: new Date("2026-11-20T08:15:00"),
+        theme: `Test ${id} PDC +2`,
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        k_ecc: 1.3,
+        rir: 2,
+        rpe: 7,
+        lumbar_flag: false,
+        elapsed_time_sec: 900,
+        exercises: [{ id, block: 2, sets: cat.default_sets, reps: cat.default_reps, load: 2, completion: 1 }],
+      });
+      assert.equal(payloadTwo.description.includes(`| ${cat.name} | PDC +2 kg |`), true, id);
+    }
+
+    // Calcul BAND_CORE sur SPRINT_RESISTED_BAND_START (load = 15 niv)
+    const bandCat = getCatalogExercise("SPRINT_RESISTED_BAND_START");
+    const mBand = calculateSessionMetrics({
+      exercises: [{ id: "SPRINT_RESISTED_BAND_START", sets: 4, reps: 4, load: 15, completion: 1 }],
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      elapsed_time_sec: 900,
+    });
+    // tutBand = 4 * 4 * 1.0 = 16 ; strain = 16 * 0.02 * 15 = 4.8 -> arrondi 5
+    assert.equal(mBand.PpgEffectiveTut, 16);
+    assert.equal(mBand.pole_breakdown.BAND_CORE.tut, 16);
+    assert.equal(mBand.pole_breakdown.BAND_CORE.strain, 5);
+    assert.equal(mBand.pole_breakdown.DUMBBELL.strain, 0);
+    assert.equal(mBand.EccentricStrainIndex, 5);
+    assert.equal(mBand.StrengthCompliancePct, 100);
+
+    const payloadBand = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T08:30:00"),
+      theme: "Sprint Résisté Élastique",
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 7,
+      lumbar_flag: false,
+      elapsed_time_sec: 900,
+      exercises: [{ id: "SPRINT_RESISTED_BAND_START", block: 1, sets: 4, reps: 4, load: 15, completion: 1 }],
+    });
+    assert.equal(payloadBand.description.includes(`| ${bandCat.name} | 15 niv | 4×4s |`), true);
+
+    // Séance complète combinant les 5 exercices de sprint
+    const combinedExercises = SPRINT_IDS.map((id, idx) => {
+      const ex = getCatalogExercise(id);
+      return {
+        id,
+        block: idx < 2 ? 1 : idx < 4 ? 2 : 3,
+        sets: ex.default_sets,
+        reps: ex.default_reps,
+        load: id === "SPRINT_RESISTED_BAND_START" ? 15 : 0,
+        completion: 1,
+      };
+    });
+
+    const combinedMetrics = calculateSessionMetrics({
+      exercises: combinedExercises,
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 8,
+      elapsed_time_sec: 1800,
+    });
+    assert.equal(Number.isFinite(combinedMetrics.PpgEffectiveTut) && combinedMetrics.PpgEffectiveTut > 0, true);
+    assert.equal(Number.isFinite(combinedMetrics.EccentricStrainIndex) && combinedMetrics.EccentricStrainIndex > 0, true);
+    assert.equal(combinedMetrics.StrengthCompliancePct, 100);
+    assert.equal(combinedMetrics.icu_training_load > 0, true);
+    assert.equal(combinedMetrics.pole_breakdown.DUMBBELL.tut > 0, true);
+    assert.equal(combinedMetrics.pole_breakdown.DUMBBELL.strain > 0, true);
+    assert.equal(combinedMetrics.pole_breakdown.BAND_CORE.tut > 0, true);
+    assert.equal(combinedMetrics.pole_breakdown.BAND_CORE.strain > 0, true);
+
+    const combinedPayload = buildManualActivityPayload({
+      dateObj: new Date("2026-11-20T09:00:00"),
+      theme: "Bloc Sprint v1.12.0",
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 8,
+      lumbar_flag: false,
+      elapsed_time_sec: 1800,
+      exercises: combinedExercises,
+    });
+    const telemetry = parseTelemetryJsonFromDescription(combinedPayload.description);
+    assert.ok(telemetry);
+    assert.equal(telemetry.ex.length, 5);
+    assert.deepEqual(
+      telemetry.ex.map((item) => item.id),
+      SPRINT_IDS
+    );
+
+    // Cas limite completion = 0
+    const skippedMetrics = calculateSessionMetrics({
+      exercises: combinedExercises.map((ex) => ({ ...ex, completion: 0 })),
+      k_ecc: 1.3,
+      rir: 2,
+      rpe: 5,
+      elapsed_time_sec: 600,
+    });
+    assert.equal(skippedMetrics.PpgEffectiveTut, 0);
+    assert.equal(skippedMetrics.EccentricStrainIndex, 0);
+    assert.equal(skippedMetrics.StrengthCompliancePct, 0);
+  });
+
+  it("valide disque, casse exacte (fs.readdirSync), attributs d'animation et sécurité XSS des 5 SVG Sprint", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const exosDir = path.join(rootDir, "assets", "exos");
+    const diskEntries = new Set(fs.readdirSync(exosDir));
+
+    for (const id of SPRINT_IDS) {
+      const ex = getCatalogExercise(id);
+      const expectedFilename = `${id}.svg`;
+      const expectedSvgPath = `./assets/exos/${expectedFilename}`;
+
+      assert.equal(ex.guide.svg_path, expectedSvgPath);
+      assert.equal(
+        diskEntries.has(expectedFilename),
+        true,
+        `Nom de fichier exact (casse sensible) manquant dans assets/exos/ : ${expectedFilename}`
+      );
+
+      const fullPath = path.join(exosDir, expectedFilename);
+      const stat = fs.statSync(fullPath);
+      assert.ok(stat.size > 0 && stat.size < 8192, `${expectedFilename} pèse ${stat.size} o`);
+
+      const rawSvg = fs.readFileSync(fullPath, "utf8");
+      assert.equal(rawSvg.includes('viewBox="0 0 240 220"'), true, expectedFilename);
+      assert.equal(rawSvg.includes("--anim-speed"), true, expectedFilename);
+      assert.equal(rawSvg.includes("--anim-state"), true, expectedFilename);
+
+      const cleanSvg = sanitizeSvgMarkup(rawSvg);
+      assert.equal(cleanSvg.includes("<svg") && cleanSvg.includes("</svg>"), true, expectedFilename);
+      assert.equal(cleanSvg.includes('viewBox="0 0 240 220"'), true, expectedFilename);
+      assert.equal(cleanSvg.includes("--anim-speed"), true, expectedFilename);
+      assert.equal(cleanSvg.includes("--anim-state"), true, expectedFilename);
+      assert.equal(/<script\b/i.test(cleanSvg), false, `${expectedFilename} contient <script>`);
+      assert.equal(/<foreignObject\b/i.test(cleanSvg), false, `${expectedFilename} contient <foreignObject>`);
+      assert.equal(/<iframe\b/i.test(cleanSvg), false, `${expectedFilename} contient <iframe>`);
+      assert.equal(/\bon[a-z0-9_-]+\s*=/i.test(cleanSvg), false, `${expectedFilename} contient on*`);
+      assert.equal(/javascript\s*:/i.test(cleanSvg), false, `${expectedFilename} contient javascript:`);
+    }
+  });
+
+  it("vérifie le Service Worker sw.js v1.12.0 : CACHE_NAME, no-cache et pré-cache des 5 SVG Sprint + 60 SVG officiels", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
+
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.12\.0["']\s*;/);
+    const noCacheMatches = swContent.match(/\{\s*cache\s*:\s*["']no-cache["']\s*\}/g) ?? [];
+    assert.equal(
+      noCacheMatches.length >= 2,
+      true,
+      "sw.js doit utiliser { cache: \"no-cache\" } dans install et fetch"
+    );
+
+    const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
+    assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
+
+    const precachedPaths = new Set(
+      Array.from(precacheMatch[1].matchAll(/["']([^"']+)["']/g), (m) => m[1])
+    );
+
+    for (const id of SPRINT_IDS) {
+      assert.equal(
+        precachedPaths.has(`./assets/exos/${id}.svg`),
+        true,
+        `./assets/exos/${id}.svg manquant dans PRECACHE_ASSETS`
+      );
+    }
+
+    const precachedSvgs = Array.from(precachedPaths).filter(
+      (p) => p.startsWith("./assets/exos/") && p.endsWith(".svg")
+    );
+    assert.equal(precachedSvgs.length, 60);
+
+    for (const ex of ALL_OFFICIAL_EXERCISES) {
+      assert.equal(
+        precachedPaths.has(ex.guide.svg_path),
+        true,
+        `${ex.guide.svg_path} manquant dans PRECACHE_ASSETS`
+      );
+    }
+  });
+
+  it("résout les 5 exercices Sprint dans mdParser.js (IDs & libellés français) et assure le round-trip directoryBuilder.js", () => {
+    // 1. Résolution par ID explicite
+    const parsedByIds = parseMarkdownOffline(
+      [
+        "# Séance Sprint IDs",
+        "SPRINT_ACCEL_DRIVE_15M 4x5s",
+        "SPRINT_FLYING_CADENCE_BURST 4x4s",
+        "SPRINT_UPHILL_POWER_DRIVE 5x10s",
+        "SPRINT_RESISTED_BAND_START 4x4s 15 niv",
+        "SPRINT_DECEL_STICK_LANDING 4x4 2 kg",
+      ].join("\n")
+    );
+    assert.deepEqual(
+      parsedByIds.exercises.map((ex) => ex.id),
+      SPRINT_IDS
+    );
+    assert.equal(parsedByIds.exercises[3].load, 15);
+    assert.equal(parsedByIds.exercises[4].load, 2);
+
+    // 2. Résolution par libellés français courants
+    const parsedByLabels = parseMarkdownOffline(
+      [
+        "# Séance Sprint Libellés FR",
+        "Accélération courte 15 m 4x5s @ 0 kg",
+        "Sprint lancé vélocité 4x4s @ 2 kg",
+        "Sprint en côte 5x10s @ 0 kg",
+        "Départ sprint résisté élastique 4x4s @ 15 niv",
+        "Freinage sprint stick 4x4 @ 2 kg",
+      ].join("\n")
+    );
+    assert.deepEqual(
+      parsedByLabels.exercises.map((ex) => ex.id),
+      SPRINT_IDS
+    );
+    assert.deepEqual(
+      parsedByLabels.exercises.map((ex) => ({
+        sets: ex.sets,
+        reps: ex.reps,
+        load: ex.load,
+      })),
+      [
+        { sets: 4, reps: 5, load: 0 },
+        { sets: 4, reps: 4, load: 2 },
+        { sets: 5, reps: 10, load: 0 },
+        { sets: 4, reps: 4, load: 15 },
+        { sets: 4, reps: 4, load: 2 },
+      ]
+    );
+
+    // 3. Aller-retour complet exportDirectoryDraftToMarkdown -> parseMarkdownOffline
+    let draft = [];
+    for (const id of SPRINT_IDS) {
+      draft = addDraftExercise(draft, id);
+    }
+    draft = updateDraftExercise(draft, 0, { load: 2 }); // SPRINT_ACCEL_DRIVE_15M -> 2 kg
+    draft = updateDraftExercise(draft, 3, { load: 15 }); // SPRINT_RESISTED_BAND_START -> 15 niv
+    draft = updateDraftExercise(draft, 4, { load: 2 }); // SPRINT_DECEL_STICK_LANDING -> 2 kg
+
+    const exportedMd = exportDirectoryDraftToMarkdown(draft, "Sprint Round-Trip v1.12.0");
+    assert.equal(exportedMd.includes("# Sprint Round-Trip v1.12.0"), true);
+    assert.equal(exportedMd.includes("15 niv"), true);
+
+    const reparsed = parseMarkdownOffline(exportedMd);
+    assert.equal(reparsed.theme, "Sprint Round-Trip v1.12.0");
+    assert.equal(reparsed.exercises.length, 5);
+
+    for (let i = 0; i < draft.length; i += 1) {
+      const expected = draft[i];
+      const actual = reparsed.exercises[i];
+      const resolvedTimed =
+        typeof actual.is_timed === "boolean"
+          ? actual.is_timed
+          : Boolean(getCatalogExercise(actual.id).is_timed);
+
+      assert.equal(actual.id, expected.id);
+      assert.equal(actual.sets, expected.sets);
+      assert.equal(actual.reps, expected.reps);
+      assert.equal(actual.load, expected.load);
+      assert.equal(resolvedTimed, expected.is_timed);
+    }
+
+    const plan = buildDirectorySessionPlan(draft, { title: "Plan Sprint v1.12.0" });
+    assert.equal(plan.preserve_order, true);
+    assert.deepEqual(
+      plan.exercises.map((ex) => ex.id),
+      SPRINT_IDS
+    );
+  });
+
+  it("filtre les exercices Sprint et les nouveaux comptages dans filterCatalogExercises", () => {
+    const sprintQuery = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      query: "sprint",
+    });
+    assert.equal(sprintQuery.length, 7);
+    const sprintIdsInQuery = sprintQuery
+      .filter((ex) => ex.id.startsWith("SPRINT_"))
+      .map((ex) => ex.id);
+    assert.equal(sprintIdsInQuery.length, 5);
+    for (const id of SPRINT_IDS) {
+      assert.equal(sprintIdsInQuery.includes(id), true, `${id} absent du filtre query: "sprint"`);
+    }
+
+    const sprintPrefixQuery = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      query: "SPRINT_",
+    });
+    assert.deepEqual(
+      sprintPrefixQuery.map((ex) => ex.id),
+      SPRINT_IDS
+    );
+
+    const velocityList = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      category: "VELOCITY",
+    });
+    assert.equal(velocityList.length, 10);
+    for (const id of [
+      "SPRINT_ACCEL_DRIVE_15M",
+      "SPRINT_FLYING_CADENCE_BURST",
+      "SPRINT_UPHILL_POWER_DRIVE",
+      "SPRINT_RESISTED_BAND_START",
+    ]) {
+      assert.equal(velocityList.some((ex) => ex.id === id), true, id);
+    }
+
+    const plyoList = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      category: "PLYOMETRICS",
+    });
+    assert.equal(plyoList.length, 7);
+    assert.equal(
+      plyoList.some((ex) => ex.id === "SPRINT_DECEL_STICK_LANDING"),
+      true
+    );
+
+    const bandList = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      equipment: "BAND",
+    });
+    assert.equal(bandList.length, 14);
+    assert.equal(
+      bandList.some((ex) => ex.id === "SPRINT_RESISTED_BAND_START"),
+      true
+    );
+
+    const pdcList = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      equipment: "PDC",
+    });
+    assert.equal(pdcList.length, 24);
+    for (const id of [
+      "SPRINT_ACCEL_DRIVE_15M",
+      "SPRINT_FLYING_CADENCE_BURST",
+      "SPRINT_UPHILL_POWER_DRIVE",
+      "SPRINT_DECEL_STICK_LANDING",
+    ]) {
+      assert.equal(pdcList.some((ex) => ex.id === id), true, id);
+    }
   });
 });

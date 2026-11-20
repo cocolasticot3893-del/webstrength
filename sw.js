@@ -5,7 +5,7 @@
  * Ne jamais intercepter ni mettre en cache Intervals.icu ou les API Google/Gemini.
  */
 
-const CACHE_NAME = "webstrength-v1.11.1";
+const CACHE_NAME = "webstrength-v1.12.0";
 
 const PRECACHE_ASSETS = [
   "./",
@@ -82,6 +82,11 @@ const PRECACHE_ASSETS = [
   "./assets/exos/plyo_lateral_skater_bound.svg",
   "./assets/exos/plyo_split_scissor_switch.svg",
   "./assets/exos/plyo_push_up_explosive_incline.svg",
+  "./assets/exos/SPRINT_ACCEL_DRIVE_15M.svg",
+  "./assets/exos/SPRINT_FLYING_CADENCE_BURST.svg",
+  "./assets/exos/SPRINT_UPHILL_POWER_DRIVE.svg",
+  "./assets/exos/SPRINT_RESISTED_BAND_START.svg",
+  "./assets/exos/SPRINT_DECEL_STICK_LANDING.svg",
 ];
 
 /**

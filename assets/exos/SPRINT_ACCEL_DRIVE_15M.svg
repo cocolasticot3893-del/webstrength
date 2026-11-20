@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="Sprint accélération 15 mètres : départ incliné à 45 degrés, poussée explosive en triple extension et propulsion horizontale">
+  <style>
+    .sprint_accel_drive {
+      --base-dur: 1.15s;
+      transform-origin: 54px 184px;
+      animation: sprint_accel_push calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_accel_knee {
+      --base-dur: 1.15s;
+      transform-origin: 112px 128px;
+      animation: sprint_accel_swing calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_accel_arms {
+      --base-dur: 1.15s;
+      transform-origin: 144px 96px;
+      animation: sprint_accel_pump calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_accel_vec {
+      --base-dur: 1.15s;
+      animation: sprint_accel_surge calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_accel_streaks {
+      --base-dur: 1.15s;
+      animation: sprint_accel_flow calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    .sprint_accel_grf {
+      --base-dur: 1.15s;
+      transform-origin: 54px 186px;
+      animation: sprint_accel_burst calc(var(--base-dur, 1.15s) / var(--anim-speed, 1)) ease-in-out infinite;
+      animation-play-state: var(--anim-state, running);
+    }
+    @keyframes sprint_accel_push {
+      0%, 100% { transform: translate(-8px, 4px) scale(0.98); }
+      55%, 72% { transform: translate(10px, -4px) scale(1.01); }
+    }
+    @keyframes sprint_accel_swing {
+      0%, 100% { transform: rotate(10deg); }
+      55%, 72% { transform: rotate(-12deg); }
+    }
+    @keyframes sprint_accel_pump {
+      0%, 100% { transform: rotate(-8deg); }
+      55%, 72% { transform: rotate(10deg); }
+    }
+    @keyframes sprint_accel_surge {
+      0%, 100% { opacity: 0.35; transform: translateX(-6px); }
+      55%, 75% { opacity: 1; transform: translateX(6px); }
+    }
+    @keyframes sprint_accel_flow {
+      0%, 15%, 90%, 100% { opacity: 0.15; transform: translateX(8px); }
+      55%, 75% { opacity: 0.95; transform: translateX(-10px); }
+    }
+    @keyframes sprint_accel_burst {
+      0%, 100% { opacity: 0.9; transform: scaleX(1.15); }
+      55%, 75% { opacity: 0.18; transform: scaleX(0.55); }
+    }
+  </style>
+
+  <rect width="240" height="220" rx="14" fill="#0d1117"/>
+
+  <!-- Piste et jalons 15m -->
+  <line x1="18" y1="186" x2="222" y2="186" stroke="#30363d" stroke-width="2" stroke-linecap="round"/>
+  <line x1="54" y1="183" x2="54" y2="191" stroke="#8b949e" stroke-width="1.5"/>
+  <line x1="110" y1="184" x2="110" y2="190" stroke="#30363d" stroke-width="1.4"/>
+  <line x1="166" y1="184" x2="166" y2="190" stroke="#30363d" stroke-width="1.4"/>
+  <line x1="214" y1="182" x2="214" y2="191" stroke="#10b981" stroke-width="1.6"/>
+  <text x="54" y="203" text-anchor="middle" fill="#8b949e" font-family="system-ui,sans-serif" font-size="8">0m</text>
+  <text x="214" y="203" text-anchor="middle" fill="#10b981" font-family="system-ui,sans-serif" font-size="8" font-weight="600">15m</text>
+
+  <!-- Repère géométrique 45 degrés -->
+  <line x1="54" y1="186" x2="148" y2="92" stroke="#1f2937" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <path d="M84 186 A30 30 0 0 0 75 165" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.8"/>
+  <text x="89" y="177" fill="#38bdf8" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600">45°</text>
+
+  <!-- Impulsion au sol -->
+  <ellipse class="sprint_accel_grf" cx="54" cy="186" rx="14" ry="3.2" fill="#f59e0b" fill-opacity="0.6"/>
+
+  <!-- Stries de vitesse -->
+  <g class="sprint_accel_streaks">
+    <line x1="22" y1="92" x2="72" y2="92" stroke="#10b981" stroke-width="2" stroke-dasharray="10 5" stroke-linecap="round"/>
+    <line x1="18" y1="114" x2="62" y2="114" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="8 4" stroke-linecap="round" stroke-opacity="0.75"/>
+    <line x1="28" y1="136" x2="66" y2="136" stroke="#10b981" stroke-width="1.8" stroke-dasharray="7 5" stroke-linecap="round" stroke-opacity="0.65"/>
+  </g>
+
+  <!-- Silhouette athlète incliné à 45 degrés en triple extension -->
+  <g class="sprint_accel_drive">
+    <!-- Jambe arrière en triple extension (cheville-genou-hanche alignés) -->
+    <polyline points="46,184 54,183 83,155 112,128" fill="none" stroke="#8b949e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Jambe avant en montée de genou dynamique -->
+    <g class="sprint_accel_knee">
+      <polyline points="112,128 145,134 130,164 139,166" fill="none" stroke="#e6edf3" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="145" cy="134" r="2.8" fill="#10b981"/>
+    </g>
+    <!-- Tronc gainé aligné à 45 degrés -->
+    <line x1="112" y1="128" x2="144" y2="96" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+    <!-- Bras en balancier explosif -->
+    <g class="sprint_accel_arms">
+      <polyline points="144,96 118,93 105,110" fill="none" stroke="#8b949e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="144,96 164,106 176,84" fill="none" stroke="#e6edf3" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <!-- Tête et repères articulaires -->
+    <circle cx="156" cy="84" r="8.2" fill="#e6edf3"/>
+    <circle cx="54" cy="183" r="3" fill="#f59e0b"/>
+    <circle cx="83" cy="155" r="2.8" fill="#e6edf3"/>
+    <circle cx="112" cy="128" r="3.4" fill="#38bdf8"/>
+  </g>
+
+  <!-- Flèche vectrice horizontale émeraude -->
+  <g class="sprint_accel_vec">
+    <line x1="164" y1="128" x2="218" y2="128" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+    <polyline points="209,122 220,128 209,134" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="176" y1="116" x2="206" y2="116" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="5 3" stroke-linecap="round"/>
+  </g>
+
+  <text x="16" y="24" fill="#8b949e" font-family="system-ui,sans-serif" font-size="9.5" font-weight="600">SPRINT · ACCEL 15M</text>
+  <text x="224" y="24" text-anchor="end" fill="#10b981" font-family="system-ui,sans-serif" font-size="9">DRIVE 45° · TRIPLE EXT</text>
+</svg>
