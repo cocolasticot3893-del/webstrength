@@ -185,6 +185,28 @@ button.status-pill {
   font-weight: 600;
 }
 
+.topbar-catalog-btn {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(34, 211, 238, 0.1);
+  color: #a5f3fc;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    transform 0.08s ease;
+}
+
+.topbar-catalog-btn:hover {
+  background: rgba(34, 211, 238, 0.18);
+  border-color: rgba(34, 211, 238, 0.7);
+}
+
+.topbar-catalog-btn:active {
+  transform: scale(0.98);
+}
+
+.topbar-catalog-btn:focus-visible {
+  outline: 3px solid #10b981;
+  outline-offset: 2px;
+}
+
 .error-banner {
   display: flex;
   flex-wrap: wrap;
@@ -1958,6 +1980,178 @@ dialog.guide-modal::backdrop {
   .md-import-actions {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ==========================================================================
+   Vue Annuaire Catalogue Complet (#catalog-directory-view)
+   ========================================================================== */
+
+.directory-view {
+  gap: 0.9rem;
+}
+
+.directory-view :is(button, input, a):focus-visible {
+  outline: 3px solid #10b981;
+  outline-offset: 2px;
+}
+
+.directory-sticky-bar {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: calc(0.7rem + env(safe-area-inset-top, 0px)) 0.85rem 0.7rem;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius-md);
+}
+
+.directory-view-title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.directory-search-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.directory-filter-row {
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-block-end: 0.2rem;
+  scrollbar-width: thin;
+}
+
+@media (min-width: 640px) {
+  .directory-filter-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+.directory-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+@media (min-width: 720px) {
+  .directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.directory-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.85rem;
+  background: var(--bg-surface);
+  border: 1px solid #30363d;
+  border-radius: var(--radius-lg);
+  min-inline-size: 0;
+}
+
+/* Différer uniquement les cartes sous la ligne de flottaison */
+.directory-card:nth-child(n + 5) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 168px;
+}
+
+.directory-thumb {
+  width: 112px;
+  height: 102px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.directory-thumb img,
+.directory-thumb svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.directory-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-inline-size: 0;
+}
+
+.directory-card-body h3 {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+}
+
+.directory-exo-id {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.directory-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.directory-short-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.directory-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-block-start: 0.25rem;
+}
+
+.directory-card-actions .btn,
+.directory-card-actions button {
+  min-height: 40px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  flex: 1 1 auto;
+}
+
+.directory-card-actions .btn.is-added,
+.directory-card-actions button.is-added {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.16);
+  color: #6ee7b7;
+}
+
+.directory-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  background: #161b22;
+  border: 1px dashed #30363d;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 /* ==========================================================================

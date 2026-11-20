@@ -23,6 +23,8 @@ import {
   EXTENDED_CATALOG_BY_ID,
   EXTENDED_EXERCISE_IDS,
   ALL_OFFICIAL_EXERCISES,
+  DIRECTORY_CATEGORIES,
+  DIRECTORY_EQUIPMENTS,
   USER_EXERCISES_STORAGE_KEY,
   generateUserExerciseId,
   loadUserExercises,
@@ -31,6 +33,8 @@ import {
   clearUserExercises,
   getUserExercisesList,
   getAllCatalogExercises,
+  getExerciseEquipments,
+  filterCatalogExercises,
   exportUserExercisesJson,
   getCatalogExercise,
 } from "../catalog.js";
@@ -3291,11 +3295,11 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     assert.equal(seenPaths.size, 55);
   });
 
-  it("vérifie le Service Worker sw.js v1.9.0 : CACHE_NAME, extendedCatalog.js et pré-cache des 55 SVG", () => {
+  it("vérifie le Service Worker sw.js v1.10.0 : CACHE_NAME, extendedCatalog.js et pré-cache des 55 SVG", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
 
-    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.9\.0["']\s*;/);
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.10\.0["']\s*;/);
 
     const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
     assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
@@ -3355,5 +3359,403 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     assert.equal(planRegression.exercises[0].sets, 4);
     assert.equal(planRegression.exercises[0].reps, 10);
     assert.equal(planRegression.exercises[0].is_timed, false);
+  });
+});
+
+// ============================================================================
+// 11. Catalogue Complet & Filtrage Multi-Critères v1.10.0
+// ============================================================================
+
+describe("11. Catalogue Complet & Filtrage Multi-Critères v1.10.0", () => {
+  let restoreLocalStorage;
+
+  /**
+   * Crée et persiste un 4e exercice utilisateur dynamique `USER_*` isolé.
+   * @param {string} [name]
+   * @returns {Readonly<Record<string, any>>}
+   */
+  function createDynamicUserExercise(name = "Rowing Anneaux Élastique Perso") {
+    const tpl = getCatalogExercise("CUSTOM_BAND_CORE");
+    const id = generateUserExerciseId(name, loadUserExercises(), tpl.pole);
+    const fallbackGuide = buildFallbackExerciseGuide({
+      name,
+      pole: tpl.pole,
+      isTimed: false,
+      exerciseId: id,
+    });
+    return saveUserExercise({
+      id,
+      name,
+      pole: tpl.pole,
+      pattern: tpl.pattern,
+      allowed_loads: [...tpl.allowed_loads],
+      parasitic_reps: tpl.parasitic_reps,
+      unit_tut_sec: tpl.unit_tut_sec,
+      cns_spinal_tax: tpl.cns_spinal_tax,
+      unit_label: tpl.unit_label,
+      is_timed: false,
+      default_sets: 3,
+      default_reps: 12,
+      short_desc: fallbackGuide.short_desc,
+      guide: fallbackGuide.guide,
+      svg_inline: fallbackGuide.svg_inline,
+    });
+  }
+
+  beforeEach(() => {
+    const memStorage = createMemoryLocalStorage();
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: memStorage,
+    });
+    clearUserExercises();
+  });
+
+  afterEach(() => {
+    clearUserExercises();
+    restoreLocalStorage?.();
+    restoreLocalStorage = undefined;
+  });
+
+  it("recense les 55 officiels + 1 USER_* dynamique (56 au total) et préserve EXERCISE_IDS.length === 17", () => {
+    assert.equal(EXERCISE_IDS.length, 17);
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 55);
+    assert.equal(getAllCatalogExercises().length, 55);
+    assert.equal(filterCatalogExercises(getAllCatalogExercises()).length, 55);
+
+    const saved = createDynamicUserExercise();
+    assert.equal(saved.id.startsWith("USER_"), true);
+    assert.equal(EXERCISE_IDS.length, 17);
+
+    const allWithUser = getAllCatalogExercises();
+    assert.equal(allWithUser.length, 56);
+    assert.equal(filterCatalogExercises(allWithUser).length, 56);
+
+    // Cas limites défensifs de filterCatalogExercises
+    assert.deepEqual(filterCatalogExercises(null), []);
+    assert.deepEqual(filterCatalogExercises(undefined), []);
+    assert.deepEqual(filterCatalogExercises([null, undefined, 42]), []);
+    assert.equal(
+      filterCatalogExercises(allWithUser, {
+        query: null,
+        category: "",
+        equipment: "",
+      }).length,
+      56
+    );
+  });
+
+  it("filtre exhaustivement les 7 catégories DIRECTORY_CATEGORIES (55 officiels et 56 avec USER_* dynamique)", () => {
+    assert.equal(Object.isFrozen(DIRECTORY_CATEGORIES), true);
+    assert.deepEqual(
+      DIRECTORY_CATEGORIES.map((entry) => entry.id),
+      [
+        "ALL",
+        "UPPER_BODY",
+        "CORE_TRUNK",
+        "POSTERIOR_HIP_ANKLE",
+        "VELOCITY",
+        "PLYOMETRICS",
+        "PERSO",
+      ]
+    );
+
+    const expectedOfficialCounts = {
+      ALL: 55,
+      UPPER_BODY: 10,
+      CORE_TRUNK: 14,
+      POSTERIOR_HIP_ANKLE: 19,
+      VELOCITY: 6,
+      PLYOMETRICS: 6,
+      PERSO: 3,
+    };
+
+    for (const { id: catId } of DIRECTORY_CATEGORIES) {
+      const filteredOfficial = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+        category: catId,
+      });
+      assert.equal(
+        filteredOfficial.length,
+        expectedOfficialCounts[catId],
+        `Comptage officiel inattendu pour catégorie ${catId}`
+      );
+      if (catId === "PERSO") {
+        assert.equal(
+          filteredOfficial.every(
+            (ex) => Boolean(ex.is_user_catalog) || ex.id.startsWith("USER_")
+          ),
+          true
+        );
+      } else if (catId !== "ALL") {
+        assert.equal(
+          filteredOfficial.every((ex) => ex.category === catId),
+          true
+        );
+      }
+    }
+
+    createDynamicUserExercise();
+    const allWithDynamic = getAllCatalogExercises();
+    const expectedDynamicCounts = {
+      ...expectedOfficialCounts,
+      ALL: 56,
+      PERSO: 4,
+    };
+
+    for (const { id: catId } of DIRECTORY_CATEGORIES) {
+      const filteredDynamic = filterCatalogExercises(allWithDynamic, {
+        category: catId,
+      });
+      assert.equal(
+        filteredDynamic.length,
+        expectedDynamicCounts[catId],
+        `Comptage avec USER_* dynamique inattendu pour catégorie ${catId}`
+      );
+    }
+  });
+
+  it("filtre exhaustivement les 7 équipements DIRECTORY_EQUIPMENTS et valide getExerciseEquipments", () => {
+    assert.equal(Object.isFrozen(DIRECTORY_EQUIPMENTS), true);
+    const equipmentIds = DIRECTORY_EQUIPMENTS.map((entry) => entry.id);
+    assert.deepEqual(equipmentIds, [
+      "ALL",
+      "KBOX",
+      "BAND",
+      "DUMBBELL",
+      "BARBELL",
+      "KETTLEBELL",
+      "AB_WHEEL",
+      "PDC",
+    ]);
+
+    const concreteEquipments = equipmentIds.filter((id) => id !== "ALL");
+    const expectedOfficialEqCounts = {
+      KBOX: 11,
+      BAND: 13,
+      DUMBBELL: 8,
+      BARBELL: 4,
+      KETTLEBELL: 7,
+      AB_WHEEL: 2,
+      PDC: 20,
+    };
+
+    assert.equal(
+      filterCatalogExercises(ALL_OFFICIAL_EXERCISES, { equipment: "ALL" }).length,
+      55
+    );
+
+    for (const eqCode of concreteEquipments) {
+      const subset = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+        equipment: eqCode,
+      });
+      assert.ok(subset.length > 0, `Aucun exercice trouvé pour l'équipement ${eqCode}`);
+      assert.equal(
+        subset.length,
+        expectedOfficialEqCounts[eqCode],
+        `Comptage officiel inattendu pour équipement ${eqCode}`
+      );
+      for (const ex of subset) {
+        assert.equal(
+          getExerciseEquipments(ex).includes(eqCode),
+          true,
+          `${ex.id} doit inclure l'équipement ${eqCode}`
+        );
+      }
+    }
+
+    assert.deepEqual(
+      getExerciseEquipments(getCatalogExercise("PULL_UP_PRONATION_STRICT_BW")),
+      ["PDC"]
+    );
+
+    const abWheelEqs = getExerciseEquipments(
+      getCatalogExercise("AB_WHEEL_ROLLOUT_KNEES")
+    );
+    assert.equal(abWheelEqs.includes("AB_WHEEL"), true);
+    assert.equal(abWheelEqs.includes("PDC"), true);
+
+    assert.equal(
+      getExerciseEquipments(getCatalogExercise("KB_SUITCASE_CARRY")).includes(
+        "KETTLEBELL"
+      ),
+      true
+    );
+    assert.equal(
+      getExerciseEquipments(
+        getCatalogExercise("BARBELL_BENT_ROW_OVERHAND")
+      ).includes("BARBELL"),
+      true
+    );
+
+    // Cas limite défensif et couverture complète sur les 55 officiels
+    assert.deepEqual(getExerciseEquipments(null), ["BAND"]);
+    for (const ex of ALL_OFFICIAL_EXERCISES) {
+      const eqs = getExerciseEquipments(ex);
+      assert.ok(Array.isArray(eqs) && eqs.length > 0, `${ex.id} sans équipement`);
+      for (const code of eqs) {
+        assert.equal(concreteEquipments.includes(code), true, `Code inconnu: ${code}`);
+      }
+    }
+  });
+
+  it("valide les combinaisons croisées (catégorie + équipement + recherche NFD insensible à la casse et aux accents)", () => {
+    const saved = createDynamicUserExercise("Rowing Anneaux Élastique Perso");
+    const allCatalog = getAllCatalogExercises();
+
+    const pronationPdc = filterCatalogExercises(allCatalog, {
+      category: "UPPER_BODY",
+      equipment: "PDC",
+      query: "pronation",
+    });
+    assert.equal(pronationPdc.length, 3);
+    assert.deepEqual(
+      pronationPdc.map((ex) => ex.id),
+      [
+        "PULL_UP_PRONATION_STRICT_BW",
+        "PULL_UP_PRONATION_TEMPO_ECC",
+        "PULL_UP_PRONATION_SCAP_ISOMETRIC",
+      ]
+    );
+
+    // Normalisation NFD : accents, majuscules et espaces périphériques
+    const qAccented = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      query: "élastiques",
+    });
+    const qUpperAscii = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      query: "ELASTIQUES",
+    });
+    const qPaddedMixed = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      query: "  ÉLaStIqUeS  ",
+    });
+    assert.equal(qAccented.length, 13);
+    assert.deepEqual(
+      qAccented.map((ex) => ex.id),
+      qUpperAscii.map((ex) => ex.id)
+    );
+    assert.deepEqual(
+      qAccented.map((ex) => ex.id),
+      qPaddedMixed.map((ex) => ex.id)
+    );
+
+    const abWheelQuery = filterCatalogExercises(allCatalog, {
+      equipment: "AB_WHEEL",
+      query: "roue",
+    });
+    assert.equal(abWheelQuery.length, 2);
+    assert.deepEqual(
+      abWheelQuery.map((ex) => ex.id),
+      ["AB_WHEEL_ROLLOUT_KNEES", "AB_WHEEL_OFFSET_ANGLE"]
+    );
+
+    const plyoPogo = filterCatalogExercises(allCatalog, {
+      category: "PLYOMETRICS",
+      query: "pogo",
+    });
+    assert.equal(plyoPogo.length, 2);
+    assert.deepEqual(
+      plyoPogo.map((ex) => ex.id),
+      ["PLYO_ANKLE_POGO_DOUBLE", "PLYO_ANKLE_POGO_SINGLE"]
+    );
+
+    // Recherche croisée ciblant le 4e exercice dynamique dans PERSO
+    const persoQuery = filterCatalogExercises(allCatalog, {
+      category: "PERSO",
+      query: "anneaux elastique",
+    });
+    assert.equal(persoQuery.length, 1);
+    assert.equal(persoQuery[0].id, saved.id);
+
+    // Combinaison incompatible -> ensemble vide sans exception
+    assert.deepEqual(
+      filterCatalogExercises(allCatalog, {
+        category: "PLYOMETRICS",
+        equipment: "BARBELL",
+      }),
+      []
+    );
+  });
+
+  it("contrôle les SVG des 55 exercices officiels sur disque et l'assainissement svg_inline du USER_* dynamique", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+    for (const ex of ALL_OFFICIAL_EXERCISES) {
+      const svgPath = ex.guide?.svg_path;
+      assert.equal(
+        typeof svgPath === "string" &&
+          svgPath.startsWith("./assets/exos/") &&
+          svgPath.endsWith(".svg"),
+        true,
+        `guide.svg_path invalide pour ${ex.id}`
+      );
+      const diskPath = path.join(rootDir, svgPath.replace(/^\.\//, ""));
+      assert.equal(
+        fs.existsSync(diskPath),
+        true,
+        `Fichier SVG manquant sur disque : ${svgPath}`
+      );
+    }
+
+    const saved = createDynamicUserExercise("Fente Dynamique Perso");
+    assert.equal(
+      typeof saved.svg_inline === "string" && saved.svg_inline.length > 0,
+      true
+    );
+    const cleaned = sanitizeSvgMarkup(saved.svg_inline);
+    assert.equal(cleaned.includes("<svg") && cleaned.includes("</svg>"), true);
+    assert.equal(/<script\b/i.test(cleaned), false);
+    assert.equal(/\bon[a-z0-9_-]+\s*=/i.test(cleaned), false);
+    assert.equal(/javascript\s*:/i.test(cleaned), false);
+  });
+
+  it("vérifie les contrôles statiques DOM (#catalog-directory-view), la CSP (index.html) et 0 innerHTML (app.js)", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const indexHtml = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+    const appJs = fs.readFileSync(path.join(rootDir, "app.js"), "utf8");
+
+    const requiredIds = [
+      "open-catalog-directory-btn",
+      "catalog-directory-view",
+      "close-catalog-directory-btn",
+      "directory-results-count",
+      "directory-search-input",
+      "directory-grid",
+    ];
+    for (const domId of requiredIds) {
+      assert.equal(
+        new RegExp(`id\\s*=\\s*["']${domId}["']`).test(indexHtml),
+        true,
+        `ID DOM manquant dans index.html : #${domId}`
+      );
+    }
+
+    for (const { id: catId } of DIRECTORY_CATEGORIES) {
+      assert.equal(
+        new RegExp(`data-dir-category\\s*=\\s*["']${catId}["']`).test(indexHtml),
+        true,
+        `Bouton data-dir-category="${catId}" manquant dans index.html`
+      );
+    }
+
+    for (const { id: eqId } of DIRECTORY_EQUIPMENTS) {
+      assert.equal(
+        new RegExp(`data-dir-equipment\\s*=\\s*["']${eqId}["']`).test(indexHtml),
+        true,
+        `Bouton data-dir-equipment="${eqId}" manquant dans index.html`
+      );
+    }
+
+    const cspMatch = indexHtml.match(
+      /http-equiv=(["'])Content-Security-Policy\1[\s\S]*?content=(["'])([\s\S]*?)\2/i
+    );
+    assert.ok(cspMatch, "Balise meta CSP introuvable dans index.html");
+    const cspContent = cspMatch[3];
+    assert.equal(cspContent.includes("img-src 'self' data:"), true);
+    assert.equal(cspContent.includes("script-src 'self'"), true);
+    assert.equal(cspContent.includes("object-src 'none'"), true);
+
+    assert.equal(
+      /\binnerHTML\b/i.test(appJs),
+      false,
+      "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
+    );
   });
 });

@@ -770,6 +770,29 @@ export const ALL_OFFICIAL_EXERCISES = deepFreeze([
   ...EXTENDED_CATALOG_EXERCISES,
 ]);
 
+/** Catégories ordonnées exposées par l'annuaire d'exercices. */
+export const DIRECTORY_CATEGORIES = deepFreeze([
+  { id: "ALL", label: "Toutes" },
+  { id: "UPPER_BODY", label: "Haut / Tractions" },
+  { id: "CORE_TRUNK", label: "Tronc / Gainage" },
+  { id: "POSTERIOR_HIP_ANKLE", label: "Postérieur / Hanche / Cheville" },
+  { id: "VELOCITY", label: "Vitesse" },
+  { id: "PLYOMETRICS", label: "Pliométrie" },
+  { id: "PERSO", label: "Perso" },
+]);
+
+/** Équipements ordonnés exposés par l'annuaire d'exercices. */
+export const DIRECTORY_EQUIPMENTS = deepFreeze([
+  { id: "ALL", label: "Tous" },
+  { id: "KBOX", label: "kBox" },
+  { id: "BAND", label: "Élastiques" },
+  { id: "DUMBBELL", label: "Haltères" },
+  { id: "BARBELL", label: "Barre" },
+  { id: "KETTLEBELL", label: "Kettlebell" },
+  { id: "AB_WHEEL", label: "Roue abdo" },
+  { id: "PDC", label: "PDC" },
+]);
+
 /** Clé de persistance localStorage pour les exercices promus dans le catalogue utilisateur. */
 export const USER_EXERCISES_STORAGE_KEY = "WEBSTRENGTH_USER_EXERCISES_V1";
 
@@ -1149,6 +1172,184 @@ export function getAllCatalogExercises() {
     ...EXTENDED_CATALOG_EXERCISES,
     ...dynamicOnly,
   ];
+}
+
+const DIRECTORY_CATEGORY_LABEL_BY_ID = Object.fromEntries(
+  DIRECTORY_CATEGORIES.map((entry) => [entry.id, entry.label])
+);
+
+const DIRECTORY_EQUIPMENT_LABEL_BY_ID = Object.fromEntries(
+  DIRECTORY_EQUIPMENTS.map((entry) => [entry.id, entry.label])
+);
+
+const PDC_EXACT_IDS = new Set([
+  "DB_COPENHAGEN",
+  "CORE_MCGILL_BIG3",
+  "USER_GAINAGE_PLANCHE_VENTRALE_GAINAGE_PROFOND",
+  "USER_BIRD_DOG_ANTI_ROTATION_AU_SOL",
+]);
+
+/**
+ * Normalise une chaîne en minuscules sans diacritiques (forme NFD).
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeCatalogText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Détermine la liste non vide des codes d'équipement associés à un exercice.
+ * @param {Record<string, any> | null | undefined} ex
+ * @returns {string[]}
+ */
+export function getExerciseEquipments(ex) {
+  if (!ex || typeof ex !== "object") {
+    return ["BAND"];
+  }
+  const rawId = String(ex.id ?? "").trim();
+  const upperId = rawId.toUpperCase();
+  const pole = String(ex.pole ?? "").trim().toUpperCase();
+  const normalizedText = normalizeCatalogText(
+    [rawId, rawId.replaceAll("_", " "), ex.name, ex.short_desc]
+      .filter(Boolean)
+      .join(" ")
+  );
+
+  /** @type {string[]} */
+  const equipments = [];
+
+  if (pole === "KBOX" || upperId.startsWith("KBOX_")) {
+    equipments.push("KBOX");
+  }
+  if (
+    upperId.startsWith("AB_WHEEL_") ||
+    normalizedText.includes("roue") ||
+    normalizedText.includes("ab wheel")
+  ) {
+    equipments.push("AB_WHEEL");
+  }
+  if (
+    upperId.startsWith("BARBELL_") ||
+    normalizedText.includes("barre libre") ||
+    normalizedText.includes("barbell")
+  ) {
+    equipments.push("BARBELL");
+  }
+  if (upperId.startsWith("KB_") || normalizedText.includes("kettlebell")) {
+    equipments.push("KETTLEBELL");
+  }
+  if (
+    upperId.startsWith("DB_") ||
+    normalizedText.includes("haltere") ||
+    normalizedText.includes("dumbbell")
+  ) {
+    equipments.push("DUMBBELL");
+  }
+  if (
+    upperId.startsWith("BAND_") ||
+    normalizedText.includes("elastique") ||
+    normalizedText.includes("band") ||
+    normalizedText.includes("mini-band")
+  ) {
+    equipments.push("BAND");
+  }
+  if (
+    ex.is_bodyweight === true ||
+    PDC_EXACT_IDS.has(upperId) ||
+    upperId.startsWith("PULL_UP_") ||
+    upperId.startsWith("PLYO_") ||
+    normalizedText.includes("poids du corps") ||
+    normalizedText.includes("pdc") ||
+    normalizedText.includes("planche") ||
+    normalizedText.includes("bird dog")
+  ) {
+    equipments.push("PDC");
+  }
+
+  if (equipments.length === 0) {
+    if (pole === "KBOX") {
+      return ["KBOX"];
+    }
+    if (pole === "DUMBBELL") {
+      return ["DUMBBELL"];
+    }
+    return ["BAND"];
+  }
+
+  return equipments;
+}
+
+/**
+ * Filtre un tableau d'exercices selon une requête textuelle, une catégorie et un équipement.
+ * @param {Array<Record<string, any>>} exercises
+ * @param {{ query?: string, category?: string, equipment?: string }} [filters]
+ * @returns {Array<Record<string, any>>}
+ */
+export function filterCatalogExercises(
+  exercises,
+  { query = "", category = "ALL", equipment = "ALL" } = {}
+) {
+  if (!Array.isArray(exercises)) {
+    return [];
+  }
+  const normalizedQuery = normalizeCatalogText(query);
+  const activeCategory = category || "ALL";
+  const activeEquipment = equipment || "ALL";
+
+  return exercises.filter((ex) => {
+    if (!ex || typeof ex !== "object") {
+      return false;
+    }
+    const id = String(ex.id ?? "");
+    const isPerso = Boolean(ex.is_user_catalog) || id.startsWith("USER_");
+
+    if (activeCategory !== "ALL") {
+      if (activeCategory === "PERSO") {
+        if (!isPerso) {
+          return false;
+        }
+      } else if (ex.category !== activeCategory) {
+        return false;
+      }
+    }
+
+    const equipments = getExerciseEquipments(ex);
+    if (activeEquipment !== "ALL" && !equipments.includes(activeEquipment)) {
+      return false;
+    }
+
+    if (normalizedQuery) {
+      const categoryLabel = ex.category
+        ? DIRECTORY_CATEGORY_LABEL_BY_ID[ex.category] ?? ""
+        : "";
+      const equipmentLabels = equipments.map(
+        (code) => DIRECTORY_EQUIPMENT_LABEL_BY_ID[code] ?? code
+      );
+      const haystack = normalizeCatalogText(
+        [
+          id,
+          id.replaceAll("_", " "),
+          ex.name,
+          ex.short_desc,
+          categoryLabel,
+          isPerso ? DIRECTORY_CATEGORY_LABEL_BY_ID.PERSO : "",
+          ...equipmentLabels,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
+      if (!haystack.includes(normalizedQuery)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 /**

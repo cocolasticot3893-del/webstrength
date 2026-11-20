@@ -6,11 +6,15 @@
 import {
   CATALOG,
   CUSTOM_TEMPLATES,
+  DIRECTORY_CATEGORIES,
+  DIRECTORY_EQUIPMENTS,
   EXTENDED_CATEGORIES,
   exportUserExercisesJson,
+  filterCatalogExercises,
   generateUserExerciseId,
   getAllCatalogExercises,
   getCatalogExercise,
+  getExerciseEquipments,
   getUserExercisesList,
   loadUserExercises,
   saveUserExercise,
@@ -142,6 +146,14 @@ const state = {
     playing: true,
     activeRequestId: 0,
   },
+  directory: {
+    open: false,
+    returnStep: 1,
+    query: "",
+    category: "ALL",
+    equipment: "ALL",
+    addedInVisit: 0,
+  },
 };
 
 /** Raccourci sûr de sélection par ID. */
@@ -209,6 +221,11 @@ function showStep(step) {
   $("step-1").hidden = step !== 1;
   $("step-2").hidden = step !== 2;
   $("step-3").hidden = step !== 3;
+  const dirView = $("catalog-directory-view");
+  if (dirView) dirView.hidden = true;
+  state.directory.open = false;
+  const dirBtn = $("open-catalog-directory-btn");
+  if (dirBtn) dirBtn.setAttribute("aria-expanded", "false");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -528,6 +545,7 @@ function updateExportUserExercisesBtn() {
         ? `Envoyer ${count} exercice(s) promu(s) sur Google Drive`
         : "Aucun exercice promu localement";
   }
+  updateCatalogDirectoryBadge();
 }
 
 /**
@@ -1704,7 +1722,7 @@ function renderStep2Plan() {
  * @param {object} plan
  * @param {{ source?: string, model?: string | null, fallbackReason?: string | null }} [sourceMeta]
  */
-function launchPlanIntoStep2(plan, sourceMeta = {}) {
+function launchPlanIntoStep2(plan, sourceMeta = {}, { keepDirectoryOpen = false } = {}) {
   state.plan = {
     ...plan,
     is_free_mode: Boolean(plan?.is_free_mode),
@@ -1756,7 +1774,12 @@ function launchPlanIntoStep2(plan, sourceMeta = {}) {
   startChrono();
   stopRestTimer();
   renderStep2Plan();
-  showStep(2);
+  if (keepDirectoryOpen && state.directory.open) {
+    state.currentStep = 2;
+    state.directory.returnStep = 2;
+  } else {
+    showStep(2);
+  }
 }
 
 async function handleGateSelection(gate) {
@@ -2160,6 +2183,7 @@ async function promoteCustomExercise(index, triggerBtn = null) {
 
     renderStep2Plan();
     updateExportUserExercisesBtn();
+    updateCatalogDirectoryBadge();
 
     const originLabel =
       result.source === "GEMINI_CATALOG" ? "Gemini" : "schéma offline";
@@ -2866,16 +2890,351 @@ function registerServiceWorker() {
   }
 }
 
+/* ==========================================================================
+   Vue Annuaire Catalogue Complet (#catalog-directory-view)
+   ========================================================================== */
+
+const DIRECTORY_CATEGORY_LABEL_BY_ID = Object.freeze(
+  Object.fromEntries(DIRECTORY_CATEGORIES.map((item) => [item.id, item.label]))
+);
+
+const DIRECTORY_EQUIPMENT_LABEL_BY_ID = Object.freeze(
+  Object.fromEntries(DIRECTORY_EQUIPMENTS.map((item) => [item.id, item.label]))
+);
+
+/** Timers de confirmation par bouton pour éviter les fuites DOM ou collisions. */
+const directoryAddBtnTimers = new WeakMap();
+
+/**
+ * Met à jour le badge compteur du catalogue dans la barre supérieure.
+ */
+function updateCatalogDirectoryBadge() {
+  const btn = $("open-catalog-directory-btn");
+  if (!btn) return;
+  btn.textContent = `📚 Catalogue (${getAllCatalogExercises().length})`;
+}
+
+/**
+ * Ouvre la vue dédiée du catalogue sans altérer la séance ou le chrono en cours.
+ */
+function openCatalogDirectory() {
+  const dirView = $("catalog-directory-view");
+  if (!dirView) return;
+
+  state.directory.returnStep = state.currentStep;
+  state.directory.addedInVisit = 0;
+  state.directory.open = true;
+
+  const closeBtn = $("close-catalog-directory-btn");
+  if (closeBtn) {
+    closeBtn.textContent = "← Retour à la séance";
+  }
+
+  $("step-1").hidden = true;
+  $("step-2").hidden = true;
+  $("step-3").hidden = true;
+  dirView.hidden = false;
+
+  const openBtn = $("open-catalog-directory-btn");
+  if (openBtn) {
+    openBtn.setAttribute("aria-expanded", "true");
+  }
+
+  renderCatalogDirectory();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  closeBtn?.focus();
+}
+
+/**
+ * Ferme l'annuaire catalogue et restaure l'étape d'origine.
+ */
+function closeCatalogDirectory() {
+  showStep(state.directory.returnStep);
+  $("open-catalog-directory-btn")?.focus();
+}
+
+/**
+ * Ajoute un exercice de l'annuaire à la séance active ou crée une séance libre.
+ * @param {Record<string, any>} ex
+ * @param {HTMLButtonElement | null} triggerBtn
+ */
+function addExerciseFromDirectory(ex, triggerBtn) {
+  if (!ex || !ex.id) return;
+
+  const block = ex.pole === "KBOX" ? 2 : ex.pole === "DUMBBELL" ? 2 : 1;
+  const load = ex.allowed_loads?.[0] ?? 0;
+  const sets = ex.default_sets ?? 3;
+  const reps = ex.default_reps ?? (ex.is_timed ? 45 : 10);
+  const item = {
+    id: ex.id,
+    block,
+    sets,
+    reps,
+    load,
+    completion: 1,
+    ...(ex.is_timed ? { is_timed: true } : {}),
+  };
+
+  const hasActiveSession =
+    Boolean(state.plan) &&
+    Array.isArray(state.session.exercises) &&
+    state.session.exercises.length > 0;
+
+  if (hasActiveSession) {
+    state.session.exercises.push(item);
+    state.plan = {
+      ...state.plan,
+      exercises: [...(state.plan.exercises ?? []), item],
+    };
+    renderStep2Plan();
+    state.directory.returnStep = 2;
+  } else {
+    const plan = buildFreeSessionPlan({
+      title: "Séance Libre Catalogue",
+      exercises: [item],
+      sourceLabel: "Catalogue",
+      gate: state.gate,
+      readiness: state.readiness,
+    });
+    launchPlanIntoStep2(
+      plan,
+      { source: "FREE_BUILDER" },
+      { keepDirectoryOpen: true }
+    );
+  }
+
+  state.directory.addedInVisit += 1;
+  const closeBtn = $("close-catalog-directory-btn");
+  if (closeBtn) {
+    closeBtn.textContent = `← Retour à la séance (+${state.directory.addedInVisit})`;
+  }
+
+  if (triggerBtn) {
+    const existingTimer = directoryAddBtnTimers.get(triggerBtn);
+    if (existingTimer !== undefined) {
+      clearTimeout(existingTimer);
+    }
+    triggerBtn.textContent = "✓ Ajouté";
+    triggerBtn.classList.add("is-added");
+    const timerId = setTimeout(() => {
+      directoryAddBtnTimers.delete(triggerBtn);
+      if (triggerBtn.isConnected) {
+        triggerBtn.textContent = "➕ Ajouter à la séance";
+        triggerBtn.classList.remove("is-added");
+      }
+    }, 1600);
+    directoryAddBtnTimers.set(triggerBtn, timerId);
+  }
+}
+
+/**
+ * Construit et affiche la grille filtrée de l'annuaire catalogue (DOM natif via createElement / textContent).
+ */
+function renderCatalogDirectory() {
+  const grid = $("directory-grid");
+  if (!grid) return;
+
+  const all = getAllCatalogExercises();
+  const filtered = filterCatalogExercises(all, state.directory);
+
+  const countEl = $("directory-results-count");
+  if (countEl) {
+    const hasFilter =
+      Boolean(state.directory.query.trim()) ||
+      state.directory.category !== "ALL" ||
+      state.directory.equipment !== "ALL";
+    countEl.textContent = hasFilter
+      ? `${filtered.length} / ${all.length} exercices`
+      : `${all.length} exercices`;
+  }
+
+  if (filtered.length === 0) {
+    const emptyEl = document.createElement("p");
+    emptyEl.className = "directory-empty";
+    emptyEl.textContent = "Aucun exercice ne correspond aux filtres actifs.";
+    grid.replaceChildren(emptyEl);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  for (const ex of filtered) {
+    const card = document.createElement("article");
+    card.className = "directory-card";
+
+    const thumb = document.createElement("div");
+    thumb.className = "directory-thumb";
+    const inlineSvg = ex.svg_inline || ex.guide?.svg_inline;
+    if (ex.guide?.svg_path) {
+      const img = document.createElement("img");
+      img.src = ex.guide.svg_path;
+      img.alt = ex.name || ex.id;
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.width = 110;
+      img.height = 100;
+      thumb.appendChild(img);
+    } else if (typeof inlineSvg === "string" && inlineSvg.trim()) {
+      try {
+        thumb.appendChild(sanitizeAndImportSvg(inlineSvg));
+      } catch {
+        // Aperçu ignoré si le SVG inline est invalide
+      }
+    }
+
+    const body = document.createElement("div");
+    body.className = "directory-card-body";
+
+    const title = document.createElement("h3");
+    title.textContent = ex.name || ex.id;
+
+    const exoId = document.createElement("code");
+    exoId.className = "directory-exo-id";
+    exoId.textContent = ex.id;
+
+    const badges = document.createElement("div");
+    badges.className = "directory-badges";
+    if (ex.category && Object.hasOwn(CATEGORY_BADGE_META, ex.category)) {
+      appendCategoryAndBodyweightBadges(badges, ex);
+    } else {
+      if (
+        ex.category &&
+        Object.hasOwn(DIRECTORY_CATEGORY_LABEL_BY_ID, ex.category)
+      ) {
+        const catBadge = document.createElement("span");
+        catBadge.className = "exo-badge";
+        catBadge.textContent = DIRECTORY_CATEGORY_LABEL_BY_ID[ex.category];
+        badges.appendChild(catBadge);
+      }
+      appendCategoryAndBodyweightBadges(badges, ex);
+    }
+
+    for (const eqCode of getExerciseEquipments(ex)) {
+      if (eqCode === "PDC" && ex.is_bodyweight) continue;
+      const eqBadge = document.createElement("span");
+      eqBadge.className =
+        eqCode === "PDC" ? "exo-badge is-bodyweight" : "exo-badge";
+      eqBadge.textContent = DIRECTORY_EQUIPMENT_LABEL_BY_ID[eqCode] ?? eqCode;
+      badges.appendChild(eqBadge);
+    }
+
+    if (ex.is_user_catalog || String(ex.id ?? "").startsWith("USER_")) {
+      const persoBadge = document.createElement("span");
+      persoBadge.className = "exo-badge is-user-catalog";
+      persoBadge.textContent = "Perso";
+      badges.appendChild(persoBadge);
+    }
+
+    const desc = document.createElement("p");
+    desc.className = "directory-short-desc";
+    desc.textContent = ex.short_desc ?? "";
+
+    const actions = document.createElement("div");
+    actions.className = "directory-card-actions";
+
+    const guideBtn = document.createElement("button");
+    guideBtn.type = "button";
+    guideBtn.className = "btn btn-secondary btn-sm";
+    guideBtn.textContent = "🎬 Fiche & ralenti";
+    guideBtn.addEventListener("click", () => {
+      void openExerciseGuideModal(ex.id);
+    });
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn btn-primary btn-sm";
+    addBtn.textContent = "➕ Ajouter à la séance";
+    addBtn.addEventListener("click", () => {
+      addExerciseFromDirectory(ex, addBtn);
+    });
+
+    actions.append(guideBtn, addBtn);
+    body.append(title, exoId, badges, desc, actions);
+    card.append(thumb, body);
+    fragment.appendChild(card);
+  }
+
+  grid.replaceChildren(fragment);
+}
+
+/**
+ * Branche les événements de navigation, recherche et filtres du catalogue complet.
+ */
+function initCatalogDirectoryView() {
+  const dirView = $("catalog-directory-view");
+  const openBtn = $("open-catalog-directory-btn");
+  const closeBtn = $("close-catalog-directory-btn");
+  const searchInput = /** @type {HTMLInputElement | null} */ (
+    $("directory-search-input")
+  );
+  const categoryBtns = Array.from(
+    document.querySelectorAll("[data-dir-category]")
+  );
+  const equipmentBtns = Array.from(
+    document.querySelectorAll("[data-dir-equipment]")
+  );
+
+  const syncFilterButtons = () => {
+    for (const btn of categoryBtns) {
+      const active =
+        (btn.dataset.dirCategory || "ALL") === state.directory.category;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    }
+    for (const btn of equipmentBtns) {
+      const active =
+        (btn.dataset.dirEquipment || "ALL") === state.directory.equipment;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    }
+  };
+
+  openBtn?.addEventListener("click", () => {
+    openCatalogDirectory();
+  });
+
+  closeBtn?.addEventListener("click", () => {
+    closeCatalogDirectory();
+  });
+
+  searchInput?.addEventListener("input", (event) => {
+    state.directory.query = event.target.value;
+    if (state.directory.open || dirView?.hidden === false) {
+      renderCatalogDirectory();
+    }
+  });
+
+  for (const btn of categoryBtns) {
+    btn.addEventListener("click", () => {
+      state.directory.category = btn.dataset.dirCategory || "ALL";
+      syncFilterButtons();
+      renderCatalogDirectory();
+    });
+  }
+
+  for (const btn of equipmentBtns) {
+    btn.addEventListener("click", () => {
+      state.directory.equipment = btn.dataset.dirEquipment || "ALL";
+      syncFilterButtons();
+      renderCatalogDirectory();
+    });
+  }
+
+  syncFilterButtons();
+}
+
 async function bootstrap() {
   state.vault = loadVault();
   updateNetworkBadge();
   updateServicePills();
+  updateCatalogDirectoryBadge();
   registerServiceWorker();
 
   initVaultControls();
   initGuideModalEvents();
   initFreeBuilderModal();
   initMarkdownImportModal();
+  initCatalogDirectoryView();
   initStep1Events();
   initStep2Events();
   initStep3Events();

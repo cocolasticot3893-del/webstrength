@@ -71,6 +71,16 @@
         </button>
         <button
           type="button"
+          id="open-catalog-directory-btn"
+          class="status-pill status-pill-btn topbar-catalog-btn"
+          aria-controls="catalog-directory-view"
+          aria-expanded="false"
+          title="Ouvrir le catalogue complet avec aperçus SVG animés"
+        >
+          📚 Catalogue (55)
+        </button>
+        <button
+          type="button"
           id="vault-toggle-btn"
           class="icon-btn"
           aria-label="Ouvrir le coffre-fort"
@@ -849,6 +859,188 @@
         >
           Nouvelle Séance
         </button>
+      </section>
+
+      <section
+        id="catalog-directory-view"
+        class="step-view directory-view"
+        hidden
+        aria-labelledby="directory-view-title"
+      >
+        <div class="directory-sticky-bar">
+          <button
+            type="button"
+            id="close-catalog-directory-btn"
+            class="btn btn-secondary btn-sm"
+          >
+            ← Retour à la séance
+          </button>
+          <h2 id="directory-view-title" class="directory-view-title">
+            Catalogue Complet
+          </h2>
+          <span
+            id="directory-results-count"
+            class="status-pill"
+            role="status"
+            aria-live="polite"
+          >
+            55 exercices
+          </span>
+        </div>
+
+        <search class="directory-search-box">
+          <label for="directory-search-input" class="free-search-label">
+            Rechercher par nom, ID ou objectif
+          </label>
+          <input
+            type="search"
+            id="directory-search-input"
+            name="directory_search"
+            class="free-search-input"
+            placeholder="Ex : traction pronation, pogo, kBox, roue…"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+            enterkeyhint="search"
+            autocomplete="off"
+          />
+        </search>
+
+        <div
+          class="segmented directory-filter-row"
+          role="group"
+          aria-label="Filtrer par catégorie"
+        >
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn is-active"
+            data-dir-category="ALL"
+            aria-pressed="true"
+          >
+            Toutes
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="UPPER_BODY"
+            aria-pressed="false"
+          >
+            Haut / Tractions
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="CORE_TRUNK"
+            aria-pressed="false"
+          >
+            Tronc / Gainage
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="POSTERIOR_HIP_ANKLE"
+            aria-pressed="false"
+          >
+            Postérieur / Hanche / Cheville
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="VELOCITY"
+            aria-pressed="false"
+          >
+            Vitesse
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="PLYOMETRICS"
+            aria-pressed="false"
+          >
+            Pliométrie
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-category="PERSO"
+            aria-pressed="false"
+          >
+            Perso
+          </button>
+        </div>
+
+        <div
+          class="segmented directory-filter-row"
+          role="group"
+          aria-label="Filtrer par équipement ou modalité"
+        >
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn is-active"
+            data-dir-equipment="ALL"
+            aria-pressed="true"
+          >
+            Tous
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="KBOX"
+            aria-pressed="false"
+          >
+            kBox
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="BAND"
+            aria-pressed="false"
+          >
+            Élastiques
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="DUMBBELL"
+            aria-pressed="false"
+          >
+            Haltères
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="BARBELL"
+            aria-pressed="false"
+          >
+            Barre
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="KETTLEBELL"
+            aria-pressed="false"
+          >
+            Kettlebell
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="AB_WHEEL"
+            aria-pressed="false"
+          >
+            Roue abdo
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-cat-btn"
+            data-dir-equipment="PDC"
+            aria-pressed="false"
+          >
+            PDC
+          </button>
+        </div>
+
+        <div id="directory-grid" class="directory-grid"></div>
       </section>
     </main>
 
