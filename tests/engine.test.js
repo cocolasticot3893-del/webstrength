@@ -3306,11 +3306,11 @@ describe("10. Catalogue Étendu v1.9.0 (55 exercices), PDC, Vitesse/Pliométrie,
     assert.equal(seenPaths.size, 55);
   });
 
-  it("vérifie le Service Worker sw.js v1.11.0 : CACHE_NAME, extendedCatalog.js, directoryBuilder.js et pré-cache des 55 SVG", () => {
+  it("vérifie le Service Worker sw.js v1.11.1 : CACHE_NAME, extendedCatalog.js, directoryBuilder.js et pré-cache des 55 SVG", () => {
     const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
     const swContent = fs.readFileSync(path.join(rootDir, "sw.js"), "utf8");
 
-    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.11\.0["']\s*;/);
+    assert.match(swContent, /const\s+CACHE_NAME\s*=\s*["']webstrength-v1\.11\.1["']\s*;/);
 
     const precacheMatch = swContent.match(/const\s+PRECACHE_ASSETS\s*=\s*\[([\s\S]*?)\]\s*;/);
     assert.ok(precacheMatch, "PRECACHE_ASSETS introuvable dans sw.js");
@@ -4251,6 +4251,90 @@ describe("12. Correctifs Recherche URL & Constructeur de Séance Catalogue v1.11
       /\binnerHTML\b/i.test(directoryBuilderJs),
       false,
       "directoryBuilder.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
+    );
+  });
+
+  it("vérifie la non-régression v1.11.1 : #directory-search-input (autocomplete/value), resetDirectorySearchInput, pageshow et 0 innerHTML", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const indexHtml = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+    const appJs = fs.readFileSync(path.join(rootDir, "app.js"), "utf8");
+
+    const inputTagMatch = indexHtml.match(
+      /<input\b[^>]*\bid\s*=\s*["']directory-search-input["'][^>]*>/i
+    );
+    assert.ok(
+      inputTagMatch,
+      'Balise <input id="directory-search-input"> introuvable dans index.html'
+    );
+    assert.match(
+      inputTagMatch[0],
+      /\bautocomplete\s*=\s*["']off["']/i,
+      '#directory-search-input doit contenir autocomplete="off"'
+    );
+    assert.match(
+      inputTagMatch[0],
+      /\bvalue\s*=\s*["']["']/i,
+      '#directory-search-input doit contenir value=""'
+    );
+
+    const extractBraceBlock = (source, headerRegex, label) => {
+      const match = headerRegex.exec(source);
+      assert.ok(match, `${label} introuvable dans app.js`);
+      const openIdx = source.indexOf("{", match.index);
+      assert.notEqual(openIdx, -1, `Accolade ouvrante manquante pour ${label}`);
+      let depth = 0;
+      for (let i = openIdx; i < source.length; i += 1) {
+        if (source[i] === "{") depth += 1;
+        else if (source[i] === "}") {
+          depth -= 1;
+          if (depth === 0) return source.slice(match.index, i + 1);
+        }
+      }
+      assert.fail(`Accolade fermante manquante pour ${label}`);
+    };
+
+    extractBraceBlock(
+      appJs,
+      /\bfunction\s+resetDirectorySearchInput\s*\(\s*\)\s*\{/,
+      "function resetDirectorySearchInput()"
+    );
+
+    const openDirBody = extractBraceBlock(
+      appJs,
+      /\bfunction\s+openCatalogDirectory\s*\(\s*\)\s*\{/,
+      "function openCatalogDirectory()"
+    );
+    assert.match(
+      openDirBody,
+      /\bresetDirectorySearchInput\s*\(\s*\)\s*;/,
+      "openCatalogDirectory() doit appeler resetDirectorySearchInput()"
+    );
+
+    const initDirBody = extractBraceBlock(
+      appJs,
+      /\bfunction\s+initCatalogDirectoryView\s*\(\s*\)\s*\{/,
+      "function initCatalogDirectoryView()"
+    );
+    const pageshowBlock = extractBraceBlock(
+      initDirBody,
+      /addEventListener\s*\(\s*["']pageshow["']\s*,\s*(?:function\s*\([^)]*\)|(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)\s*\{/,
+      "écouteur pageshow"
+    );
+    assert.match(
+      pageshowBlock,
+      /\bresetDirectorySearchInput\s*\(\s*\)\s*;/,
+      "L'écouteur pageshow doit appeler resetDirectorySearchInput()"
+    );
+    assert.match(
+      initDirBody.replace(pageshowBlock, ""),
+      /\bresetDirectorySearchInput\s*\(\s*\)\s*;/,
+      "initCatalogDirectoryView() doit appeler resetDirectorySearchInput()"
+    );
+
+    assert.equal(
+      /\binnerHTML\b/i.test(appJs),
+      false,
+      "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
     );
   });
 });

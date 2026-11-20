@@ -2999,6 +2999,24 @@ function appendDirectoryCategoryBadges(container, ex) {
 }
 
 /**
+ * Réinitialise la barre de recherche de l'annuaire catalogue et son bouton d'effacement.
+ */
+function resetDirectorySearchInput() {
+  state.directory.query = "";
+  const searchInput = /** @type {HTMLInputElement | null} */ (
+    $("directory-search-input")
+  );
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.defaultValue = "";
+  }
+  const clearBtn = $("directory-search-clear-btn");
+  if (clearBtn) {
+    clearBtn.hidden = true;
+  }
+}
+
+/**
  * Ouvre la vue dédiée du catalogue sans altérer la séance ou le chrono en cours.
  */
 function openCatalogDirectory() {
@@ -3025,6 +3043,7 @@ function openCatalogDirectory() {
     openBtn.setAttribute("aria-expanded", "true");
   }
 
+  resetDirectorySearchInput();
   renderDirectoryBuilder();
   renderCatalogDirectory();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3566,11 +3585,7 @@ function initCatalogDirectoryView() {
   });
 
   clearBtn?.addEventListener("click", () => {
-    state.directory.query = "";
-    if (searchInput) {
-      searchInput.value = "";
-    }
-    clearBtn.hidden = true;
+    resetDirectorySearchInput();
     renderCatalogDirectory();
     searchInput?.focus();
   });
@@ -3669,6 +3684,14 @@ function initCatalogDirectoryView() {
   $("directory-builder-launch-btn")?.addEventListener("click", handleBuilderLaunch);
   $("directory-ribbon-launch-btn")?.addEventListener("click", handleBuilderLaunch);
 
+  window.addEventListener("pageshow", () => {
+    resetDirectorySearchInput();
+    if (state.directory.open || dirView?.hidden === false) {
+      renderCatalogDirectory();
+    }
+  });
+
+  resetDirectorySearchInput();
   syncFilterButtons();
   renderDirectoryBuilder();
 }
