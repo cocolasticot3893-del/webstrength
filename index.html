@@ -437,6 +437,104 @@
               aria-checked="false"
             />
           </label>
+
+          <div id="equipment-availability-card" class="equipment-card">
+            <div class="equipment-card-header">
+              <strong>Matériel disponible</strong>
+              <div class="equipment-presets" role="group" aria-label="Pré-réglages matériel">
+                <button
+                  type="button"
+                  class="equipment-preset-btn is-active"
+                  data-equip-preset="ALL"
+                  aria-pressed="true"
+                >
+                  Complet
+                </button>
+                <button
+                  type="button"
+                  class="equipment-preset-btn"
+                  data-equip-preset="NO_KBOX"
+                  aria-pressed="false"
+                >
+                  Sans kBox
+                </button>
+                <button
+                  type="button"
+                  class="equipment-preset-btn"
+                  data-equip-preset="TRAVEL"
+                  aria-pressed="false"
+                >
+                  Élast. + PDC
+                </button>
+                <button
+                  type="button"
+                  class="equipment-preset-btn"
+                  data-equip-preset="PDC_ONLY"
+                  aria-pressed="false"
+                >
+                  PDC seul
+                </button>
+              </div>
+            </div>
+            <div class="equipment-chips" role="group" aria-label="Équipements disponibles">
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="KBOX"
+                aria-pressed="true"
+              >
+                kBox
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="BAND"
+                aria-pressed="true"
+              >
+                Élastiques
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="DUMBBELL"
+                aria-pressed="true"
+              >
+                Haltères
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="BARBELL"
+                aria-pressed="true"
+              >
+                Barre
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="KETTLEBELL"
+                aria-pressed="true"
+              >
+                Kettlebell
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="AB_WHEEL"
+                aria-pressed="true"
+              >
+                Roue abdo
+              </button>
+              <button
+                type="button"
+                class="equipment-chip"
+                data-equip-toggle="PDC"
+                aria-pressed="true"
+              >
+                PDC
+              </button>
+            </div>
+          </div>
         </article>
 
         <section class="gatekeeper-section" aria-label="Sélection Gatekeeper 1-Tap">
@@ -1069,6 +1167,15 @@
           </button>
         </div>
 
+        <label class="only-available-toggle" for="directory-only-available-toggle">
+          <input
+            type="checkbox"
+            id="directory-only-available-toggle"
+            checked
+          />
+          <span>Matériel dispo uniquement</span>
+        </label>
+
         <section
           id="directory-builder-panel"
           class="card directory-builder-panel"
@@ -1349,6 +1456,14 @@
               Pliométrie
             </button>
           </div>
+          <label class="only-available-toggle" for="free-only-available-toggle">
+            <input
+              type="checkbox"
+              id="free-only-available-toggle"
+              checked
+            />
+            <span>Matériel dispo uniquement</span>
+          </label>
           <div id="free-catalog-picker" class="free-picker-list"></div>
         </section>
 

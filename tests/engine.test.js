@@ -25,6 +25,9 @@ import {
   ALL_OFFICIAL_EXERCISES,
   DIRECTORY_CATEGORIES,
   DIRECTORY_EQUIPMENTS,
+  EQUIPMENT_KEYS,
+  DEFAULT_EQUIPMENT_PROFILE,
+  EQUIPMENT_PRESETS,
   USER_EXERCISES_STORAGE_KEY,
   generateUserExerciseId,
   loadUserExercises,
@@ -34,6 +37,10 @@ import {
   getUserExercisesList,
   getAllCatalogExercises,
   getExerciseEquipments,
+  normalizeEquipmentProfile,
+  isEquipmentProfileFull,
+  isExerciseAvailable,
+  filterExercisesByEquipment,
   filterCatalogExercises,
   exportUserExercisesJson,
   getCatalogExercise,
@@ -4852,3 +4859,388 @@ describe("13. Extension Sprint v1.12.0 (60 exercices) & SVG Animés", () => {
     }
   });
 });
+
+// ============================================================================
+// 14. Filtrage par Matériel Disponible
+// ============================================================================
+
+describe("14. Filtrage par Matériel Disponible", () => {
+  let restoreLocalStorage = null;
+  let restoreFetch = null;
+  let restoreNavigator = null;
+
+  beforeEach(() => {
+    restoreLocalStorage = stubGlobalProperty("localStorage", {
+      value: createMemoryLocalStorage(),
+    });
+  });
+
+  afterEach(() => {
+    if (restoreNavigator) {
+      restoreNavigator();
+      restoreNavigator = null;
+    }
+    if (restoreFetch) {
+      restoreFetch();
+      restoreFetch = null;
+    }
+    if (restoreLocalStorage) {
+      restoreLocalStorage();
+      restoreLocalStorage = null;
+    }
+  });
+
+  it("normalizeEquipmentProfile, isEquipmentProfileFull, isExerciseAvailable, filterExercisesByEquipment et filterCatalogExercises sur les 60 exercices officiels", () => {
+    assert.equal(ALL_OFFICIAL_EXERCISES.length, 60);
+
+    // 1. normalizeEquipmentProfile (valeurs nulles, partielles, invalides)
+    assert.deepEqual(normalizeEquipmentProfile(null), DEFAULT_EQUIPMENT_PROFILE);
+    assert.deepEqual(normalizeEquipmentProfile(undefined), DEFAULT_EQUIPMENT_PROFILE);
+    assert.deepEqual(normalizeEquipmentProfile(["KBOX"]), DEFAULT_EQUIPMENT_PROFILE);
+
+    const partialNormalized = normalizeEquipmentProfile({
+      KBOX: false,
+      BARBELL: false,
+      EXTRA_UNKNOWN: false,
+    });
+    assert.deepEqual(Object.keys(partialNormalized), [...EQUIPMENT_KEYS]);
+    assert.equal(partialNormalized.KBOX, false);
+    assert.equal(partialNormalized.BARBELL, false);
+    assert.equal(partialNormalized.BAND, true);
+    assert.equal(partialNormalized.DUMBBELL, true);
+    assert.equal(partialNormalized.KETTLEBELL, true);
+    assert.equal(partialNormalized.AB_WHEEL, true);
+    assert.equal(partialNormalized.PDC, true);
+    assert.equal("EXTRA_UNKNOWN" in partialNormalized, false);
+
+    // 2. isEquipmentProfileFull
+    assert.equal(isEquipmentProfileFull(DEFAULT_EQUIPMENT_PROFILE), true);
+    assert.equal(isEquipmentProfileFull(null), true);
+    assert.equal(isEquipmentProfileFull({ KBOX: false }), false);
+    assert.equal(isEquipmentProfileFull(EQUIPMENT_PRESETS.TRAVEL.profile), false);
+    assert.equal(isEquipmentProfileFull(EQUIPMENT_PRESETS.PDC_ONLY.profile), false);
+
+    // 3. isExerciseAvailable & filterExercisesByEquipment sur les 60 exercices
+    const fullFiltered = filterExercisesByEquipment(
+      ALL_OFFICIAL_EXERCISES,
+      DEFAULT_EQUIPMENT_PROFILE
+    );
+    assert.equal(fullFiltered.length, 60);
+
+    const noKboxProfile = EQUIPMENT_PRESETS.NO_KBOX.profile;
+    const noKboxFiltered = filterExercisesByEquipment(ALL_OFFICIAL_EXERCISES, noKboxProfile);
+    assert.ok(noKboxFiltered.length > 0 && noKboxFiltered.length < 60);
+    for (const ex of noKboxFiltered) {
+      const equips = getExerciseEquipments(ex);
+      assert.equal(equips.includes("KBOX"), false, `${ex.id} ne doit pas exiger KBOX`);
+      assert.equal(isExerciseAvailable(ex, noKboxProfile), true);
+    }
+    const kboxSquat = getCatalogExercise("KBOX_SQUAT_HARNESS");
+    assert.equal(isExerciseAvailable(kboxSquat, noKboxProfile), false);
+
+    // Mode TRAVEL = BAND + PDC uniquement
+    const travelProfile = EQUIPMENT_PRESETS.TRAVEL.profile;
+    const travelFiltered = filterExercisesByEquipment(ALL_OFFICIAL_EXERCISES, travelProfile);
+    assert.ok(travelFiltered.length > 0);
+    for (const ex of travelFiltered) {
+      const equips = getExerciseEquipments(ex);
+      assert.equal(
+        equips.every((code) => code === "BAND" || code === "PDC"),
+        true,
+        `${ex.id} invalide en mode TRAVEL (${equips.join(",")})`
+      );
+    }
+
+    // Mode PDC_ONLY = PDC uniquement
+    const pdcProfile = EQUIPMENT_PRESETS.PDC_ONLY.profile;
+    const pdcFiltered = filterExercisesByEquipment(ALL_OFFICIAL_EXERCISES, pdcProfile);
+    assert.ok(pdcFiltered.length > 0);
+    for (const ex of pdcFiltered) {
+      const equips = getExerciseEquipments(ex);
+      assert.equal(
+        equips.every((code) => code === "PDC"),
+        true,
+        `${ex.id} invalide en mode PDC_ONLY (${equips.join(",")})`
+      );
+    }
+
+    // Tout désactivé -> 0 exercice
+    const noneProfile = Object.fromEntries(EQUIPMENT_KEYS.map((k) => [k, false]));
+    assert.equal(filterExercisesByEquipment(ALL_OFFICIAL_EXERCISES, noneProfile).length, 0);
+
+    // 4. filterCatalogExercises avec onlyAvailableEquipment: true et availableEquipment
+    const catalogFilteredNoKbox = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      onlyAvailableEquipment: true,
+      availableEquipment: noKboxProfile,
+    });
+    assert.deepEqual(
+      catalogFilteredNoKbox.map((ex) => ex.id),
+      noKboxFiltered.map((ex) => ex.id)
+    );
+
+    const catalogIgnoredWhenFalse = filterCatalogExercises(ALL_OFFICIAL_EXERCISES, {
+      onlyAvailableEquipment: false,
+      availableEquipment: noneProfile,
+    });
+    assert.equal(catalogIgnoredWhenFalse.length, 60);
+  });
+
+  it("persiste EQUIPMENT_PROFILE dans vault.js (saveVault / loadVault / exportVaultJson / importVaultJson)", () => {
+    const initial = loadVault();
+    assert.deepEqual(initial.EQUIPMENT_PROFILE, DEFAULT_EQUIPMENT_PROFILE);
+
+    const customProfile = {
+      KBOX: false,
+      BAND: true,
+      DUMBBELL: false,
+      BARBELL: false,
+      KETTLEBELL: true,
+      AB_WHEEL: false,
+      PDC: true,
+    };
+
+    const saved = saveVault({
+      INTERVALS_ATHLETE_ID: "i999",
+      INTERVALS_API_KEY: "secret_intervals_xyz",
+      GEMINI_API_KEY: "secret_gemini_xyz",
+      EQUIPMENT_PROFILE: customProfile,
+    });
+    assert.deepEqual(saved.EQUIPMENT_PROFILE, customProfile);
+    assert.deepEqual(loadVault().EQUIPMENT_PROFILE, customProfile);
+
+    // Export sans secrets préserve EQUIPMENT_PROFILE et masque les secrets
+    const exportedJson = exportVaultJson({ includeSecrets: false });
+    const exportedObj = JSON.parse(exportedJson);
+    assert.equal(exportedObj.INTERVALS_API_KEY, "");
+    assert.equal(exportedObj.GEMINI_API_KEY, "");
+    assert.deepEqual(exportedObj.EQUIPMENT_PROFILE, customProfile);
+
+    // Réinitialise vers profil complet puis réimporte le JSON exporté
+    saveVault({ EQUIPMENT_PROFILE: DEFAULT_EQUIPMENT_PROFILE });
+    assert.deepEqual(loadVault().EQUIPMENT_PROFILE, DEFAULT_EQUIPMENT_PROFILE);
+
+    const imported = importVaultJson(exportedJson);
+    assert.deepEqual(imported.EQUIPMENT_PROFILE, customProfile);
+    assert.deepEqual(loadVault().EQUIPMENT_PROFILE, customProfile);
+  });
+
+  it("generateFallbackSession et enforceSymbolicConstraints filtrent le matériel (sans KBOX, TRAVEL, PDC_ONLY, tout à false)", () => {
+    // 1. Sans KBOX (KBOX: false) -> aucun KBOX, charges valides selon allowed_loads
+    const noKboxCtx = {
+      gate: "GREEN",
+      readiness: "OPTIMAL",
+      lumbar_flag: false,
+      yesterday_bike_hours: 1,
+      hours_since_last_eccentric: 72,
+      last_dominant_pattern: "KNEE_DOMINANT",
+      equipment_profile: EQUIPMENT_PRESETS.NO_KBOX.profile,
+    };
+    const noKboxPlan = generateFallbackSession(noKboxCtx);
+    assert.ok(noKboxPlan.exercises.length >= 1 && noKboxPlan.exercises.length <= 6);
+    for (const ex of noKboxPlan.exercises) {
+      const cat = getCatalogExercise(ex.id);
+      assert.notEqual(cat.pole, "KBOX", `${ex.id} interdit quand KBOX=false`);
+      assert.equal(isExerciseAvailable(cat, noKboxCtx.equipment_profile), true);
+      assert.equal(
+        cat.allowed_loads.includes(ex.load),
+        true,
+        `Charge ${ex.load} hors allowed_loads [${cat.allowed_loads.join(",")}] pour ${ex.id}`
+      );
+    }
+
+    // enforceSymbolicConstraints injecté avec des exercices KBOX alors que KBOX=false
+    const pollutedPlan = {
+      theme: "Plan avec KBOX interdit",
+      rationale: "Test filtrage matériel",
+      recommended_k_ecc: 1.5,
+      recommended_rir: 2,
+      recommended_rpe: 7,
+      target_duration_sec: 2100,
+      exercises: [
+        { id: "KBOX_SQUAT_HARNESS", block: 2, sets: 4, reps: 6, load: 0.075 },
+        { id: "KBOX_RDL", block: 2, sets: 4, reps: 8, load: 0.05 },
+        { id: "BAND_MONSTER_WALK", block: 1, sets: 3, reps: 45, load: 2 },
+        { id: "DB_BULGARIAN_SPLIT", block: 3, sets: 3, reps: 8, load: 12 },
+      ],
+    };
+    const sanitizedNoKbox = enforceSymbolicConstraints(pollutedPlan, noKboxCtx);
+    for (const ex of sanitizedNoKbox.exercises) {
+      const cat = getCatalogExercise(ex.id);
+      assert.equal(isExerciseAvailable(cat, noKboxCtx.equipment_profile), true);
+      assert.equal(getExerciseEquipments(cat).includes("KBOX"), false);
+      assert.equal(cat.allowed_loads.includes(ex.load), true);
+    }
+
+    // 2. Mode TRAVEL (BAND + PDC uniquement)
+    const travelCtx = {
+      ...noKboxCtx,
+      equipment_profile: EQUIPMENT_PRESETS.TRAVEL.profile,
+    };
+    const travelPlan = generateFallbackSession(travelCtx);
+    assert.ok(travelPlan.exercises.length >= 1 && travelPlan.exercises.length <= 6);
+    for (const ex of travelPlan.exercises) {
+      const cat = getCatalogExercise(ex.id);
+      const equips = getExerciseEquipments(cat);
+      assert.equal(
+        equips.every((code) => code === "BAND" || code === "PDC"),
+        true,
+        `${ex.id} doit uniquement utiliser BAND ou PDC (${equips.join(",")})`
+      );
+      assert.equal(cat.allowed_loads.includes(ex.load), true);
+    }
+
+    // 3. Mode PDC_ONLY (PDC uniquement)
+    const pdcCtx = {
+      ...noKboxCtx,
+      equipment_profile: EQUIPMENT_PRESETS.PDC_ONLY.profile,
+    };
+    const pdcPlan = generateFallbackSession(pdcCtx);
+    assert.ok(pdcPlan.exercises.length >= 1 && pdcPlan.exercises.length <= 6);
+    for (const ex of pdcPlan.exercises) {
+      const cat = getCatalogExercise(ex.id);
+      const equips = getExerciseEquipments(cat);
+      assert.equal(
+        equips.every((code) => code === "PDC"),
+        true,
+        `${ex.id} doit uniquement utiliser PDC (${equips.join(",")})`
+      );
+      assert.equal(cat.allowed_loads.includes(ex.load), true);
+    }
+
+    // 4. Tout à false -> erreur NO_COMPATIBLE_EXERCISES
+    const emptyCtx = {
+      ...noKboxCtx,
+      equipment_profile: Object.fromEntries(EQUIPMENT_KEYS.map((k) => [k, false])),
+    };
+    assert.throws(
+      () => generateFallbackSession(emptyCtx),
+      (err) => err instanceof Error && err.code === "NO_COMPATIBLE_EXERCISES"
+    );
+    assert.throws(
+      () => enforceSymbolicConstraints(pollutedPlan, emptyCtx),
+      (err) => err instanceof Error && err.code === "NO_COMPATIBLE_EXERCISES"
+    );
+  });
+
+  it("generateSessionWithGemini filtre les exercices KBOX retournés quand KBOX=false et lève NO_COMPATIBLE_EXERCISES sans appel réseau si tout à false", async () => {
+    let fetchCalls = 0;
+    let capturedBody = null;
+
+    restoreFetch = stubGlobalProperty("fetch", {
+      value: async (_url, init) => {
+        fetchCalls += 1;
+        capturedBody = JSON.parse(String(init?.body ?? "{}"));
+
+        // Réponse Gemini simulée incluant un exercice KBOX malgré KBOX: false
+        const geminiPayload = {
+          theme: "Séance Gemini Mixte",
+          rationale: "Contient un KBOX interdit à filtrer",
+          recommended_k_ecc: 1.3,
+          recommended_rir: 2,
+          recommended_rpe: 7,
+          target_duration_sec: 2100,
+          exercises: [
+            { id: "BAND_MONSTER_WALK", block: 1, sets: 3, reps: 45, load: 2 },
+            { id: "CORE_MCGILL_BIG3", block: 1, sets: 3, reps: 60, load: 1 },
+            { id: "KBOX_SQUAT_HARNESS", block: 2, sets: 3, reps: 6, load: 0.05 },
+            { id: "KBOX_RDL", block: 2, sets: 3, reps: 8, load: 0.05 },
+            { id: "DB_BULGARIAN_SPLIT", block: 3, sets: 3, reps: 8, load: 12 },
+            { id: "BAND_PALLOF_PRESS", block: 3, sets: 3, reps: 45, load: 2 },
+          ],
+        };
+
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: JSON.stringify(geminiPayload) }],
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      },
+    });
+
+    const noKboxProfile = EQUIPMENT_PRESETS.NO_KBOX.profile;
+    const res = await generateSessionWithGemini({
+      apiKey: "dummy_gemini_key",
+      model: "gemini-2.5-flash",
+      context: {
+        gate: "GREEN",
+        readiness: "OPTIMAL",
+        lumbar_flag: false,
+        yesterday_bike_hours: 1,
+        hours_since_last_eccentric: 72,
+        last_dominant_pattern: "KNEE_DOMINANT",
+        equipment_profile: noKboxProfile,
+      },
+    });
+
+    assert.equal(fetchCalls, 1);
+    assert.equal(res.source, "GEMINI");
+
+    // Le schéma JSON envoyé à Gemini exclut déjà tout ID KBOX
+    const schemaEnum =
+      capturedBody?.generationConfig?.responseSchema?.properties?.exercises?.items?.properties?.id
+        ?.enum ?? [];
+    assert.ok(schemaEnum.length > 0);
+    for (const id of schemaEnum) {
+      const cat = getCatalogExercise(id);
+      assert.equal(getExerciseEquipments(cat).includes("KBOX"), false);
+    }
+
+    // La réponse finale passée dans enforceSymbolicConstraints ne contient aucun KBOX
+    for (const ex of res.plan.exercises) {
+      const cat = getCatalogExercise(ex.id);
+      assert.equal(isExerciseAvailable(cat, noKboxProfile), true);
+      assert.equal(getExerciseEquipments(cat).includes("KBOX"), false);
+      assert.equal(cat.allowed_loads.includes(ex.load), true);
+    }
+
+    // Tout à false -> NO_COMPATIBLE_EXERCISES levée immédiatement sans appel fetch
+    const callsBeforeEmpty = fetchCalls;
+    const noneProfile = Object.fromEntries(EQUIPMENT_KEYS.map((k) => [k, false]));
+    await assert.rejects(
+      () =>
+        generateSessionWithGemini({
+          apiKey: "dummy_gemini_key",
+          model: "gemini-2.5-flash",
+          context: {
+            gate: "GREEN",
+            readiness: "OPTIMAL",
+            equipment_profile: noneProfile,
+          },
+        }),
+      (err) => err instanceof Error && err.code === "NO_COMPATIBLE_EXERCISES"
+    );
+    assert.equal(fetchCalls, callsBeforeEmpty);
+  });
+
+  it("vérifie les contrôles statiques DOM/sécurité (#equipment-availability-card, toggles et 0 innerHTML dans app.js)", () => {
+    const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+    const indexHtml = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+    const appJs = fs.readFileSync(path.join(rootDir, "app.js"), "utf8");
+
+    for (const domId of [
+      "equipment-availability-card",
+      "directory-only-available-toggle",
+      "free-only-available-toggle",
+    ]) {
+      assert.equal(
+        indexHtml.includes(`id="${domId}"`),
+        true,
+        `ID DOM manquant dans index.html : #${domId}`
+      );
+    }
+
+    assert.equal(
+      /\binnerHTML\b/i.test(appJs),
+      false,
+      "app.js ne doit contenir aucune occurrence d'innerHTML (sécurité XSS)"
+    );
+  });
+});
+

@@ -8,6 +8,8 @@ import {
   CUSTOM_TEMPLATES,
   DIRECTORY_CATEGORIES,
   DIRECTORY_EQUIPMENTS,
+  EQUIPMENT_KEYS,
+  EQUIPMENT_PRESETS,
   EXTENDED_CATEGORIES,
   exportUserExercisesJson,
   filterCatalogExercises,
@@ -16,8 +18,10 @@ import {
   getCatalogExercise,
   getExerciseEquipments,
   getUserExercisesList,
+  isExerciseAvailable,
   isUrlSearchQuery,
   loadUserExercises,
+  normalizeEquipmentProfile,
   saveUserExercise,
 } from "./catalog.js";
 import {
@@ -124,6 +128,7 @@ function createDefaultContext() {
 const state = {
   currentStep: 1,
   vault: loadVault(),
+  equipment_profile: normalizeEquipmentProfile(loadVault().EQUIPMENT_PROFILE),
   context: createDefaultContext(),
   readiness: "OPTIMAL",
   lumbar_flag: false,
@@ -156,18 +161,23 @@ const state = {
     playing: true,
     activeRequestId: 0,
   },
+  freeBuilderOnlyAvailable: true,
   directory: {
     open: false,
     returnStep: 1,
     query: "",
     category: "ALL",
     equipment: "ALL",
+    onlyAvailableEquipment: true,
     addedInVisit: 0,
     draft: [],
     builderOpen: false,
     draftTitle: "Séance Catalogue PPG",
   },
 };
+
+/** Référence de rafraîchissement de la liste du constructeur libre s'il est ouvert. */
+let refreshFreeBuilderCatalogPicker = null;
 
 /** Raccourci sûr de sélection par ID. */
 function $(id) {
@@ -891,6 +901,10 @@ function initVaultControls() {
     try {
       const content = await file.text();
       state.vault = importVaultJson(content);
+      state.equipment_profile = normalizeEquipmentProfile(
+        state.vault.EQUIPMENT_PROFILE
+      );
+      syncEquipmentAvailabilityUI();
       populateVaultForm();
       updateServicePills();
       setStatusMessage($("vault-feedback"), "Coffre-fort importé avec succès.", "success");
@@ -1824,6 +1838,22 @@ async function handleGateSelection(gate) {
   gateButtons.forEach((b) => {
     b.disabled = true;
   });
+
+  const hasAnyEquipment = EQUIPMENT_KEYS.some(
+    (key) => state.equipment_profile?.[key] === true
+  );
+  if (!hasAnyEquipment) {
+    setStatusMessage(
+      $("generation-status"),
+      "Aucun matériel sélectionné : activez au moins un équipement disponible pour générer une séance.",
+      "error"
+    );
+    gateButtons.forEach((b) => {
+      b.disabled = false;
+    });
+    return;
+  }
+
   setStatusMessage($("generation-status"), `Génération séance ${gate} en cours…`);
 
   try {
@@ -1831,6 +1861,7 @@ async function handleGateSelection(gate) {
       gate,
       readiness: state.readiness,
       lumbar_flag: state.lumbar_flag,
+      equipment_profile: state.equipment_profile,
       yesterday_bike_hours: state.context.yesterday_bike_hours ?? 0,
       hours_since_last_eccentric: state.context.hours_since_last_eccentric ?? null,
       last_dominant_pattern: state.context.last_dominant_pattern ?? null,
@@ -1859,6 +1890,22 @@ async function handleGateSelection(gate) {
       fallbackReason: result.fallbackReason ?? null,
     });
     setStatusMessage($("generation-status"), "");
+  } catch (err) {
+    const code = err && typeof err === "object" ? err.code : "";
+    const msg = err instanceof Error ? err.message : String(err ?? "");
+    if (code === "NO_COMPATIBLE_EXERCISES" || msg.includes("NO_COMPATIBLE_EXERCISES")) {
+      setStatusMessage(
+        $("generation-status"),
+        "Aucun exercice compatible avec le matériel disponible : activez au moins un équipement supplémentaire.",
+        "error"
+      );
+    } else {
+      setStatusMessage(
+        $("generation-status"),
+        `Erreur de génération : ${msg || "inconnue"}`,
+        "error"
+      );
+    }
   } finally {
     gateButtons.forEach((b) => {
       b.disabled = false;
@@ -2001,6 +2048,61 @@ function initVoiceDictation() {
   });
 }
 
+/**
+ * Synchronise l'état visuel des chips et pré-réglages de matériel disponible.
+ */
+function syncEquipmentAvailabilityUI() {
+  const profile = normalizeEquipmentProfile(state.equipment_profile);
+  state.equipment_profile = profile;
+
+  document.querySelectorAll("[data-equip-toggle]").forEach((btn) => {
+    const key = btn.dataset.equipToggle;
+    if (!key) return;
+    const isEnabled = profile[key] === true;
+    btn.setAttribute("aria-pressed", String(isEnabled));
+  });
+
+  document.querySelectorAll("[data-equip-preset]").forEach((btn) => {
+    const presetKey = btn.dataset.equipPreset;
+    const preset =
+      presetKey && Object.hasOwn(EQUIPMENT_PRESETS, presetKey)
+        ? EQUIPMENT_PRESETS[presetKey]
+        : null;
+    const isMatch = Boolean(
+      preset &&
+        EQUIPMENT_KEYS.every(
+          (key) => Boolean(profile[key]) === Boolean(preset.profile[key])
+        )
+    );
+    btn.classList.toggle("is-active", isMatch);
+    btn.setAttribute("aria-pressed", String(isMatch));
+  });
+}
+
+/**
+ * Met à jour, persiste et répercute le profil matériel sur l'interface.
+ * @param {Record<string, boolean>} nextProfile
+ */
+function applyEquipmentProfile(nextProfile) {
+  state.equipment_profile = normalizeEquipmentProfile(nextProfile);
+  state.vault = saveVault({ EQUIPMENT_PROFILE: state.equipment_profile });
+  syncEquipmentAvailabilityUI();
+
+  if (EQUIPMENT_KEYS.some((key) => state.equipment_profile[key] === true)) {
+    const genStatus = $("generation-status");
+    if (genStatus?.classList.contains("is-error")) {
+      setStatusMessage(genStatus, "");
+    }
+  }
+
+  if (state.directory.open || $("catalog-directory-view")?.hidden === false) {
+    renderCatalogDirectory();
+  }
+  if ($("free-builder-modal")?.open) {
+    refreshFreeBuilderCatalogPicker?.();
+  }
+}
+
 function initStep1Events() {
   $("refresh-context-btn").addEventListener("click", () => refreshContext());
 
@@ -2013,6 +2115,27 @@ function initStep1Events() {
     state.lumbar_flag = Boolean(lumbarSwitch.checked);
     lumbarSwitch.setAttribute("aria-checked", String(state.lumbar_flag));
   });
+
+  document.querySelectorAll("[data-equip-toggle]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.equipToggle;
+      if (!key || !EQUIPMENT_KEYS.includes(key)) return;
+      applyEquipmentProfile({
+        ...state.equipment_profile,
+        [key]: !state.equipment_profile[key],
+      });
+    });
+  });
+
+  document.querySelectorAll("[data-equip-preset]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const presetKey = btn.dataset.equipPreset;
+      if (!presetKey || !Object.hasOwn(EQUIPMENT_PRESETS, presetKey)) return;
+      applyEquipmentProfile(EQUIPMENT_PRESETS[presetKey].profile);
+    });
+  });
+
+  syncEquipmentAvailabilityUI();
 
   document.querySelectorAll("[data-gate]").forEach((btn) => {
     btn.addEventListener("click", () => handleGateSelection(btn.dataset.gate));
@@ -2470,6 +2593,9 @@ function initFreeBuilderModal() {
   const searchInput = /** @type {HTMLInputElement | null} */ ($("free-catalog-search"));
   const poleFilterBtns = Array.from(dialog.querySelectorAll("[data-free-pole]"));
   const categoryFilterBtns = Array.from(dialog.querySelectorAll("[data-free-category]"));
+  const onlyAvailableToggle = /** @type {HTMLInputElement | null} */ (
+    $("free-only-available-toggle")
+  );
   const catalogPicker = $("free-catalog-picker");
   const customNameInput = /** @type {HTMLInputElement | null} */ ($("custom-exo-name"));
   const customPoleSelect = /** @type {HTMLSelectElement | null} */ ($("custom-exo-pole"));
@@ -2609,6 +2735,12 @@ function initFreeBuilderModal() {
       if (activeCategory !== "ALL" && ex.category !== activeCategory) {
         return false;
       }
+      if (
+        state.freeBuilderOnlyAvailable &&
+        !isExerciseAvailable(ex, state.equipment_profile)
+      ) {
+        return false;
+      }
       if (normalizedQuery) {
         const categoryMeta =
           ex.category && Object.hasOwn(EXTENDED_CATEGORIES, ex.category)
@@ -2628,8 +2760,14 @@ function initFreeBuilderModal() {
       return true;
     });
 
+    const hasEquipmentRestriction =
+      state.freeBuilderOnlyAvailable &&
+      !EQUIPMENT_KEYS.every((key) => state.equipment_profile?.[key] === true);
     const hasFilter =
-      activePole !== "ALL" || activeCategory !== "ALL" || normalizedQuery.length > 0;
+      activePole !== "ALL" ||
+      activeCategory !== "ALL" ||
+      normalizedQuery.length > 0 ||
+      hasEquipmentRestriction;
     const catalogHeading = $("free-catalog-heading");
     if (catalogHeading) {
       catalogHeading.textContent = hasFilter
@@ -2723,6 +2861,14 @@ function initFreeBuilderModal() {
     renderCatalogPicker();
   });
 
+  if (onlyAvailableToggle) {
+    onlyAvailableToggle.checked = Boolean(state.freeBuilderOnlyAvailable);
+    onlyAvailableToggle.addEventListener("change", () => {
+      state.freeBuilderOnlyAvailable = Boolean(onlyAvailableToggle.checked);
+      renderCatalogPicker();
+    });
+  }
+
   customPoleSelect?.addEventListener("change", syncCustomTemplateDefaults);
 
   customAddBtn?.addEventListener("click", () => {
@@ -2778,6 +2924,9 @@ function initFreeBuilderModal() {
     activeCategory = "ALL";
     searchQuery = "";
     if (searchInput) searchInput.value = "";
+    if (onlyAvailableToggle) {
+      onlyAvailableToggle.checked = Boolean(state.freeBuilderOnlyAvailable);
+    }
     syncFilterButtonsState();
     setStatusMessage(statusEl, "");
     renderCatalogPicker();
@@ -2814,6 +2963,7 @@ function initFreeBuilderModal() {
     }
   });
 
+  refreshFreeBuilderCatalogPicker = renderCatalogPicker;
   syncCustomTemplateDefaults();
   renderCatalogPicker();
   renderSelectedList();
@@ -3407,13 +3557,20 @@ function renderCatalogDirectory() {
   }
 
   const all = getAllCatalogExercises();
-  const filtered = filterCatalogExercises(all, state.directory);
+  const filtered = filterCatalogExercises(all, {
+    ...state.directory,
+    availableEquipment: state.equipment_profile,
+  });
 
   if (countEl) {
+    const hasEquipmentRestriction =
+      state.directory.onlyAvailableEquipment &&
+      !EQUIPMENT_KEYS.every((key) => state.equipment_profile?.[key] === true);
     const hasFilter =
       Boolean(state.directory.query.trim()) ||
       state.directory.category !== "ALL" ||
-      state.directory.equipment !== "ALL";
+      state.directory.equipment !== "ALL" ||
+      hasEquipmentRestriction;
     countEl.textContent = hasFilter
       ? `${filtered.length} / ${all.length} exercices`
       : `${all.length} exercices`;
@@ -3516,6 +3673,9 @@ function initCatalogDirectoryView() {
   const equipmentBtns = Array.from(
     document.querySelectorAll("[data-dir-equipment]")
   );
+  const onlyAvailableToggle = /** @type {HTMLInputElement | null} */ (
+    $("directory-only-available-toggle")
+  );
 
   const syncFilterButtons = () => {
     for (const btn of categoryBtns) {
@@ -3602,6 +3762,16 @@ function initCatalogDirectoryView() {
     btn.addEventListener("click", () => {
       state.directory.equipment = btn.dataset.dirEquipment || "ALL";
       syncFilterButtons();
+      renderCatalogDirectory();
+    });
+  }
+
+  if (onlyAvailableToggle) {
+    onlyAvailableToggle.checked = Boolean(state.directory.onlyAvailableEquipment);
+    onlyAvailableToggle.addEventListener("change", () => {
+      state.directory.onlyAvailableEquipment = Boolean(
+        onlyAvailableToggle.checked
+      );
       renderCatalogDirectory();
     });
   }

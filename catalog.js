@@ -793,6 +793,80 @@ export const DIRECTORY_EQUIPMENTS = deepFreeze([
   { id: "PDC", label: "PDC" },
 ]);
 
+/** Clés d'équipement disponibles pour le profil matériel athlète. */
+export const EQUIPMENT_KEYS = Object.freeze([
+  "KBOX",
+  "BAND",
+  "DUMBBELL",
+  "BARBELL",
+  "KETTLEBELL",
+  "AB_WHEEL",
+  "PDC",
+]);
+
+/** Profil matériel par défaut (tous les équipements activés). */
+export const DEFAULT_EQUIPMENT_PROFILE = Object.freeze({
+  KBOX: true,
+  BAND: true,
+  DUMBBELL: true,
+  BARBELL: true,
+  KETTLEBELL: true,
+  AB_WHEEL: true,
+  PDC: true,
+});
+
+/** Préréglages de profil matériel exposés à l'utilisateur. */
+export const EQUIPMENT_PRESETS = Object.freeze({
+  ALL: Object.freeze({
+    label: "Complet",
+    profile: Object.freeze({
+      KBOX: true,
+      BAND: true,
+      DUMBBELL: true,
+      BARBELL: true,
+      KETTLEBELL: true,
+      AB_WHEEL: true,
+      PDC: true,
+    }),
+  }),
+  NO_KBOX: Object.freeze({
+    label: "Sans kBox",
+    profile: Object.freeze({
+      KBOX: false,
+      BAND: true,
+      DUMBBELL: true,
+      BARBELL: true,
+      KETTLEBELL: true,
+      AB_WHEEL: true,
+      PDC: true,
+    }),
+  }),
+  TRAVEL: Object.freeze({
+    label: "Élast. + PDC",
+    profile: Object.freeze({
+      KBOX: false,
+      BAND: true,
+      DUMBBELL: false,
+      BARBELL: false,
+      KETTLEBELL: false,
+      AB_WHEEL: false,
+      PDC: true,
+    }),
+  }),
+  PDC_ONLY: Object.freeze({
+    label: "PDC seul",
+    profile: Object.freeze({
+      KBOX: false,
+      BAND: false,
+      DUMBBELL: false,
+      BARBELL: false,
+      KETTLEBELL: false,
+      AB_WHEEL: false,
+      PDC: true,
+    }),
+  }),
+});
+
 /** Clé de persistance localStorage pour les exercices promus dans le catalogue utilisateur. */
 export const USER_EXERCISES_STORAGE_KEY = "WEBSTRENGTH_USER_EXERCISES_V1";
 
@@ -1285,14 +1359,78 @@ export function getExerciseEquipments(ex) {
 }
 
 /**
- * Filtre un tableau d'exercices selon une requête textuelle, une catégorie et un équipement.
+ * Normalise un profil matériel en un objet plat possédant exactement les 7 clés `EQUIPMENT_KEYS` en booléen.
+ * @param {unknown} raw
+ * @returns {Record<string, boolean>}
+ */
+export function normalizeEquipmentProfile(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...DEFAULT_EQUIPMENT_PROFILE };
+  }
+  /** @type {Record<string, boolean>} */
+  const normalized = {};
+  for (const key of EQUIPMENT_KEYS) {
+    normalized[key] = raw[key] !== false;
+  }
+  return normalized;
+}
+
+/**
+ * Indique si toutes les clés d'équipement du profil sont activées (`true`).
+ * @param {unknown} profile
+ * @returns {boolean}
+ */
+export function isEquipmentProfileFull(profile) {
+  const normalized = normalizeEquipmentProfile(profile);
+  return EQUIPMENT_KEYS.every((key) => normalized[key] === true);
+}
+
+/**
+ * Vérifie si un exercice est réalisable compte tenu du profil matériel fourni.
+ * @param {Record<string, any> | null | undefined} ex
+ * @param {Record<string, boolean> | null | undefined} equipmentProfile
+ * @returns {boolean}
+ */
+export function isExerciseAvailable(ex, equipmentProfile) {
+  if (!equipmentProfile || isEquipmentProfileFull(equipmentProfile)) {
+    return true;
+  }
+  const equips = getExerciseEquipments(ex);
+  if (!equips || equips.length === 0) {
+    return true;
+  }
+  const normalized = normalizeEquipmentProfile(equipmentProfile);
+  return equips.every((code) => normalized[code] !== false);
+}
+
+/**
+ * Filtre un tableau d'exercices en ne conservant que ceux compatibles avec le profil matériel.
  * @param {Array<Record<string, any>>} exercises
- * @param {{ query?: string, category?: string, equipment?: string }} [filters]
+ * @param {Record<string, boolean> | null | undefined} equipmentProfile
+ * @returns {Array<Record<string, any>>}
+ */
+export function filterExercisesByEquipment(exercises, equipmentProfile) {
+  if (!Array.isArray(exercises)) {
+    return [];
+  }
+  return exercises.filter((ex) => isExerciseAvailable(ex, equipmentProfile));
+}
+
+/**
+ * Filtre un tableau d'exercices selon une requête textuelle, une catégorie, un équipement et la disponibilité matérielle.
+ * @param {Array<Record<string, any>>} exercises
+ * @param {{ query?: string, category?: string, equipment?: string, onlyAvailableEquipment?: boolean, availableEquipment?: Record<string, boolean> | null }} [filters]
  * @returns {Array<Record<string, any>>}
  */
 export function filterCatalogExercises(
   exercises,
-  { query = "", category = "ALL", equipment = "ALL" } = {}
+  {
+    query = "",
+    category = "ALL",
+    equipment = "ALL",
+    onlyAvailableEquipment = false,
+    availableEquipment = null,
+  } = {}
 ) {
   if (!Array.isArray(exercises)) {
     return [];
@@ -1320,6 +1458,10 @@ export function filterCatalogExercises(
 
     const equipments = getExerciseEquipments(ex);
     if (activeEquipment !== "ALL" && !equipments.includes(activeEquipment)) {
+      return false;
+    }
+
+    if (onlyAvailableEquipment === true && !isExerciseAvailable(ex, availableEquipment)) {
       return false;
     }
 

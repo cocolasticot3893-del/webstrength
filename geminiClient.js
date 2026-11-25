@@ -9,7 +9,12 @@ import {
   CATALOG,
   CUSTOM_TEMPLATE_IDS,
   CUSTOM_TEMPLATES,
+  EQUIPMENT_KEYS,
   EXERCISE_IDS,
+  filterExercisesByEquipment,
+  getAllCatalogExercises,
+  isEquipmentProfileFull,
+  normalizeEquipmentProfile,
 } from "./catalog.js";
 import {
   enforceSymbolicConstraints,
@@ -211,10 +216,15 @@ export function pickBestAvailableModel(modelsList, currentSavedModel = "") {
 
 /**
  * Construit le JSON Schema strict compatible avec `generationConfig.responseSchema` de Gemini.
- * Restreint `exercises[].id` à l'énumération fermée `EXERCISE_IDS` du catalogue.
+ * Restreint `exercises[].id` à l'énumération fermée des exercices autorisés (par défaut `CATALOG`).
+ * @param {Array<Record<string, any>>} [allowedExercises=CATALOG]
  * @returns {object}
  */
-export function buildResponseSchema() {
+export function buildResponseSchema(allowedExercises = CATALOG) {
+  const allowedIds = Array.isArray(allowedExercises)
+    ? allowedExercises.map((ex) => ex.id)
+    : [...EXERCISE_IDS];
+
   return {
     type: "OBJECT",
     properties: {
@@ -229,7 +239,7 @@ export function buildResponseSchema() {
         items: {
           type: "OBJECT",
           properties: {
-            id: { type: "STRING", enum: [...EXERCISE_IDS] },
+            id: { type: "STRING", enum: allowedIds },
             block: { type: "INTEGER" },
             sets: { type: "INTEGER" },
             reps: { type: "INTEGER" },
@@ -252,22 +262,51 @@ export function buildResponseSchema() {
 }
 
 /**
- * Génère la table compacte du catalogue fermé pour l'instruction système Gemini.
+ * Génère la table compacte du catalogue autorisé pour l'instruction système Gemini.
+ * @param {Array<Record<string, any>>} [allowedExercises=CATALOG]
  * @returns {string}
  */
-function formatCompactCatalogTable() {
-  return CATALOG.map(
-    (ex) =>
-      `${ex.id} | ${ex.pole} | ${ex.pattern} | charges:[${ex.allowed_loads.join(",")}] ${ex.unit_label} | ${ex.is_timed ? "sec" : "reps"}`
-  ).join("\n");
+export function formatCompactCatalogTable(allowedExercises = CATALOG) {
+  const list = Array.isArray(allowedExercises) ? allowedExercises : CATALOG;
+  return list
+    .map(
+      (ex) =>
+        `${ex.id} | ${ex.pole} | ${ex.pattern} | charges:[${ex.allowed_loads.join(",")}] ${ex.unit_label} | ${ex.is_timed ? "sec" : "reps"}`
+    )
+    .join("\n");
 }
 
 /**
- * Construit l'instruction système intégrant les 5 règles métier et le catalogue fermé.
+ * Retourne la liste des équipements désactivés dans un profil matériel.
+ * @param {Record<string, boolean> | null | undefined} equipmentProfile
+ * @returns {string[]}
+ */
+function getDisabledEquipmentKeys(equipmentProfile) {
+  if (!equipmentProfile || isEquipmentProfileFull(equipmentProfile)) {
+    return [];
+  }
+  const normalized = normalizeEquipmentProfile(equipmentProfile);
+  return EQUIPMENT_KEYS.filter((key) => normalized[key] === false);
+}
+
+/**
+ * Construit l'instruction système intégrant les 5 règles métier et le catalogue autorisé.
+ * @param {Array<Record<string, any>>} [allowedExercises=CATALOG]
+ * @param {Record<string, boolean> | null} [equipmentProfile=null]
  * @returns {string}
  */
-function buildSystemInstruction() {
-  return [
+function buildSystemInstruction(allowedExercises = CATALOG, equipmentProfile = null) {
+  const disabledEquipments = getDisabledEquipmentKeys(equipmentProfile);
+  const isConstrained = disabledEquipments.length > 0;
+  const isKboxDisabled = isConstrained && disabledEquipments.includes("KBOX");
+
+  const rule5Text = isKboxDisabled
+    ? "5. Règle 5 (Structure adaptée sans kBox) : Jusqu'à 6 exercices uniques (3 blocs × 2 exercices, ou moins si le catalogue filtré contient < 6 exercices) issus UNIQUEMENT du catalogue ci-dessous et avec une charge exacte de `allowed_loads`. La kBox étant indisponible, le Bloc 2 peut utiliser tout matériel de remplacement disponible."
+    : isConstrained
+      ? "5. Règle 5 (Structure adaptée au matériel) : Jusqu'à 6 exercices uniques (3 blocs × 2 exercices, ou moins si le catalogue filtré contient < 6 exercices) issus UNIQUEMENT du catalogue ci-dessous et avec une charge exacte de `allowed_loads`."
+      : "5. Règle 5 (Structure fermée) : Exactement 6 exercices (3 blocs × 2 exercices) issus UNIQUEMENT du catalogue ci-dessous et avec une charge exacte de `allowed_loads`. Bloc 1 = BAND_CORE (2 exos), Bloc 2 = KBOX (2 exos hors Règle 1), Bloc 3 = DUMBBELL ou BAND_CORE (2 exos).";
+
+  const lines = [
     "Tu es le préparateur physique neuro-symbolique de WebStrength (cycliste d'endurance, excentrique kBox + haltères + gainage).",
     "Réponds EXCLUSIVEMENT en JSON conforme au schéma fourni, en français concis.",
     "",
@@ -280,11 +319,22 @@ function buildSystemInstruction() {
     "2. Règle 2 (Décharge L4-L5) : Si lumbar_flag === true OU yesterday_bike_hours > 4, INTERDICTION de KBOX_SQUAT_HARNESS et KBOX_RDL ; utiliser KBOX_SQUAT_BELT ou KBOX_HIP_THRUST.",
     "3. Règle 3 (Plafond inertie & ORANGE) : Si gate === 'GREEN' et readiness === 'OPTIMAL', max 2 exercices KBOX à 0.075. Si gate === 'ORANGE', max 3 séries par exercice, inertie KBOX <= 0.050, recommended_k_ecc=1.3, recommended_rir>=2, recommended_rpe<=7.",
     "4. Règle 4 (Alternance biomécanique) : Hors Règle 1, alterner la dominante du Bloc 2 par rapport à last_dominant_pattern (KNEE_DOMINANT <-> HIP_DOMINANT).",
-    "5. Règle 5 (Structure fermée) : Exactement 6 exercices (3 blocs × 2 exercices) issus UNIQUEMENT du catalogue ci-dessous et avec une charge exacte de `allowed_loads`. Bloc 1 = BAND_CORE (2 exos), Bloc 2 = KBOX (2 exos hors Règle 1), Bloc 3 = DUMBBELL ou BAND_CORE (2 exos).",
+    rule5Text,
+  ];
+
+  if (isConstrained) {
+    lines.push(
+      `6. Contrainte matérielle : Équipements indisponibles / exclus = [${disabledEquipments.join(", ")}].${isKboxDisabled ? " La kBox étant désactivée, le Bloc 2 peut utiliser le matériel de remplacement disponible dans le catalogue ci-dessous." : ""}`
+    );
+  }
+
+  lines.push(
     "",
     "CATALOGUE FERMÉ (id | pôle | pattern | charges | unité) :",
-    formatCompactCatalogTable(),
-  ].join("\n");
+    formatCompactCatalogTable(allowedExercises)
+  );
+
+  return lines.join("\n");
 }
 
 const ALLOWED_GATES = new Set(["GREEN", "ORANGE", "RED"]);
@@ -335,7 +385,20 @@ function buildUserPrompt(context = {}) {
     tsb: toFiniteNumberOr(context.tsb, null),
   };
 
-  return `Génère la séance WebStrength optimale pour ce contexte athlète :\n<athlete_context_json>\n${JSON.stringify(safeCtx)}\n</athlete_context_json>`;
+  const disabledEquipments = getDisabledEquipmentKeys(context.equipment_profile);
+  if (disabledEquipments.length > 0) {
+    safeCtx.equipment_profile = normalizeEquipmentProfile(context.equipment_profile);
+  }
+
+  const basePrompt = `Génère la séance WebStrength optimale pour ce contexte athlète :\n<athlete_context_json>\n${JSON.stringify(safeCtx)}\n</athlete_context_json>`;
+  if (disabledEquipments.length === 0) {
+    return basePrompt;
+  }
+
+  const kboxNote = disabledEquipments.includes("KBOX")
+    ? " La kBox étant désactivée, le Bloc 2 peut utiliser le matériel de remplacement disponible."
+    : "";
+  return `${basePrompt}\nContrainte matérielle : équipements indisponibles / exclus = [${disabledEquipments.join(", ")}].${kboxNote}`;
 }
 
 /**
@@ -497,13 +560,22 @@ function postGenerateContent({
  * @param {AbortSignal} params.signal
  * @returns {Promise<Response>}
  */
-function requestGenerateContent({ apiKey, model, context, signal }) {
+function requestGenerateContent({
+  apiKey,
+  model,
+  context,
+  allowedExercises = CATALOG,
+  signal,
+}) {
   return postGenerateContent({
     apiKey,
     model,
-    systemInstruction: buildSystemInstruction(),
+    systemInstruction: buildSystemInstruction(
+      allowedExercises,
+      context?.equipment_profile ?? null
+    ),
     userPrompt: buildUserPrompt(context),
-    responseSchema: buildResponseSchema(),
+    responseSchema: buildResponseSchema(allowedExercises),
     signal,
   });
 }
@@ -544,7 +616,8 @@ async function parseAndConstrainResponse(response, context) {
  * Génère un plan de séance via l'API Gemini (avec Structured Outputs) puis le passe
  * impérativement dans `enforceSymbolicConstraints`.
  * Inclut un auto-healing en plein vol sur HTTP 404/400 (modèle déprécié/invalide).
- * Ne lève jamais d'exception bloquante : bascule sur `generateFallbackSession` sur toute erreur.
+ * Lève `NO_COMPATIBLE_EXERCISES` sans appeler l'API si le profil matériel exclut tout le catalogue ;
+ * sinon bascule sur `generateFallbackSession` sur toute erreur réseau/API.
  * @param {object} params
  * @param {string} [params.apiKey]
  * @param {string} [params.model="gemini-3.5-flash"]
@@ -557,7 +630,25 @@ export async function generateSessionWithGemini({
   model = "gemini-3.5-flash",
   context = {},
   timeoutMs = 4000,
-}) {
+} = {}) {
+  const hasEquipmentConstraint =
+    Boolean(context?.equipment_profile) &&
+    !isEquipmentProfileFull(context.equipment_profile);
+  const equipmentProfile = hasEquipmentConstraint
+    ? normalizeEquipmentProfile(context.equipment_profile)
+    : null;
+  const allowedExercises = hasEquipmentConstraint
+    ? filterExercisesByEquipment(getAllCatalogExercises(), equipmentProfile)
+    : CATALOG;
+
+  if (allowedExercises.length === 0) {
+    const err = new Error(
+      "Aucun exercice compatible avec le matériel disponible."
+    );
+    err.code = "NO_COMPATIBLE_EXERCISES";
+    throw err;
+  }
+
   const cleanKey = typeof apiKey === "string" ? apiKey.trim() : "";
   const isOffline = globalThis?.navigator?.onLine === false;
 
@@ -587,6 +678,7 @@ export async function generateSessionWithGemini({
       apiKey: cleanKey,
       model: cleanModel,
       context,
+      allowedExercises,
       signal: controller.signal,
     });
 
@@ -611,6 +703,7 @@ export async function generateSessionWithGemini({
           apiKey: cleanKey,
           model: repairedModel,
           context,
+          allowedExercises,
           signal: controller.signal,
         });
 
@@ -637,6 +730,9 @@ export async function generateSessionWithGemini({
 
     throw new Error(`HTTP ${response.status} depuis Gemini`);
   } catch (err) {
+    if (err && typeof err === "object" && err.code === "NO_COMPATIBLE_EXERCISES") {
+      throw err;
+    }
     const reason =
       err instanceof Error ? err.message : String(err ?? "Erreur Gemini");
     return {

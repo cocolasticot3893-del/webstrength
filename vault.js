@@ -5,6 +5,8 @@
  * Compatible navigateur et Node.js 26+ ESM sans erreur.
  */
 
+import { DEFAULT_EQUIPMENT_PROFILE, normalizeEquipmentProfile } from "./catalog.js";
+
 export const VAULT_KEY = "GLOBAL_ATHLETE_VAULT_V1";
 
 export const FLAT_KEYS = Object.freeze([
@@ -21,6 +23,7 @@ export const DEFAULT_VAULT = Object.freeze({
   LLM_MODEL: "gemini-3.5-flash",
   DRIVE_WEBHOOK_URL: "",
   DRIVE_WEBHOOK_SECRET: "",
+  EQUIPMENT_PROFILE: DEFAULT_EQUIPMENT_PROFILE,
   updatedAt: null,
 });
 
@@ -198,6 +201,7 @@ function normalizeVaultRecord(rawSource, flatFallback = {}) {
     merged.DRIVE_WEBHOOK_SECRET,
     DEFAULT_VAULT.DRIVE_WEBHOOK_SECRET
   );
+  merged.EQUIPMENT_PROFILE = normalizeEquipmentProfile(merged.EQUIPMENT_PROFILE);
 
   merged.updatedAt =
     typeof merged.updatedAt === "string" && merged.updatedAt.trim().length > 0
